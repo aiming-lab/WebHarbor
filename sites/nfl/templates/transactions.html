@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}2026 NFL League Transactions - Trades Waivers, Signings &amp; more. | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>2026 NFL TRANSACTIONS</h1>
+  <p class="page-sub">September 2026 · official league transactions</p>
+</div>
+<div class="channel-tabs">
+  {% for c in cats %}
+  <a class="channel-tab {{ 'active' if c == cat else '' }}" href="{{ url_for('transactions', category=c) }}">{{ c | upper }}</a>
+  {% endfor %}
+</div>
+<section class="panel">
+  {% if rows %}
+  <table class="data-table">
+    <thead>
+      <tr><th>From</th><th>To</th><th>Date</th><th>Name</th><th>Position</th><th>Transaction</th></tr>
+    </thead>
+    <tbody>
+      {% for t in rows %}
+      <tr>
+        <td>{{ t.team }}</td>
+        <td>{{ t.to_team or '—' }}</td>
+        <td>{{ t.date }}</td>
+        <td>{{ t.name }}</td>
+        <td>{{ t.position or '—' }}</td>
+        <td>{{ t.transaction }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="fine-print">No transactions available for this category in September 2026.</p>
+  {% endif %}
+</section>
+{% endblock %}

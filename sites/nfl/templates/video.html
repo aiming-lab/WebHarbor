@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ video.title }} | NFL.com{% endblock %}
+{% block content %}
+<div class="video-player-page">
+  <div class="video-player">
+    <figure class="video-frame">
+      <img src="{{ video.image }}" alt="{{ video.title }}">
+      <span class="play-badge play-badge--lg">▶</span>
+      <figcaption class="video-frame-cap">{{ video.category }}</figcaption>
+    </figure>
+    <h1>{{ video.title }}</h1>
+    <p class="video-desc">{{ video.description }}</p>
+    <p class="fine-print">This video is part of the {{ video.category }} channel on NFL.com.</p>
+  </div>
+  <aside class="video-playlist">
+    <h2 class="panel-title">UP NEXT</h2>
+    {% for v in related %}
+    <a class="playlist-row" href="{{ url_for('video_detail', slug=v.slug) }}">
+      <figure><img src="{{ v.image }}" alt="{{ v.title }}"></figure>
+      <div>
+        <span class="kicker">{{ v.category }}</span>
+        <h4>{{ v.title }}</h4>
+      </div>
+    </a>
+    {% endfor %}
+  </aside>
+</div>
+{% endblock %}

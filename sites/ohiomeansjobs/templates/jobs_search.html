@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Search jobs on OhioMeansJobs | OhioMeansJobs | Ohio.gov{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Find a job in Ohio</h1>
+    <p>Searching for a great position on OhioMeansJobs.com is easy. Filter career opportunities by location, industry, salary, and more.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-top:18px">
+  <form class="search-form-bar" method="get" action="{{ url_for('jobs_search') }}">
+    <div class="grow">
+      <label for="tjt">Job Title</label>
+      <input id="tjt" type="text" name="tjt" value="{{ args.get('tjt','') }}" placeholder="Job Title">
+    </div>
+    <div class="grow">
+      <label for="keywords">Keywords</label>
+      <input id="keywords" type="text" name="keywords" value="{{ args.get('keywords','') }}" placeholder="Keywords">
+    </div>
+    <div class="grow">
+      <label for="cnme">City/Town or Zip</label>
+      <input id="cnme" type="text" name="cnme" value="{{ args.get('cnme','') }}" placeholder="City/Town or Zip">
+    </div>
+    <div>
+      <label for="rad">Radius</label>
+      <select id="rad" name="rad">
+        {% for label, value in radius_options %}
+          <option value="{{ value }}" {% if args.get('rad','20')|string == value|string %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="sort">Sort by</label>
+      <select id="sort" name="sort">
+        <option value="date" {% if args.get('sort','date') == 'date' %}selected{% endif %}>Date</option>
+        <option value="relevance" {% if args.get('sort') == 'relevance' %}selected{% endif %}>Relevance</option>
+      </select>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="btn" type="submit">Search Jobs</button>
+    </div>
+  </form>
+
+  <div class="search-layout">
+    <aside class="refine">
+      <h3>Refine</h3>
+      {% set active = [] %}
+      {% for key, label in [('tjt','Job title: ' ~ args.get('tjt')), ('cnme','Location: ' ~ args.get('cnme')), ('omjindustry','Industry: ' ~ industry_names.get(args.get('omjindustry',''), args.get('omjindustry',''))), ('saltyp','Salary: ' ~ salary_names.get(args.get('saltyp',0)|int, args.get('saltyp',''))), ('lv','Education: ' ~ education_names.get(args.get('lv',0)|int, args.get('lv',''))), ('jtype','Job type: ' ~ args.get('jtype')), ('cn','Company: ' ~ args.get('cn'))] %}
+        {% if label and label.split(': ',1)[1] %}
+          {% set _ = active.append((key, label)) %}
+        {% endif %}
+      {% endfor %}
+      {% if args.get('remote') in ('1','on','true') %}{% set _ = active.append(('remote','Remote only')) %}{% endif %}
+      {% if args.get('internship') in ('1','on','true') %}{% set _ = active.append(('internship','Internship only')) %}{% endif %}
+      {% if active %}
+        <div class="active-filters">
+          <strong>Active filters</strong><br>
+          {% for key, label in active %}
+            <span class="chip">{{ label }} <a href="{{ search_url(args, **{key: None}) }}" aria-label="Remove filter {{ label }}">&times;</a></span>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if facets.industry %}
+        <div class="facet">
+          <h4>Industry</h4>
+          <ul>
+            {% for code, count in facets.industry %}
+              <li><a href="{{ search_url(args, omjindustry=code) }}">{{ industry_names.get(code, code) }}</a><span class="count">{{ count }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if facets.location %}
+        <div class="facet">
+          <h4>Location</h4>
+          <ul>
+            {% for city, count in facets.location[:12] %}
+              <li><a href="{{ search_url(args, cnme=city|title, rad=20) }}">{{ city|title }}</a><span class="count">{{ count }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if facets.salary %}
+        <div class="facet">
+          <h4>Salary</h4>
+          <ul>
+            {% for band, count in facets.salary %}
+              <li><a href="{{ search_url(args, saltyp=band) }}">{{ salary_names.get(band, band) }}</a><span class="count">{{ count }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if facets.job_type %}
+        <div class="facet">
+          <h4>Job Type</h4>
+          <ul>
+            {% for t, count in facets.job_type %}
+              <li><a href="{{ search_url(args, jtype=t) }}">{{ t }}</a><span class="count">{{ count }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if facets.education %}
+        <div class="facet">
+          <h4>Education</h4>
+          <ul>
+            {% for lv, count in facets.education %}
+              <li><a href="{{ search_url(args, lv=lv) }}">{{ education_names.get(lv, lv) }}</a><span class="count">{{ count }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if facets.certification %}
+        <div class="facet">
+          <h4>Certificates</h4>
+          <ul>
+            {% for cert, count in facets.certification %}
+              <li><a href="{{ search_url(args, cert=cert) }}">{{ cert_names.get(cert, cert) }}</a><span class="count">{{ count }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      <div class="facet">
+        <h4>More filters</h4>
+        <ul>
+          <li><a href="{{ search_url(args, remote='1') }}">Remote-friendly jobs</a></li>
+          <li><a href="{{ search_url(args, internship='1') }}">Internships only</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <section>
+      <div class="results-header">
+        <div class="count"><strong>{{ total }}</strong> jobs found</div>
+        <div class="sort-links">
+          Sort by:
+          <a class="{{ 'on' if args.get('sort','date') != 'relevance' }}" href="{{ search_url(args, sort='date', pg=1) }}">Date</a> |
+          <a class="{{ 'on' if args.get('sort') == 'relevance' }}" href="{{ search_url(args, sort='relevance', pg=1) }}">Relevance</a>
+        </div>
+      </div>
+
+      <div class="list-box">
+        {% for job in jobs %}
+          <div class="list-row">
+            <div class="sr_jobsummary">
+              <h3>
+                <a href="{{ url_for('job_detail', jobid=job.jobid) }}">{{ job.title }}</a>
+                {% if job.remote %}<span class="badge remote">Remote</span>{% endif %}
+                {% if job.internship %}<span class="badge intern">Internship</span>{% endif %}
+                {% if job.id in saved_ids %}<span class="badge saved">Saved</span>{% endif %}
+                {% if job.id in applied_ids %}<span class="badge applied">Applied</span>{% endif %}
+              </h3>
+            </div>
+            <div class="company">
+              <a href="{{ url_for('company_profile', slug=job.company_slug) }}">{{ job.company }}</a>
+            </div>
+            <div class="loc">{{ job.city }}</div>
+            <div class="actions-wrap">
+              <a href="#" class="actions-link" data-title="Actions">Actions</a>
+              <div class="list-row__actions-content">
+                <a href="{{ url_for('job_detail', jobid=job.jobid) }}">View details</a>
+                {% if current_user.is_authenticated %}
+                  <form method="post" action="{{ url_for('job_save', jobid=job.jobid) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">{{ 'Remove from saved' if job.id in saved_ids else 'Save to My Profile' }}</button>
+                  </form>
+                  <a href="{{ url_for('job_apply', jobid=job.jobid) }}">Apply</a>
+                {% else %}
+                  <a href="{{ url_for('account_login', next=url_for('job_detail', jobid=job.jobid)) }}">Save to My Profile</a>
+                  <a href="{{ url_for('account_login', next=url_for('job_detail', jobid=job.jobid)) }}">Apply</a>
+                {% endif %}
+                <a href="{{ url_for('company_profile', slug=job.company_slug) }}">See all jobs from this company</a>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-note">Your search did not match any results. Try removing filters or using a broader job title.</div>
+        {% endfor %}
+      </div>
+
+      {% if total_pages > 1 %}
+        <nav class="pagination" aria-label="Search result pages">
+          {% if page > 1 %}
+            <a href="{{ search_url(args, pg=page-1) }}">Previous</a>
+          {% endif %}
+          {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+              <span class="current">{{ p }}</span>
+            {% else %}
+              <a href="{{ search_url(args, pg=p) }}">{{ p }}</a>
+            {% endif %}
+          {% endfor %}
+          {% if page < total_pages %}
+            <a href="{{ search_url(args, pg=page+1) }}">Next</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('account_saved_searches') }}" class="form-card" style="margin-top:18px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="params" value="{{ search_params_json }}">
+          <h3>Save this search</h3>
+          <div class="form-inline">
+            <input type="text" name="name" placeholder="Name this search" required style="flex:1;padding:9px 11px;border:1px solid #9db8d9;border-radius:3px">
+            <select name="frequency" style="padding:9px;border:1px solid #9db8d9;border-radius:3px">
+              <option>Daily</option><option>Weekly</option><option>Monthly</option>
+            </select>
+            <label style="font-size:14px"><input type="checkbox" name="alerts" checked> Email me alerts</label>
+            <button class="btn" type="submit">Save Search</button>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

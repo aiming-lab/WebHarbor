@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}State Directory | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--resource">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <header id="odx-content-header" class="odx-content__header">
+                    <div class="odx-title">
+                        <h1 class="odx-content__title">State Directory</h1>
+                        <div class="odx-content__summary">
+                            Find the state agency, board, or commission you need.
+                        </div>
+                    </div>
+                </header>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section id="js-odx-content__body" class="odx-content-section odx-content__body">
+                    <ul>
+                        <li><strong>Search by name or keyword:</strong> Enter the agency or board or a keyword in the box below.</li>
+                        <li><strong>Looking for a person?</strong>&nbsp;Use the&nbsp;<a href="{{ url_for('phone_search') }}">State Employee Phone Search</a>&nbsp;tool.</li>
+                        <li><strong>Need help?</strong> Ask the&nbsp;<a href="{{ url_for('ohio_assistant') }}">Ohio Assistant</a>.</li>
+                    </ul>
+                </section>
+
+                <section id="js-odx-content__table" class="js-odx-content__table">
+                    <div class="row margin-bottom-sm">
+                        <form method="get" action="{{ url_for('state_directory') }}" class="form-inline">
+                            <div class="col-xs-12 col-sm-6">
+                                <div class="dataTables_filter">
+                                    <label>Search for any keyword...
+                                        <input type="search" class="form-control input-sm" name="q" value="{{ q }}" placeholder="Search for any keyword...">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 text-right">
+                                <div class="dataTables_length">
+                                    <label>Show
+                                        <select name="per" class="form-control input-sm">
+                                            {% for n in [25, 50, 75, 100] %}
+                                            <option value="{{ n }}" {{ 'selected' if per == n else '' }}>{{ n }}</option>
+                                            {% endfor %}
+                                        </select> entries
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 text-right margin-bottom-xs">
+                                <button class="btn btn-primary btn-sm" type="submit">Search</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <table id="js-table-visualization" class="table dataTable no-footer dtr-inline" width="100%">
+                        <thead>
+                            <tr>
+                                <th>Agency</th>
+                                <th>Contact Method</th>
+                                <th>Social Media</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in items %}
+                            <tr class="{{ 'odd' if loop.index is odd else 'even' }}">
+                                <td class="sorting_1"><a target="_blank" href="{{ a.url }}" aria-label="{{ a.name }}">{{ a.name }}</a></td>
+                                <td>{% if a.contact_url %}<a aria-label="Contact the {{ a.name }}" href="{{ a.contact_url }}">{{ a.contact_method or 'contact form' }}</a>{% else %}&mdash;{% endif %}</td>
+                                <td>
+                                    {% for s in a.socials %}
+                                    <a href="{{ s.url }}" title="{{ a.name }} on {{ s.net }}">
+                                        <i class="fa fa-{{ 'facebook-square' if s.net == 'Facebook' else ('youtube' if s.net == 'YouTube' else ('linkedin-square' if s.net == 'LinkedIn' else ('instagram' if s.net == 'Instagram' else ('x-twitter' if s.net == 'X' else ('flickr' if s.net == 'Flickr' else 'link'))))) }}" style="font-size: 1.4em;"></i>
+                                    </a>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="row margin-top-sm">
+                        <div class="col-xs-12">
+                            <p>Showing {{ items | length }} of {{ total }} agencies (page {{ page }} of {{ pages or 1 }}).</p>
+                            <div class="odx-pagination">
+                                {% for p in range(1, (pages or 1) + 1) %}
+                                <a class="{{ 'active' if p == page else '' }}" href="{{ url_for('state_directory', q=q, per=per, page=p) }}">{{ p }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

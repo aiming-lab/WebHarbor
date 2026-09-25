@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}News &amp; Events | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>News &amp; Events</h1>
+    <p>OhioMeansJobs.com is always being updated with opportunities in your area. Attend career fairs and workshops.</p>
+  </div>
+</div>
+<div class="container" style="padding-top:20px">
+  <form class="filter-bar" method="get" action="{{ url_for('news_events') }}">
+    <div>
+      <label for="q">Filter by keyword</label>
+      <input type="text" id="q" name="q" value="{{ keyword }}" placeholder="Keyword">
+    </div>
+    <div>
+      <label for="topic">Topic</label>
+      <select id="topic" name="topic">
+        <option value="">All topics</option>
+        {% for t in topics %}
+          <option value="{{ t }}" {% if topic == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="from">From Date</label>
+      <input type="date" id="from" name="from" value="{{ date_from }}">
+    </div>
+    <div>
+      <label for="to">To Date</label>
+      <input type="date" id="to" name="to" value="{{ date_to }}">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="btn" type="submit">Filter</button>
+      <a class="btn secondary" href="{{ url_for('news_events') }}">Reset Filters</a>
+    </div>
+  </form>
+
+  {% for n in items %}
+    <div class="news-item">
+      <h3><a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a></h3>
+      <div class="meta">{{ n.published_date }} &middot; {{ n.topic }}</div>
+      <p>{{ n.teaser }}</p>
+    </div>
+  {% else %}
+    <div class="empty-note">Your filter did not match any results.</div>
+  {% endfor %}
+</div>
+{% endblock %}

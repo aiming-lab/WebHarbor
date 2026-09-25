@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Official Latest NFL Injury Report for Players - Week {{ current_week }} of the 2026 Season | NFL.com{% endblock %}
+{% block subnav %}
+<div class="subnav">
+  <div class="subnav-inner">
+    <span class="subnav-title">PLAYERS</span>
+    <a href="{{ url_for('players_directory') }}">Player Directory</a>
+    <a href="{{ url_for('injuries') }}">Injuries</a>
+    <a href="{{ url_for('transactions') }}">Transactions</a>
+    <a href="#">Health &amp; Safety</a>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>2026 NFL INJURY REPORT</h1>
+  <p class="page-sub">Injuries - Week {{ current_week }}</p>
+</div>
+{% for m in matchups %}
+<section class="panel">
+  <h2 class="panel-title">{{ m.game_date }} — {{ m.matchup }}</h2>
+  <table class="data-table">
+    <thead>
+      <tr><th>Team</th><th>Player</th><th>Position</th><th>Injuries</th><th>Practice Status</th><th>Game Status</th></tr>
+    </thead>
+    <tbody>
+      {% for i in m.rows %}
+      <tr>
+        <td>{{ i.team }}</td>
+        <td>{{ i.player }}</td>
+        <td>{{ i.position }}</td>
+        <td>{{ i.injury or '—' }}</td>
+        <td>{{ i.practice_status }}</td>
+        <td>{{ i.game_status or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+{% endblock %}

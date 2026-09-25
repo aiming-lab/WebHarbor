@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ hub.title }} | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--topic-hub">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">{{ hub.title }}</h1>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-8 col-md-9 col-lg-9">
+                {% if children %}
+                <section class="odx-content-section odx-content-section__body odx-content__body">
+                    <div class="odx-ads-container odx-ads-container--two-columns odx-ads-container--image-200-height margin-bottom-xs" id="js-faqs-with-pagination">
+                        {% for ch in children %}
+                        <div class="odx-ads-item odx-ads-item--large odx-ads-item--stackable odx-ads-item--title-primary-color" style="display: block;">
+                            <a href="{{ url_for('topic_hub', audience=audience, hub=ch.slug.split('/', 2)[2]) }}" class="odx-ads-item__link">
+                                <div class="odx-ads-item__content">
+                                    <div class="odx-ads-item__main">
+                                        <p class="odx-ads-item__title">{{ ch.title }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                <section class="odx-content-section">
+                    <h2>{{ hub.title }} Resources</h2>
+                    <p class="odx-topic-hub-filter-help-text">Search by keyword to filter this list.</p>
+                    <div class="odx-topic-hub-search__input-container margin-bottom-sm">
+                        <form method="get" action="{{ url_for('topic_hub', audience=audience, hub=hub.slug.split('/', 2)[2]) }}">
+                            <label for="odx-topic-input-search" class="odx-topic-input-label">Search by Keyword</label>
+                            <input id="odx-topic-input-search" class="odx-topic-hub-resources__input" type="text" name="q" value="{{ q }}">
+                            <button class="js-resources-btn-search odx-topic-hub-resources__button btn btn-primary" type="submit">SEARCH</button>
+                        </form>
+                    </div>
+                    <div class="odx-topic-hub-resources__container">
+                        <div class="odx-ads-container odx-ads-container--two-columns odx-ads-container--image-200-height">
+                            {% for r in members %}
+                            <div class="odx-ads-item odx-ads-item--large odx-ads-item--stackable odx-ads-item--title-primary-color" style="display: block;">
+                                <a href="{{ r.path }}" class="odx-ads-item__link">
+                                    {% if r.image %}
+                                    <div class="odx-ads-item__image" style="background-image: url({{ r.image }})"></div>
+                                    {% endif %}
+                                    <div class="odx-ads-item__content">
+                                        <div class="odx-ads-item__main">
+                                            <p class="odx-ads-item__title">{{ r.title }}</p>
+                                            <p class="odx-ads-item__summary">{{ r.summary }}</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            {% else %}
+                            <p>No resources matched that keyword. Try different words, or ask the Ohio Assistant.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p class="margin-top-sm"><strong>{{ members | length }}</strong> resource{{ '' if members|length == 1 else 's' }} listed.</p>
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-4 col-md-3 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">More {{ label }} topics</h2>
+                        <ul class="list-unstyled">
+                            {% for sib in siblings %}
+                            <li class="margin-bottom-xs">
+                                <a href="{{ url_for('topic_hub', audience=audience, hub=sib.slug.split('/', 2)[2]) }}">{{ sib.title }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

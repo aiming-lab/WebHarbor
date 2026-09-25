@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}2026 NFL Scores & Schedule | NFL.com{% endblock %}
+{% block subnav %}
+<div class="subnav">
+  <div class="subnav-inner">
+    <span class="subnav-title">SCORES</span>
+    <div class="week-picker">
+      {% for w in range(1, 19) %}
+      <a class="week-link {{ 'active' if w == week else '' }}" href="{{ url_for('scores', week=w) }}">{{ w }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>2026 NFL SCORES: WEEK {{ week }}</h1>
+  <p class="page-sub">2026 Regular Season · Week {{ week }} of 18</p>
+</div>
+<div class="scores-list">
+  {% for g in games %}
+  <article class="game-card {% if g.status.startswith('FINAL') %}game-card--final{% endif %}">
+    <div class="game-card-meta">
+      <span>{{ g.day_display }}</span>
+      {% if g.time_display %}<span>{{ g.time_display }}</span>{% endif %}
+      {% if g.category %}<span class="badge">{{ g.category }}</span>{% endif %}
+      {% if g.status.startswith('FINAL') %}<span class="badge badge-final">{{ g.status }}</span>{% endif %}
+    </div>
+    <a class="game-card-body" href="{{ url_for('game_detail', slug=g.slug) }}">
+      <div class="gc-team {% if g.winner == g.home_abbr %}winner{% endif %}">
+        <img src="{{ g.away.logo }}" alt="{{ g.away.nickname }}">
+        <div class="gc-team-name">
+          <strong>{{ g.away.full_name }}</strong>
+          <em>{{ g.away_abbr }} · {{ g.away.record }}</em>
+        </div>
+        {% if g.status.startswith('FINAL') %}<span class="gc-score">{{ g.away_score }}</span>{% endif %}
+      </div>
+      <div class="gc-team {% if g.winner == g.away_abbr %}winner{% endif %}">
+        <img src="{{ g.home.logo }}" alt="{{ g.home.nickname }}">
+        <div class="gc-team-name">
+          <strong>{{ g.home.full_name }}</strong>
+          <em>{{ g.home_abbr }} · {{ g.home.record }}</em>
+        </div>
+        {% if g.status.startswith('FINAL') %}<span class="gc-score">{{ g.home_score }}</span>{% endif %}
+      </div>
+    </a>
+    <div class="game-card-foot">
+      <span>{{ g.venue }}{% if g.venue_city %} · {{ g.venue_city }}{% endif %}</span>
+      {% if g.network_display %}<span>{{ g.network_display }}</span>{% endif %}
+      <a class="link-more" href="{{ url_for('game_detail', slug=g.slug) }}">Game Center →</a>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

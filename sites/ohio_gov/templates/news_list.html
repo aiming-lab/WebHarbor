@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}News Highlights from State Agencies, Boards, and Commissions | Ohio.gov{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--landing-page">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">News Highlights from State Agencies, Boards, and Commissions</h1>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section margin-bottom-sm">
+                    <form class="form-inline" method="get" action="{{ url_for('all_news') }}">
+                        <div class="form-group">
+                            <label for="source">Filter by agency</label>
+                            <select id="source" name="source" class="form-control">
+                                <option value="">All agencies</option>
+                                {% for s in sources %}
+                                <option value="{{ s }}" {{ 'selected' if s == active_source else '' }}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-sm margin-left-xs" type="submit">Filter</button>
+                        {% if active_source %}
+                        <a class="btn btn-secondary btn-sm" href="{{ url_for('all_news') }}">Clear</a>
+                        {% endif %}
+                    </form>
+                </section>
+
+                <h2 class="search-count odx-bold" style="font-size: 1.2em">
+                    Showing {{ items | length }} of {{ total }} news releases
+                </h2>
+
+                <div class="core-news__list margin-bottom-md">
+                    {% for art in items %}
+                    <article>
+                        <a href="{{ art.path }}" class="core-news__item">
+                            {% if art.image %}
+                            <div class="core-news__thumbnail" style="background-image: url( {{ art.image }} )"></div>
+                            {% endif %}
+                            <div class="core-news__info">
+                                <h3 class="core-news__title">{{ art.title }}</h3>
+                                <p class="core-news__summary">{{ art.summary or (art.body_html | striptags | truncate(140)) }}</p>
+                                <div class="core-news__footer">
+                                    <span class="core-news__date">{{ art.published }}</span>
+                                    {% if art.source %}<span class="core-news__date">&middot; {{ art.source }}</span>{% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                {% if (total / per) | round(0, 'ceil') | int > 1 %}
+                <div class="pagination-container">
+                    <div class="odx-pagination">
+                        {% for p in range(1, ((total / per) | round(0, 'ceil') | int) + 1) %}
+                        <a class="{{ 'active' if p == page else '' }}" href="{{ url_for('all_news', page=p, source=active_source) }}">{{ p }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

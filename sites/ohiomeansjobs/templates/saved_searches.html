@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Saved Searches | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">Saved Searches</h1>
+      <p>Save your job searches and be the first to know when new jobs open in your area.</p>
+      {% if searches %}
+        <table class="data">
+          <tr><th>Name</th><th>Criteria</th><th>Alerts</th><th>Frequency</th><th>Created</th><th></th></tr>
+          {% for s in searches %}
+            <tr>
+              <td><a href="{{ url_for('jobs_search', **s.params) }}">{{ s.name }}</a></td>
+              <td style="font-size:13px">{{ s.params }}</td>
+              <td>{{ 'On' if s.alerts_enabled else 'Off' }}</td>
+              <td>{{ s.frequency }}</td>
+              <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+              <td>
+                <form method="post" action="{{ url_for('account_saved_searches') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="id" value="{{ s.id }}">
+                  <button class="btn small danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <div class="empty-note">No saved searches yet. Run a job search and use &ldquo;Save this search&rdquo; on the results page.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

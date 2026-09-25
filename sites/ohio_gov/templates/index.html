@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="odx-content odx-content--landing-page">
+    <div class="odx-top-container">
+        <div class="odx-content__top-component">
+            <div class="gov-search-box">
+                <h1 class="odx-content__title">
+                    <span class="multilingual">Your source for Ohio government information</span>
+                </h1>
+                <div class="gov-search-box__container">
+                    <form id="home-search-form" class="gov-search-box__form" action="{{ url_for('search') }}">
+                        <label for="search_query_bar" class="sr-only">Input search</label>
+                        <input type="text" id="search_query_bar" class="gov-search-box__input" name="search_query" title="Search" placeholder="Find what you need" pattern=".{2,}">
+                        <button type="submit" class="gov-search-box__button">
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="multilingual">Search</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="odx-content__image-caption">
+            <span>Ohio.gov | Official Website of ...</span>
+        </div>
+        <figure class="odx-content__image-container">
+            <img src="{{ url_for('static', filename='images/home/Ohiogov-cover-image-sept26-wingfoot-lake-state-park-odnr.jpg') }}" alt="A walking path in the early spring in Wingfoot Lake State Park." class="img-responsive odx-content__image">
+        </figure>
+    </div>
+
+    <section class="odx-content-section odx-content-section--component-1">
+        <div class="container">
+            <div class="core-featured-cards core-featured-cards__container full-width-component padding-top-md padding-bottom-md">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h2 class="core-featured-cards__header">
+                            <span class="multilingual">Featured content</span>
+                        </h2>
+                    </div>
+                </div>
+                <div class="core-featured-cards__list">
+                    {% for card in [
+                        ('voteohio', 'VoteOhio.gov', 'The Ohio Secretary of State provides everything you need to participate in Ohio elections.', 'voteohio-card-GettyImages-1398114880.jpg'),
+                        ('weather-safety', 'Weather Safety', 'Be prepared and know what to do in all kinds of severe weather.', 'weather-safety-summer-26-card-GettyImages-172968337.jpg'),
+                        ('ohio-benefits', 'Ohio Benefits', 'Find, apply for, and manage benefits including food assistance and Medicaid.', 'Ohio-benefits-card-GettyImages-539271483.jpg')
+                    ] %}
+                    <div class="core-featured-cards__item">
+                        <a aria-label="{{ card[1] }}" href="{{ url_for('resource_detail', audience='residents' if card[0] != 'voteohio' else 'government', slug=card[0]) }}">
+                            <div class="core-featured-cards__thumbnail">
+                                <img src="{{ url_for('static', filename='images/home/' + card[3]) }}" alt="">
+                            </div>
+                            <div class="core-featured-cards__content">
+                                <h3 class="core-featured-cards__title">
+                                    <span>{{ card[1] }}</span>
+                                </h3>
+                                <p class="core-featured-cards__summary">{{ card[2] }}</p>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="odx-content-section odx-content-section--component-2">
+        <div class="odx-dynamic-card-catalog__container js-commom-card-wrapper">
+            <div class="componentContainer">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="odx-section-resources-cards-list odx-gov-cards__component">
+                                <div class="odx-section__topic-title odx-dynamic-card__title">
+                                    Popular Topics
+                                </div>
+                                <section class="js-odx-carousel-cards js-common-card-wrapper">
+                                    <div class="js-carousel-container-card ohio-carousel-icons__items-container">
+                                        <div class="list-unstyled odx-carousel-cards__list odx-topic__cards">
+                                            <div class="row">
+                                            {% for card in popular %}
+                                                <div class="col-xs-12 col-sm-6 col-md-3">
+                                                    <div class="ohio-card ohio-card--center ohio-card-container odx-gov-resources__card">
+                                                        <a href="{{ card.mirror_path or '#' }}">
+                                                            <div class="ohio-card-bg">
+                                                                {% if card.image %}
+                                                                <img class="ohio-card-bg-img" src="{{ card.image }}" alt="">
+                                                                {% endif %}
+                                                            </div>
+                                                        </a>
+                                                        <section class="ohio-card-content">
+                                                            <a class="ohio-card-wrapper-anchor" href="{{ card.mirror_path or '#' }}">
+                                                                <h3 class="ohio-card-content-header">{{ card.title }}</h3>
+                                                            </a>
+                                                            <p>{{ card.summary }}</p>
+                                                        </section>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                <a class="odx-view-more odx-gov-cards__more" href="{{ url_for('topic_hub', audience='residents', hub='top-services') }}">
+                                    See other resources for
+                                    Top Services
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="odx-content-section odx-content-section--component-5">
+        <section class="core-main-banner">
+            <style>.core-main-banner { background-image: url({{ url_for('static', filename='images/home/2026-tourism-guide-ohiogov-spotlight.png.jpg') }}) }</style>
+            <article class="core-main-banner__container">
+                <div class="core-main-banner__details">
+                    <h2 class="core-main-banner__heading">{{ home.travel_guide_heading }}</h2>
+                    <div class="core-main-banner__image core-main-banner__image--mobile" style="background-image: url({{ url_for('static', filename='images/home/2026-tourism-guide-ohiogov-spotlight.png.jpg') }})"></div>
+                    <p class="core-main-banner__subheading">{{ home.travel_guide_subheading }}</p>
+                    <a href="{{ url_for('travel_guide') }}" class="core-main-banner__button btn btn-primary">
+                        Ohio Travel Guide
+                    </a>
+                </div>
+                <div class="core-main-banner__image core-main-banner__image--desktop" style="background-image: url({{ url_for('static', filename='images/home/2026-tourism-guide-ohiogov-spotlight.png.jpg') }})"></div>
+            </article>
+        </section>
+    </section>
+
+    <section class="odx-content-section odx-content-section--component-6">
+        <div class="container">
+            <div class="core-news core-news--with-icons">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h2 class="core-news__header">
+                            <span class="multilingual">News Highlights</span>
+                        </h2>
+                        <a href="{{ url_for('all_news') }}" class="core-more-button core-more-button--inline">
+                            <i class="far fa-newspaper" aria-hidden="true"></i>
+                            <span class="multilingual">All News</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="core-news__list margin-bottom-md">
+                    {% for n in news_highlights %}
+                    <article>
+                        <a href="{{ url_for('news_detail', slug=n.slug) }}" class="core-news__item">
+                            <div class="core-news__thumbnail" style="background-image: url( {{ n.image }} )"></div>
+                            <div class="core-news__info">
+                                <h3 class="core-news__title">{{ n.title }}</h3>
+                                <p class="core-news__summary">{{ n.summary }}</p>
+                                <div class="core-news__footer">
+                                    <span class="core-news__date">{{ n.date }}</span>
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="odx-content-section odx-content-section--component-7">
+        <div class="container">
+            <div class="core-divisions-carousel core-divisions-carousel--with-icons">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h2 class="core-divisions-carousel__header">
+                            <span class="multilingual">Divisions, Programs or Initiatives</span>
+                        </h2>
+                    </div>
+                    <div class="col-xs-12">
+                        <section class="core-divisions-carousel__container js-carousel-container">
+                            <div class="core-divisions-carousel__list js-carousel-track">
+                                <div class="row">
+                                {% for d in divisions %}
+                                    <div class="col-xs-6 col-sm-4 col-md-2">
+                                        <article class="core-divisions-carousel__item js-carousel-item">
+                                            <a class="core-divisions-carousel__link" href="{{ d.href }}" target="_blank">
+                                                <div class="core-divisions-carousel__icon" style="background-image: url({{ d.image }})"></div>
+                                                <h4 class="core-divisions-carousel__title">{{ d.title }}</h4>
+                                            </a>
+                                        </article>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</article>
+{% endblock %}

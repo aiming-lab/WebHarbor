@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Prevent and Report Scams | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--report-scam">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">Prevent and Report Scams</h1>
+                            <div class="odx-content__summary">
+                                File a consumer complaint with the Ohio Attorney General's office.
+                            </div>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    <p>If you or someone you know may be a target of a scam, you can report it below. The Ohio Attorney General's Consumer Protection Section reviews every complaint.</p>
+                    <p>If you need immediate help with a romance scam, call the dedicated hotline: <strong>1-855-961-7226</strong>.</p>
+
+                    <form method="post" action="{{ url_for('report_scam') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="full_name">Full name</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" required value="{{ current_user.display_name or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="phone">Phone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" value="{{ current_user.phone or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="scam_type">Scam type</label>
+                                    <select class="form-control" id="scam_type" name="scam_type" required>
+                                        <option>Romance scam</option>
+                                        <option>Imposter scam</option>
+                                        <option>Phone / robocall scam</option>
+                                        <option>Identity theft</option>
+                                        <option>Charity scam</option>
+                                        <option>Lottery or prize scam</option>
+                                        <option>Computer tech support scam</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="amount">Approximate dollar amount lost (optional)</label>
+                                    <input type="text" class="form-control" id="amount" name="amount" placeholder="e.g. 450">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="occurred_on">When did it happen?</label>
+                                    <input type="text" class="form-control" id="occurred_on" name="occurred_on" placeholder="e.g. August 2, 2026">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">What happened? Describe the scam.</label>
+                            <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Submit complaint</button>
+                    </form>
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Consumer help</h2>
+                        <ul class="list-unstyled">
+                            <li class="margin-bottom-xs">Romance scam hotline: <strong>1-855-961-7226</strong></li>
+                            <li class="margin-bottom-xs">Consumer Protection Section: <strong>1-800-282-0515</strong></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('faq_category', cat='consumers') }}">Consumer Questions</a></li>
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

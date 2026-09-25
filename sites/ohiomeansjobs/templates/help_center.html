@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Help Center | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Help Center</h1>
+    <p>Welcome to OhioMeansJobs.com. Since 2009, many of the services available at county OhioMeansJobs Centers are also available online.</p>
+  </div>
+</div>
+<div class="container content-page" style="padding-top:20px">
+  <p>Find answers to commonly asked questions and browse topics below.</p>
+  <div class="two-col">
+    <div>
+      <h2>Common Questions</h2>
+      <ul class="resource-list">
+        {% for a in articles %}
+          <li><a href="{{ url_for('help_article', slug=a.slug) }}">{{ a.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div>
+      <h2>Can&rsquo;t find what you need?</h2>
+      <ul class="resource-list">
+        <li>Use the <a href="{{ url_for('site_search') }}">site search</a> to find information by keyword.</li>
+        <li>Use the links below to <a href="{{ url_for('contact_us') }}">contact us</a> for additional assistance.</li>
+        <li>Start a live chat with a real person during business hours.</li>
+      </ul>
+      <div class="cta-band">
+        <h3>Still Need Help?</h3>
+        <p>Fill out our contact form and we&rsquo;ll get back to you.</p>
+        <a class="btn" href="{{ url_for('contact_us') }}">Contact us</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

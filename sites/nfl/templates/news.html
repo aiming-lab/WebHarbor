@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Latest NFL News, Analysis &amp; Updates | NFL.com{% endblock %}
+{% block subnav %}
+<div class="subnav">
+  <div class="subnav-inner">
+    <span class="subnav-title">NEWS</span>
+    <a href="{{ url_for('news_index') }}">News Home</a>
+    <a href="#">Podcasts</a>
+    <a href="{{ url_for('injuries') }}">Injuries</a>
+    <a href="{{ url_for('transactions') }}">Transactions</a>
+    <a href="#">NFL Writers</a>
+    <a href="#">Series</a>
+    <a href="#">The Athletic</a>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>NFL NEWS</h1>
+  <p class="page-sub">{{ total }} stories · 2026 Season, Week {{ current_week }}</p>
+</div>
+<div class="news-list">
+  {% for a in articles %}
+  <a class="news-row" href="{{ url_for('article_detail', slug=a.slug) }}">
+    <figure><img src="{{ a.image }}" alt="{{ a.title }}"></figure>
+    <div class="news-row-body">
+      <span class="kicker">{{ a.section or 'NEWS' }}</span>
+      <h3>{{ a.title }}</h3>
+      <p>{{ a.description }}</p>
+      <p class="byline">{{ a.author }} · {{ a.published_display }}</p>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+<div class="pager">
+  {% if page > 1 %}
+  <a class="btn btn-outline btn-sm" href="{{ url_for('news_index', page=page-1) }}">← Newer</a>
+  {% endif %}
+  <span class="pager-info">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+  <a class="btn btn-outline btn-sm" href="{{ url_for('news_index', page=page+1) }}">Older →</a>
+  {% endif %}
+</div>
+{% endblock %}

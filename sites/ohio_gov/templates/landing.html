@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--landing-page">
+    <div class="odx-top-container">
+        <div class="odx-content__top-component">
+        </div>
+        <div class="odx-content__image-caption">
+            <span>Ohio.gov | Official Website of ...</span>
+        </div>
+        <figure class="odx-content__image-container">
+            <img src="{{ hero }}" alt="{{ label }}" class="img-responsive odx-content__image">
+        </figure>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">{{ label }}</h1>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    {% for section in sections %}
+    <section class="odx-content-section odx-content-section--component-2">
+        <div class="odx-dynamic-card-catalog__container js-commom-card-wrapper">
+            <div class="componentContainer">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="odx-section-resources-cards-list odx-gov-cards__component">
+                                <div class="odx-section__topic-title odx-dynamic-card__title">
+                                    {{ section.title }}
+                                </div>
+                                <section class="js-odx-carousel-cards js-common-card-wrapper">
+                                    <div class="js-carousel-container-card ohio-carousel-icons__items-container">
+                                        <div class="list-unstyled odx-carousel-cards__list odx-topic__cards">
+                                            <div class="row">
+                                            {% for card in section.cards %}
+                                                <div class="col-xs-12 col-sm-6 col-md-3">
+                                                    <div class="ohio-card ohio-card--center ohio-card-container odx-gov-resources__card">
+                                                        <a href="{{ card.mirror_path or '#' }}">
+                                                            <div class="ohio-card-bg">
+                                                                {% if card.image %}<img class="ohio-card-bg-img" src="{{ card.image }}" alt="">{% endif %}
+                                                            </div>
+                                                        </a>
+                                                        <section class="ohio-card-content">
+                                                            <a class="ohio-card-wrapper-anchor" href="{{ card.mirror_path or '#' }}">
+                                                                <h3 class="ohio-card-content-header">{{ card.title }}</h3>
+                                                            </a>
+                                                            <p>{{ card.summary }}</p>
+                                                        </section>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                {% if section.hub_path %}
+                                <a class="odx-view-more odx-gov-cards__more" href="{{ url_for('topic_hub', audience=audience, hub=section.hub_path) }}">
+                                    See other resources for
+                                    {{ section.title }}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endfor %}
+</article>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Alerts | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--alerts">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">Alerts</h1>
+                            <div class="odx-content__summary">
+                                Current notifications from State of Ohio systems and agencies.
+                            </div>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    {% for a in items %}
+                    <div class="odx-site-alert-wrapper odx-ads-item" style="display: block;">
+                        <div class="odx-ads-item__content">
+                            <div class="odx-ads-item__main">
+                                <p class="odx-ads-item__title">
+                                    <i class="fas {{ 'fa-exclamation-triangle' if a.severity == 'warning' else 'fa-info-circle' }}" aria-hidden="true"></i>
+                                    {{ a.title }}
+                                </p>
+                                <p class="odx-ads-item__summary">{{ a.body_html | safe }}</p>
+                                <p class="odx-ads-item__summary"><small>Posted {{ a.published }}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>No active alerts right now.</p>
+                    {% endfor %}
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Stay informed</h2>
+                        <p>Get outage notices and safety alerts by email.</p>
+                        <form method="post" action="{{ url_for('alerts_subscribe') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="form-group">
+                                <label for="email">Email address</label>
+                                <input type="email" class="form-control" id="email" name="email" required placeholder="you@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="alert_type">Subscribe to</label>
+                                <select class="form-control" id="alert_type" name="alert_type">
+                                    <option>All alerts</option>
+                                    <option>Outage notifications</option>
+                                    <option>Weather safety</option>
+                                    <option>Ohio Business Gateway</option>
+                                    <option>Unemployment system</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary btn-sm" type="submit">Subscribe</button>
+                        </form>
+                        {% if current_user.is_authenticated and subscribed %}
+                        <p class="margin-top-sm"><small>Currently subscribed: {{ subscribed | join(', ') }}</small></p>
+                        {% endif %}
+                    </section>
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Outage Notification</h2>
+                        <p>Scheduled maintenance windows are also listed on the <a href="{{ url_for('outage_notification') }}">Outage Notification</a> page.</p>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}
