@@ -571,6 +571,7 @@ def run_verifier(task_id, run_checks):
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
         run_checks(judge, traj, initial_db, after_db)
+        check_precise_delta(judge, initial_db, after_db)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()
@@ -671,3 +672,34 @@ def check_only_tables_changed(judge, initial_db, after_db, allowed):
     changed = changed_tables(initial_db, after_db, others)
     return judge.check("no_collateral_writes", not changed,
                        f"tables_outside_allowed={list(others)!r}, changed={changed!r}")
+
+
+STATE_RULES = {0: {'saved_jobs': [1, [], [], 1]}, 2: {'users': [None, [], [], 1], 'cover_letters': [None, [], [], 1], 'applications': [None, [], [], 1]}, 3: {'applications': [1, [], [], 1]}, 4: {'applications': [2, [], [], 1]}, 5: {'saved_searches': [3, [], ['frequency', 'Monthly'], 1]}, 6: {'career_quiz_results': [None, [], [], 1]}, 7: {'resumes': [4, ['skills', 'updated_at'], [], 0]}, 10: {'contact_messages': [None, [], [], 1]}, 11: {'users': [1, ['password_hash'], [], 0]}, 15: {'contact_messages': [None, [], [], 1]}, 16: {'career_plan_tasks': [4, [], [], 1]}, 17: {'cover_letters': [2, [], ['name', 'Driver Cover Letter'], 1]}}
+
+
+def check_precise_delta(judge, initial_db, after_db):
+    """Preserve old rows and other owners, including inside mutable tables."""
+    rules = STATE_RULES.get(int(judge.task_id.rsplit('--', 1)[1]), {})
+    for table in TABLES:
+        before = [dict(r) for r in db_query(initial_db, f'SELECT * FROM "{table}"')]
+        after = [dict(r) for r in db_query(after_db, f'SELECT * FROM "{table}"')]
+        if table not in rules:
+            judge.check('preserved_' + table, before == after, 'unchanged table')
+            continue
+        owner, fields, deletion, new_count = rules[table]
+        old = {r['id']: r for r in before};new = {r['id']: r for r in after}
+        def owned(r):
+            return owner is None or r.get('user_id', r.get('id') if table == 'users' else None) == owner
+        deleted = []
+        for pk, row in old.items():
+            if pk not in new:
+                permitted = bool(deletion) and owned(row) and row.get(deletion[0]) == deletion[1]
+                judge.check('allowed_delete_' + table, permitted, f'id={pk}')
+                deleted.append(pk)
+            else:
+                changed = {k for k in row if row[k] != new[pk][k]}
+                judge.check('preserved_row_' + table, not changed or (owned(row) and changed <= set(fields)), f'id={pk}, changed={sorted(changed)}')
+        judge.check('deletion_count_' + table, len(deleted) == (1 if deletion else 0), str(deleted))
+        added = [r for pk, r in new.items() if pk not in old]
+        judge.check('addition_count_' + table, len(added) == new_count, f'expected={new_count}, observed={len(added)}')
+        judge.check('addition_owner_' + table, all(owned(r) for r in added), 'requested account only')

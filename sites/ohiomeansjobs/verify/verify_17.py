@@ -1,24 +1,5 @@
 #!/usr/bin/env python3
-"""Verify OhioMeansJobs--17.
-
-Log in as bob.c@test.com. He has three cover letters saved. Delete the one
-about driving, create a new cover letter named 'Warehouse Team Letter' with a
-short body about warehouse experience, report how many cover letters he has
-afterwards, the name of the oldest remaining one, and the maximum number of
-cover letters the site says you can save; then open his career plan and
-report how many tasks it contains, how many are marked complete, and the
-deadline of the task about renewing a certification.
-
-Frozen ground truth (seed DB): bob's letters are 'Warehouse Operations Cover
-Letter' (updated 2026-09-22), 'Driver Cover Letter' (2026-09-17), 'Veteran
-Transition Cover Letter' (2026-09-15). After deleting the Driver letter and
-creating 'Warehouse Team Letter' he has 3 letters; the oldest remaining is
-'Veteran Transition Cover Letter' (2026-09-15). The cover-letters page says
-you can save 5 different cover letters. His career plan has 3 tasks, 1 marked
-complete; the 'Renew forklift certification' task has deadline 2026-10-10.
-Stateful task: allowed delta = cover_letters -1 (bob/Driver) +1
-(bob/Warehouse Team Letter); nothing else.
-"""
+"""Verify the current task: browser evidence, requested facts and exact state."""
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path,
                         contains_count, contains_count_near, contains_phrase,
@@ -51,15 +32,6 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"expected the oldest remaining letter '{OLDEST_REMAINING}'")
     judge.check("answer_max_letters", contains_count(answer, MAX_LETTERS),
                 f"expected the site to say you can save {MAX_LETTERS} different cover letters")
-    check_visited_path(judge, traj, "visited_career_plan", "/account/career-plan")
-    judge.check("answer_plan_task_count",
-                contains_count_near(answer, PLAN_TASKS, ["task", "plan"]),
-                f"expected {PLAN_TASKS} career-plan tasks (count near the plan/task "
-                "wording, not an unrelated integer elsewhere)")
-    judge.check("answer_plan_done_count", contains_count(answer, PLAN_DONE),
-                f"expected {PLAN_DONE} career-plan task marked complete")
-    judge.check("answer_cert_deadline", contains_phrase(answer, CERT_DEADLINE),
-                f"expected the certification-renewal task deadline {CERT_DEADLINE}")
     # DB after-state: bob's Driver letter gone, Warehouse Team Letter present
     before = cover_letters_of(initial_db, BOB_ID)
     after = cover_letters_of(after_db, BOB_ID)

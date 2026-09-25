@@ -74,6 +74,9 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"skills before={seed_resume['skills']!r} after={after_resume['skills'] if after_resume else None!r}")
     judge.check("resume_active", after_resume is not None and bool(after_resume["active"]),
                 f"active={after_resume['active'] if after_resume else None!r}")
+    original = {x.strip().lower() for x in resume_of(initial_db, DAVID_ID)['skills'].split(',')}
+    current = {x.strip().lower() for x in resume_of(after_db, DAVID_ID)['skills'].split(',')}
+    judge.check('only_new_skill', current == original | {'tax preparation'}, 'preserve all previous skills')
     check_only_tables_changed(judge, initial_db, after_db, STATEFUL_TABLES)
 
 
