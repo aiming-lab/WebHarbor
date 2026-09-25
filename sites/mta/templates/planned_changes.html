@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Planned Service Changes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Planned Service Changes</div>
+  <h1>Planned Service Changes</h1>
+</div>
+<div class="card">
+  <p>Look up current and future subway, bus, Long Island Rail Road, and Metro-North Railroad planned service changes that may affect your travel.</p>
+
+  <form class="filters" method="get" action="{{ url_for('planned_changes') }}">
+    <div>
+      <label for="mode">Select your routes</label>
+      <select name="mode" id="mode">
+        {% for m, label in [('subway', 'Subway'), ('bus', 'Bus'), ('lirr', 'LIRR'), ('mnr', 'Metro-North')] %}
+        <option value="{{ m }}" {% if m == mode %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="when">Select your time</label>
+      <select name="when" id="when">
+        <option value="now" {% if when == 'now' %}selected{% endif %}>Now</option>
+        <option value="tonight" {% if when == 'tonight' %}selected{% endif %}>Tonight (Sep 23, 5 p.m. - Sep 24, 2 a.m.)</option>
+        <option value="tomorrow" {% if when == 'tomorrow' %}selected{% endif %}>Tomorrow (Sep 24, 2 a.m. - 5 p.m.)</option>
+        <option value="weekend" {% if when == 'weekend' %}selected{% endif %}>This weekend (Sep 25, 5 p.m. - Sep 28, 2 a.m.)</option>
+      </select>
+    </div>
+    <div>
+      <label for="route">Route (optional)</label>
+      <input type="text" name="route" id="route" value="{{ route }}" placeholder="e.g. 2, M15, Babylon Branch">
+    </div>
+    <button class="btn" type="submit">Apply</button>
+  </form>
+
+  <p>Showing {{ results | length }} result{{ '' if results|length == 1 else 's' }}.</p>
+
+  {% for a in results %}
+  <div class="alert-entry">
+    <div class="alert-type">{{ a.alert_type }}</div>
+    <div class="dates">
+      {% set routes = a.routes | fromjson %}
+      {% for r in routes %}<span class="line line-{{ r.route_id }}" style="display:inline-block">{{ r.route_id }}</span> {% endfor %}
+      {% if a.start_ts %}From {{ MIRROR_NOW.fromtimestamp(a.start_ts).strftime('%-I:%M %p, %B %-d') }}{% endif %}
+      {% if a.end_ts %} until {{ MIRROR_NOW.fromtimestamp(a.end_ts).strftime('%-I:%M %p, %B %-d, %Y') }}{% endif %}
+    </div>
+    {% if a.header_html %}{{ a.header_html | safe }}{% else %}<p>{{ a.header_text }}</p>{% endif %}
+    {% if a.desc_html %}{{ a.desc_html | safe }}{% else %}<p>{{ a.desc_text }}</p>{% endif %}
+  </div>
+  {% else %}
+  <p>No planned service changes match this selection.</p>
+  {% endfor %}
+</div>
+{% endblock %}

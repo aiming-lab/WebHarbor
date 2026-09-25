@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My MTA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › My MTA</div>
+  <h1>My MTA — {{ user.display_name }}</h1>
+</div>
+<ul class="account-nav">
+  <li class="active"><a href="{{ url_for('account_home') }}">Overview</a></li>
+  <li><a href="{{ url_for('account_favorites') }}">Favorites</a></li>
+  <li><a href="{{ url_for('account_subscriptions') }}">Alert subscriptions</a></li>
+  <li><a href="{{ url_for('account_omny') }}">OMNY</a></li>
+  <li><a href="{{ url_for('account_claims') }}">Lost &amp; Found claims</a></li>
+  <li><a href="{{ url_for('account_aar') }}">Access-A-Ride trips</a></li>
+  <li><a href="{{ url_for('account_cases') }}">Feedback cases</a></li>
+</ul>
+
+<div class="card">
+  <h2>Your services at a glance</h2>
+  <table class="data">
+    <tr><th>Favorite services</th><td>{{ user.favorites | length }} — <a href="{{ url_for('account_favorites') }}">manage</a></td></tr>
+    <tr><th>Alert subscriptions</th><td>{{ user.subscriptions | length }} — <a href="{{ url_for('account_subscriptions') }}">manage</a></td></tr>
+    <tr><th>OMNY card</th><td>{{ user.omny_serial }} — <a href="{{ url_for('account_omny') }}">view tap history and fare cap</a></td></tr>
+    <tr><th>Lost &amp; Found claims</th><td>{{ user.claims | length }} — <a href="{{ url_for('account_claims') }}">view</a></td></tr>
+    <tr><th>Access-A-Ride trips</th><td>{{ user.aar_trips | length }} — <a href="{{ url_for('account_aar') }}">view</a></td></tr>
+    <tr><th>Feedback cases</th><td>{{ user.cases | length }} — <a href="{{ url_for('account_cases') }}">view</a></td></tr>
+  </table>
+</div>
+{% endblock %}

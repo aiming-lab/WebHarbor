@@ -287,8 +287,16 @@ RUN cd /opt/WebSyn/michaels && rm -rf instance instance_seed && \
 RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/micro_center
 RUN python3 /opt/WebSyn/micro_center/migrate_seed.py
 
+# MTA ships upstream-sourced media in the pinned asset bundle and rebuilds
+# its deterministic SQLite seed (real GTFS timetables, railroad fare tables
+# parsed from the official PDFs, the accessible-stations snapshot) from the
+# tracked source_data/ at build time.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/mta && \
+    cd /opt/WebSyn/mta && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40089
+EXPOSE 8101 40000-40116
 
 CMD ["/opt/websyn_start.sh"]

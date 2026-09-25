@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Elevator &amp; Escalator Status{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Elevator &amp; Escalator Status</div>
+  <h1>Elevator &amp; Escalator Status</h1>
+</div>
+<div class="card">
+  <p>Find out how elevators and escalators on the New York City Transit Subways, Metro-North Railroad, and Long Island Rail Road are working.</p>
+  <p>Some elevators and escalators in the New York City Transit system are managed and maintained by a third party, such as real estate developers. These have an X in their ID number. Since we don't maintain these, back-in-service times for them are default estimates.</p>
+
+  <form class="filters" method="get" action="{{ url_for('elevator_status') }}">
+    <div>
+      <label for="show">Show</label>
+      <select name="show" id="show">
+        <option value="elevators" {% if show == 'elevators' %}selected{% endif %}>Elevators</option>
+        <option value="escalators" {% if show == 'escalators' %}selected{% endif %}>Escalators</option>
+        <option value="all" {% if show == 'all' %}selected{% endif %}>Elevators and escalators</option>
+      </select>
+    </div>
+    <div>
+      <label for="station">Station contains</label>
+      <input type="text" name="station" id="station" value="{{ station_q }}" list="station-list" placeholder="e.g. 42 St">
+      <datalist id="station-list">
+        {% for s in stations %}<option value="{{ s }}"></option>{% endfor %}
+      </datalist>
+    </div>
+    <div>
+      <label for="ada">ADA only</label>
+      <select name="ada" id="ada">
+        <option value="">All stations</option>
+        <option value="1" {% if ada_only %}selected{% endif %}>ADA stations only</option>
+      </select>
+    </div>
+    <div>
+      <label for="upcoming">Show</label>
+      <select name="upcoming" id="upcoming">
+        <option value="" {% if not upcoming %}selected{% endif %}>Current outages</option>
+        <option value="1" {% if upcoming %}selected{% endif %}>Upcoming outages</option>
+      </select>
+    </div>
+    <button class="btn" type="submit">Check outages</button>
+  </form>
+
+  <p>Showing {{ outages | length }} outage{{ '' if outages|length == 1 else 's' }}.</p>
+  <table class="data">
+    <thead>
+      <tr><th>Station</th><th>Equipment</th><th>Serving</th><th>ADA</th><th>Outage date</th><th>Estimated return to service</th><th>Reason</th></tr>
+    </thead>
+    <tbody>
+      {% for o in outages %}
+      <tr>
+        <td>{{ o.station }}</td>
+        <td>{{ o.equipmentno }}{% if 'X' in o.equipmentno %} (third-party){% endif %}</td>
+        <td>{{ o.serving }}</td>
+        <td>{{ 'Yes' if o.ada else 'No' }}</td>
+        <td>{{ o.outage_date }}</td>
+        <td>{{ o.estimated_return }}</td>
+        <td>{{ o.reason }}</td>
+      </tr>
+      {% if alt.get(o.equipmentno) %}
+      <tr class="alt-row"><td></td><td colspan="6"><strong>Alternative while out:</strong> {{ alt[o.equipmentno] }}</td></tr>
+      {% endif %}
+      {% else %}
+      <tr><td colspan="7">No outages match this selection.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

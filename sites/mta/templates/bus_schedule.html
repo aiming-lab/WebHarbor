@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ borough }} bus schedules{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('schedules_hub') }}">Schedules</a> › {{ borough }} bus schedules</div>
+  <h1>{{ page.title if page else borough ~ ' bus schedules' }}</h1>
+</div>
+<div class="card blocks">
+  {% if page %}
+  {% for b in (page.blocks | fromjson) %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}
+      <ul>{% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+  {% endfor %}
+  {% else %}
+  <p>No schedule listing is available for this borough.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Railroad fare finder{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('fares_hub') }}">Fares and tolls</a> › Fare finder</div>
+  <h1>Railroad fare finder</h1>
+</div>
+<div class="card">
+  <p>See the fare between any two LIRR or Metro-North stations, based on each station's fare zone and the official fare tables.</p>
+  <form class="filters" method="get" action="{{ url_for('rail_fare_finder') }}">
+    <div>
+      <label for="from">From</label>
+      <select name="from" id="from">
+        <option value="">Choose origin station</option>
+        <optgroup label="Long Island Rail Road">
+          {% for s in lirr %}<option value="{{ s.name }}" {% if s.name == origin %}selected{% endif %}>{{ s.name }} (zone {{ s.zone or '?' }})</option>{% endfor %}
+        </optgroup>
+        <optgroup label="Metro-North Railroad">
+          {% for s in mnr %}<option value="{{ s.name }}" {% if s.name == origin %}selected{% endif %}>{{ s.name }} (zone {{ s.zone or '?' }})</option>{% endfor %}
+        </optgroup>
+      </select>
+    </div>
+    <div>
+      <label for="to">To</label>
+      <select name="to" id="to">
+        <option value="">Choose destination station</option>
+        <optgroup label="Long Island Rail Road">
+          {% for s in lirr %}<option value="{{ s.name }}" {% if s.name == dest %}selected{% endif %}>{{ s.name }} (zone {{ s.zone or '?' }})</option>{% endfor %}
+        </optgroup>
+        <optgroup label="Metro-North Railroad">
+          {% for s in mnr %}<option value="{{ s.name }}" {% if s.name == dest %}selected{% endif %}>{{ s.name }} (zone {{ s.zone or '?' }})</option>{% endfor %}
+        </optgroup>
+      </select>
+    </div>
+    <div>
+      <label for="ticket">Ticket type</label>
+      <select name="ticket" id="ticket">
+        {% for t in tickets %}<option value="{{ t }}" {% if t == ticket %}selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn" type="submit">Find fare</button>
+  </form>
+
+  {% if result %}
+  <div style="margin-top:20px; background:#e8f6ea; padding:18px; border-left:4px solid #0e8a14;">
+    <h2 style="margin-top:0">Fare found</h2>
+    <p>{{ result.railroad }} from <strong>{{ result.origin.name }}</strong> (zone {{ result.origin.zone }}) to <strong>{{ result.dest.name }}</strong> (zone {{ result.dest.zone }}):</p>
+    <p><strong>{{ result.ticket }}: ${{ '%.2f' | format(result.price) }}</strong></p>
+  </div>
+  {% elif origin and dest %}
+  <div class="errors" style="margin-top:20px"><p>No fare is published for that trip and ticket type. Check the stations' fare zones and try again.</p></div>
+  {% endif %}
+</div>
+{% endblock %}
