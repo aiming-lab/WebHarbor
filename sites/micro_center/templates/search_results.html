@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ heading or 'Search' }} : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="crumbs"><a href="/">Home</a> &rsaquo; {{ heading or 'Search Results' }}</div>
+  <div class="results-layout">
+    <aside class="facets">
+      <div class="facet-box">
+        <h3>Categories</h3>
+        <ul>
+          {% for name, count in facets.categories %}
+          <li><a href="/search/search_results.aspx?fq=category:{{ name|replace(' ', '+')|replace('&', '%26')|replace('/', '%2F') }}">{{ name }} <span class="facet-count">{{ count }}</span></a></li>
+          {% else %}
+          <li class="small muted">No filters</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="facet-box">
+        <h3>Brands</h3>
+        <ul>
+          {% for name, count in facets.brands %}
+          <li><a href="/search/search_results.aspx?{{ 'Ntt=' + query + '&' if query else '' }}fq=brand:{{ name|replace(' ', '+')|replace('&', '%26') }}">{{ name }} <span class="facet-count">{{ count }}</span></a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="facet-box">
+        <h3>Price Range</h3>
+        <ul>
+          {% for label, lo, hi in [('$0 - $50', 0, 50), ('$50 - $150', 50, 150), ('$150 - $400', 150, 400), ('$400 - $800', 400, 800), ('$800 - $2000', 800, 2000), ('$2000 and up', 2000, 100000)] %}
+          <li><a href="/search/search_results.aspx?{{ 'Ntt=' + query + '&' if query else '' }}fq={{ 'category:' + fq_cat|replace(' ', '+')|replace('&', '%26')|replace('/', '%2F') + '%2C' if fq_cat else '' }}price:{{ lo }}-{{ hi }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="facet-box">
+        <h3>Customer Rating</h3>
+        <ul>
+          {% for stars in [4, 3] %}
+          <li><a href="/search/search_results.aspx?{{ 'Ntt=' + query + '&' if query else '' }}fq=Average_Rating:{{ stars }}+Stars">{{ stars }} Stars &amp; Up</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% if selected_store %}
+      <div class="facet-box">
+        <h3>My Store</h3>
+        <ul>
+          <li><span class="small">{{ selected_store.name }}<br>{{ selected_store.address }}</span></li>
+          <li>
+            <form method="GET" action="/search/search_results.aspx" class="inline-form">
+              <input type="hidden" name="fq" value="{{ raw_fq }}">
+              <input type="hidden" name="Ntt" value="{{ query }}">
+              <label class="small"><input type="checkbox" name="myStore" value="true" onchange="this.form.submit()" {% if my_store %}checked{% endif %}> Only show items in stock at my store</label>
+            </form>
+          </li>
+          <li><a href="/site/stores/default.aspx" class="small">Change store &rsaquo;</a></li>
+        </ul>
+      </div>
+      {% endif %}
+    </aside>
+
+    <section>
+      <h1 class="mt0">{{ heading or 'Search Results' }}{% if total %} <span class="small muted">({{ total }} items)</span>{% endif %}</h1>
+      <div class="results-toolbar">
+        <span class="results-count">
+          {% if query %}Results for &ldquo;{{ query }}&rdquo;{% endif %}
+          Showing {{ results|length }} of {{ total }} items
+        </span>
+        <form method="GET" action="/search/search_results.aspx" class="sort-form">
+          {% for k, v in request.args.items() %}
+            {% if k not in ('sortby', 'page') %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}
+          {% endfor %}
+          <label>Sort by:</label>
+          <select name="sortby" onchange="this.form.submit()">
+            {% for s, label in [('match','Featured / Match'), ('pricelow','Price: Low to High'), ('pricehigh','Price: High to Low'), ('rating','Rating'), ('newest','Newest Arrivals'), ('numreviews','Most Reviewed')] %}
+            <option value="{{ s }}" {% if sortby == s %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+
+      {% for product in results %}
+      <article class="product-row" id="pwrapper_{{ loop.index0 }}">
+        <div class="p-image">
+          <a href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" loading="lazy"></a>
+        </div>
+        <div>
+          <p class="p-sku">SKU: {{ '%06d'|format(product.sku) }}</p>
+          <div class="p-name"><a href="{{ product.detail_url() }}">{{ product.brand }} {{ product.name }}</a></div>
+          <div class="p-brand">Brand: {{ product.brand }}{% if product.subcategory %} &middot; {{ product.subcategory }}{% endif %}</div>
+          <div class="rating-line">
+            <span class="stars small">{{ product.rating|stars }}</span>
+            <span class="small muted">({{ product.review_count }})</span>
+          </div>
+          <ul class="p-feats">
+            {% for feature in product.features()[:4] %}<li>{{ feature }}</li>{% endfor %}
+          </ul>
+        </div>
+        <div class="p-buy">
+          <div class="our-price"><span class="cur">$</span>{{ "%.2f"|format(product.price) }}</div>
+          {% if product.original_price and product.original_price > product.price %}
+          <div class="was-price">was <strike>${{ "%.2f"|format(product.original_price) }}</strike></div>
+          {% endif %}
+          {% set stock = product|stock_label(selected_store) %}
+          {% if 'In Stock' in stock %}
+          <div class="stock-note stock-in">{{ stock }}</div>
+          {% elif 'Out of Stock' in stock %}
+          <div class="stock-note stock-out">{{ stock }}</div>
+          {% else %}
+          <div class="stock-note stock-ship">{{ stock }}</div>
+          {% endif %}
+          <div class="row-actions">
+            <form method="POST" action="/cart/add/{{ product.product_id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+              <button class="btn btn-primary" type="submit">Add to Cart</button>
+            </form>
+            <form method="POST" action="/list/add/{{ product.product_id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+              <button class="btn btn-link" type="submit">Add to List</button>
+            </form>
+          </div>
+          <label class="compare-check">
+            <form method="POST" action="/compare/add/{{ product.product_id }}" id="cmpForm{{ product.product_id }}"></form>
+            <input type="checkbox" form="cmpForm{{ product.product_id }}" name="compare"
+                   onchange="document.getElementById('cmpForm{{ product.product_id }}').submit()">
+            <input type="hidden" form="cmpForm{{ product.product_id }}" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" form="cmpForm{{ product.product_id }}" name="next" value="{{ request.full_path }}">
+            Compare
+          </label>
+        </div>
+      </article>
+      {% else %}
+      <div class="empty-state">
+        <h2>No products matched</h2>
+        <p>Try a different search or remove some filters.</p>
+      </div>
+      {% endfor %}
+
+      {% if pages > 1 %}
+      <nav class="pagination">
+        {% for p in range(1, pages + 1) %}
+          {% if p == page %}<span class="current">{{ p }}</span>
+          {% else %}<a href="{{ url_for('search_results', **dict(request.args, page=p)) }}">{{ p }}</a>{% endif %}
+        {% endfor %}
+      </nav>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

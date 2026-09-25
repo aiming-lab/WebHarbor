@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Find State of Ohio Jobs | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Find State of Ohio Jobs</h1>
+    <p>Interested in applying for careers in Ohio? State agencies post openings across all branches of state government.</p>
+  </div>
+</div>
+<div class="container content-page" style="padding-top:20px">
+  <div class="stat-row">
+    <div class="stat-box"><div class="n">{{ agencies|length }}</div><div class="l">State agencies</div></div>
+    <div class="stat-box"><div class="n">{{ gov_total }}</div><div class="l">Government jobs on the board</div></div>
+  </div>
+  <h2>State of Ohio agencies hiring</h2>
+  <div class="agency-grid">
+    {% for a in agencies %}
+      <div class="agency">
+        <img src="{{ url_for('static', filename='images/' ~ a.logo) }}" alt="{{ a.name }}">
+        <div>{{ a.name }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  <h2 style="margin-top:28px">Recent government jobs</h2>
+  <div class="list-box">
+    {% for job in jobs %}
+      <div class="list-row">
+        <div class="sr_jobsummary"><h3><a href="{{ url_for('job_detail', jobid=job.jobid) }}">{{ job.title }}</a></h3></div>
+        <div class="company">{{ job.company }}</div>
+        <div class="loc">{{ job.city }}</div>
+        <div class="loc">{{ job.posted_date }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  <p style="margin-top:16px"><a class="btn secondary small" href="{{ url_for('jobs_search', omjindustry='92') }}">See all government jobs</a></p>
+</div>
+{% endblock %}

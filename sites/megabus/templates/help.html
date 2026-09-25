@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Megabus Frequently asked questions | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Frequently asked questions</h1>
+    <form action="{{ url_for('help_search') }}" method="get" class="help-search">
+      <input class="form-control" type="text" name="q" placeholder="Search" aria-label="Search FAQs">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+
+    <h2 class="section-title">Most popular questions</h2>
+    <div class="accordion">
+      {% for f in popular %}
+        <details class="card">
+          <summary class="card-heading"><span class="card-title"><a>{{ f.question }}</a></span></summary>
+          <div class="card-body">{{ f.answer }}</div>
+        </details>
+      {% endfor %}
+    </div>
+
+    <h2 class="section-title">Help topics</h2>
+    <div class="topic-grid">
+      {% for slug, title in topics %}
+        <a class="topic-tile" href="{{ url_for('help_topic', topic=slug) }}"><h3>{{ title }}</h3></a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="alert-banner">
+  <div class="container">
+    Sign-up for FREE books for kids through the Ohio Imagination Library.
+    <a href="{{ url_for('news_events') }}">Learn More</a>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="container">
+    <h1>Find Your Next Opportunity</h1>
+    <p class="lead">Find a job, learn career skills, meet the requirements of your government benefits, and more on OhioMeansJobs.com</p>
+    <form class="hero-search" action="{{ url_for('jobs_search') }}" method="get">
+      <input class="job-title" type="text" name="tjt" placeholder="Job Title" aria-label="Job Title">
+      <input type="text" name="cnme" placeholder="City/Town or Zip" aria-label="City/Town or Zip">
+      <select name="rad" aria-label="Radius">
+        <option value="20">20 miles</option>
+        <option value="0">Exact location only</option>
+        <option value="5">5 miles</option>
+        <option value="10">10 miles</option>
+        <option value="30">30 miles</option>
+        <option value="40">40 miles</option>
+        <option value="50">50 miles</option>
+      </select>
+      <button type="submit">Search Jobs</button>
+    </form>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">{{ total_jobs }}</div><div class="lbl">Total Jobs Available</div></div>
+      <div class="hero-stat"><div class="num">{{ over_50k }}</div><div class="lbl">Over $50K Salary</div></div>
+      <div class="hero-stat"><div class="num">{{ internships }}</div><div class="lbl">Internships</div></div>
+    </div>
+    <div class="as-of">As of {{ as_of }}</div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="two-col">
+      <div class="cta-band">
+        <h3>Post Your Resume</h3>
+        <p>It only takes a few seconds</p>
+        <a class="btn" href="{{ url_for('account_register') }}">Sign Up</a>
+      </div>
+      <div class="cta-band" style="border-left-color:#f2a900">
+        <h3>Get Tailored Resource Recommendations</h3>
+        <p>Completing the Ohio Career Navigator survey provides access to customized resources designed to assist you in reaching your full potential.</p>
+        <a class="btn gold" href="{{ url_for('career_quiz_intro') }}">Get started</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section gray">
+  <div class="container">
+    <h2>Get the Most Out of OhioMeansJobs.com</h2>
+    <p>Sign up and create a profile to take advantage of all the perks.</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/sections/job-seekers-1.jpg') }}')"></div>
+        <div class="card-body">
+          <h3>Alerts on New Jobs</h3>
+          <p>Save your job searches and be the first to know when new jobs open in your area.</p>
+          <a class="card-link" href="{{ url_for('account_saved_searches') }}">Save a search &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/sections/job-seekers-2.jpg') }}')"></div>
+        <div class="card-body">
+          <h3>Personalized Experience</h3>
+          <p>Get articles, resources, tools, and job recommendations that are tailored to your needs.</p>
+          <a class="card-link" href="{{ url_for('account_register') }}">Create a profile &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/sections/job-seekers-3.jpg') }}')"></div>
+        <div class="card-body">
+          <h3>Save &amp; Report Progress</h3>
+          <p>Upload your resume and cover letter, and train to increase your skills. Report your progress to your caseworker.</p>
+          <a class="card-link" href="{{ url_for('account_resume') }}">My Resume &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="kicker">Audiences</div>
+    <h2>Find Resources</h2>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/sections/job-seekers-4.jpg') }}')"></div>
+        <div class="card-body">
+          <h3>For Job Seekers</h3>
+          <p>Post your resume. Search jobs or skills. Get best practices for your job search.</p>
+          <a class="card-link" href="{{ url_for('job_seekers') }}">For Job Seekers &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/sections/employer.png') }}')"></div>
+        <div class="card-body">
+          <h3>For Employers</h3>
+          <p>Find top talent on OhioMeansJobs.com - a One-Stop-shop for Ohio-based companies.</p>
+          <a class="card-link" href="{{ url_for('for_employers') }}">For Employers &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/students/student.png') }}')"></div>
+        <div class="card-body">
+          <h3>For Students</h3>
+          <p>Students can find part time jobs, apprenticeship, and internships on OhioMeansJobs.com</p>
+          <a class="card-link" href="{{ url_for('for_students') }}">For Students &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-img" style="background-image:url('{{ url_for('static', filename='images/sections/senior.jpg') }}')"></div>
+        <div class="card-body">
+          <h3>Golden Buckeyes</h3>
+          <p>Make your work experience work for you. Plan your next career moves using OhioMeansJobs.</p>
+          <a class="card-link" href="{{ url_for('build_your_career') }}">Build Your Career &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section gray">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <div class="kicker">Top Tools</div>
+        <h2>Get the information and skills that can launch your career to the next level.</h2>
+        <ul class="resource-list">
+          <li><a href="{{ url_for('jobs_search') }}">Find a job in Ohio</a> &mdash; search thousands of open positions</li>
+          <li><a href="{{ url_for('career_quiz_intro') }}">Career Profile Quiz</a> &mdash; learn what careers fit you</li>
+          <li><a href="{{ url_for('local_help') }}">Find a Job Center</a> &mdash; hands-on help near you</li>
+          <li><a href="{{ url_for('state_jobs') }}">Find State of Ohio Jobs</a> &mdash; careers in state government</li>
+        </ul>
+      </div>
+      <div>
+        <div class="kicker">Recent Jobs</div>
+        <h2>Fresh on the board</h2>
+        {% for job in recent %}
+          <div class="news-item">
+            <h3><a href="{{ url_for('job_detail', jobid=job.jobid) }}">{{ job.title }}</a></h3>
+            <div class="meta">{{ job.company }} &middot; {{ job.city }} &middot; Posted {{ job.posted_date }}</div>
+          </div>
+        {% endfor %}
+        <a class="btn secondary small" href="{{ url_for('jobs_search', sort='date') }}">See all jobs</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="kicker">News &amp; Events</div>
+    <h2>What&rsquo;s New?</h2>
+    <div class="cards-grid">
+      {% for n in news %}
+        <div class="news-item" style="margin-bottom:0">
+          <h3><a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a></h3>
+          <div class="meta">{{ n.published_date }}</div>
+          <p>{{ n.teaser }}</p>
+        </div>
+      {% endfor %}
+    </div>
+    <p style="margin-top:16px"><a class="btn secondary small" href="{{ url_for('news_events') }}">View Events</a></p>
+  </div>
+</section>
+{% endblock %}

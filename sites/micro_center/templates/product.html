@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ product.brand }} {{ product.name }} - Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="crumbs">
+    <a href="/">Home</a> &rsaquo;
+    {% if product.category %}<a href="/site/products/{{ product.category.slug }}.aspx">{{ product.category.name }}</a> &rsaquo;{% endif %}
+    {{ product.name }}
+  </div>
+
+  <div class="pdp-layout">
+    <div class="pdp-gallery">
+      <div class="main-image">
+        <img id="mainImage" src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}">
+      </div>
+      <div class="pdp-thumbs">
+        {% for img in product.gallery()[:6] %}
+        <a href="{{ product.detail_url() }}"><img src="/static/images/products/{{ img }}" alt="{{ product.name }} view {{ loop.index }}"></a>
+        {% endfor %}
+      </div>
+      {% if open_offers %}
+      <div class="keyfeatures">
+        <h3>Open Box Available</h3>
+        <ul>
+          {% for offer in open_offers %}
+          <li>{{ offer.condition }} &mdash; ${{ "%.2f"|format(offer.price) }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="pdp-main">
+      <div class="pdp-title">
+        <h1>{{ product.brand }} {{ product.name }}</h1>
+        <div class="pdp-brand">Brand: {{ product.brand }} &middot; SKU: {{ '%06d'|format(product.sku) }}</div>
+        <div class="rating-line">
+          <span class="stars">{{ product.rating|stars }}</span>
+          <a href="#tab-reviews">{{ product.rating }} ({{ product.review_count }} reviews)</a>
+        </div>
+      </div>
+
+      <div class="pdp-price-box">
+        {% if product.original_price and product.original_price > product.price %}
+        <div class="was-price">Original price <strike>${{ "%.2f"|format(product.original_price) }}</strike></div>
+        {% endif %}
+        <div class="our-price"><span class="cur">$</span>{{ "%.2f"|format(product.price) }}</div>
+        <div class="small muted">Todays price. Sales tax applied at checkout where applicable.</div>
+      </div>
+
+      <div class="store-pick">
+        <h3>PICK UP IN 18 MINUTES</h3>
+        {% if not selected_store %}
+        <p class="pickup-note">Ready for pickup at your local Micro Center. <a href="/site/stores/default.aspx">Please Select Your Store</a> to see live availability.</p>
+        {% else %}
+        <p class="pickup-note">Live availability at your store: <b>{{ selected_store.name }}</b> ({{ selected_store.label() }})</p>
+        {% endif %}
+        <ul class="store-options">
+          {% for row in stock_rows %}
+          <li>
+            <a href="{{ product.detail_url() }}?storeid={{ row.store_id }}">{{ row.store.label() }}</a>
+            {% if row.status == 'in stock' %}
+            <span class="stock-note stock-in">in stock{% if row.qty and row.qty <= 3 %} (only {{ row.qty }} left){% endif %}</span>
+            {% else %}
+            <span class="stock-note stock-out">out of stock</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% if stores_instock %}
+        <p class="small muted">In stock at {{ stores_instock|length }} of {{ stock_rows|length }} stores.</p>
+        {% else %}
+        <p class="small muted">No stores currently report stock for this item.</p>
+        {% endif %}
+      </div>
+
+      <div class="pdp-actions">
+        <form method="POST" action="/cart/add/{{ product.product_id }}" class="qty-row">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="/cart">
+          <label class="small" for="qty">Quantity:</label>
+          <input type="number" id="qty" name="qty" value="1" min="1" max="10">
+          <button class="btn btn-primary" type="submit">Add to Cart</button>
+        </form>
+        <form method="POST" action="/list/add/{{ product.product_id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ product.detail_url() }}">
+          <button class="btn btn-secondary" type="submit">Add to List</button>
+        </form>
+        <form method="POST" action="/compare/add/{{ product.product_id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="/endeca/CompareV2.aspx">
+          <button class="btn btn-secondary" type="submit">Compare Item</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if product.features() %}
+  <div class="keyfeatures">
+    <h3>Key Features</h3>
+    <ul>
+      {% for feature in product.features() %}<li>{{ feature }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="tabbar">
+    <a href="#tab-overview" class="active">Overview</a>
+    <a href="#tab-specs">Specs</a>
+    <a href="#tab-reviews">Reviews ({{ product.review_count }})</a>
+  </div>
+
+  <section id="tab-overview" class="section-pad">
+    <h2>Overview</h2>
+    {% if product.description %}
+    <p>{{ product.description }}</p>
+    {% else %}
+    <p class="muted">Product overview coming soon. See the Specs tab for detailed technical information.</p>
+    {% endif %}
+    <p class="small muted">SKU: {{ '%06d'|format(product.sku) }}{% if product.brand %} &middot; Mfr: {{ product.brand }}{% endif %}</p>
+  </section>
+
+  <section id="tab-specs" class="section-pad">
+    <h2>Specifications</h2>
+    {% for group in product.spec_groups() %}
+    <h3 class="spec-group-head">{{ group.group }}</h3>
+    <table class="specs-table">
+      {% for key, value in group.pairs %}
+      <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="muted">No specification sheet on file for this item.</p>
+    {% endfor %}
+  </section>
+
+  <section id="tab-reviews" class="section-pad">
+    <h2>Customer Reviews ({{ product.review_count }})</h2>
+    {% for review in reviews %}
+    <div class="review-item">
+      <div class="rv-head">
+        <span class="stars">{{ review.rating|round(1)|stars }}</span>
+        <span class="rv-date">{{ review.date }}</span>
+        {% if review.verified %}<span class="pill pill-instock">Verified Purchase</span>{% endif %}
+      </div>
+      {% if review.title %}<div class="rv-title">{{ review.title }}</div>{% endif %}
+      <div>{{ review.body }}</div>
+      <div class="small muted">&mdash; {{ review.author }}</div>
+    </div>
+    {% else %}
+    <p class="muted">No reviews yet. Be the first to review this product.</p>
+    {% endfor %}
+
+    <h3>Write a Review</h3>
+    <form method="POST" action="/product/{{ product.product_id }}/review" class="form-card wide">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="two-col">
+        <div class="form-row">
+          <label>Your Rating <span class="req">*</span></label>
+          <select name="rating">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Good</option>
+            <option value="3">3 - Average</option>
+            <option value="2">2 - Poor</option>
+            <option value="1">1 - Terrible</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Review Title</label>
+          <input type="text" name="title" maxlength="200" placeholder="Sum it up">
+        </div>
+      </div>
+      {% if not current_user.is_authenticated %}
+      <div class="form-row">
+        <label>Your Name</label>
+        <input type="text" name="author" maxlength="120" placeholder="Anonymous">
+      </div>
+      {% endif %}
+      <div class="form-row">
+        <label>Your Review <span class="req">*</span></label>
+        <textarea name="body" rows="4" required placeholder="What did you like or dislike?"></textarea>
+      </div>
+      <button class="btn btn-primary" type="submit">Submit Review</button>
+    </form>
+  </section>
+
+  {% if related %}
+  <div class="section-head"><h2>Related Products</h2></div>
+  <div class="card-grid">
+    {% for product in related %}
+    <div class="product-card">
+      <a class="pc-image" href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" loading="lazy"></a>
+      <div class="pc-name"><a href="{{ product.detail_url() }}">{{ product.name }}</a></div>
+      <div class="pc-price">${{ "%.2f"|format(product.price) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

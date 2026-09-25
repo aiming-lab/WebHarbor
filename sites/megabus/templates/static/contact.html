@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Contact Us</h1>
+    <p>Have a question? Let our new virtual travel assistant, Chuck, help you find
+      the answer to your question.</p>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="panel">
+          <h2>Send Chuck a message</h2>
+          <form action="{{ url_for('contact_us') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-1">
+              <label class="field-label" for="name">Your name</label>
+              <input class="form-control" type="text" id="name" name="name" required>
+            </div>
+            <div class="mb-1">
+              <label class="field-label" for="email">Email address</label>
+              <input class="form-control" type="email" id="email" name="email" required>
+            </div>
+            <div class="mb-1">
+              <label class="field-label" for="topic">Topic</label>
+              <select class="form-control" id="topic" name="topic">
+                <option>Booking question</option>
+                <option>Changing my ticket</option>
+                <option>Traveling on the bus</option>
+                <option>Bus stops and routes</option>
+                <option>Something else</option>
+              </select>
+            </div>
+            <div class="mb-1">
+              <label class="field-label" for="message">Message</label>
+              <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Send message</button>
+          </form>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="panel">
+          <h2>Other ways to get help</h2>
+          <p><a href="{{ url_for('webchat') }}">Chat with Chuck</a> — our virtual travel
+            assistant is available 24/7.</p>
+          <p>Browse the <a href="{{ url_for('help_index') }}">frequently asked questions</a>
+            for instant answers about bookings, luggage and boarding.</p>
+          <p>Manage an existing booking under
+            <a href="{{ url_for('manage_booking') }}">Change trip</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

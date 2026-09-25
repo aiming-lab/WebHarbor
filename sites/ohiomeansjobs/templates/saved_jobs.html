@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Saved Jobs | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">Saved Jobs</h1>
+      <p>Jobs you saved from your searches are collected here (your backpack).</p>
+      {% if saved %}
+        <div class="list-box">
+          {% for s in saved %}
+            <div class="list-row">
+              <div class="sr_jobsummary">
+                <h3><a href="{{ url_for('job_detail', jobid=s.job.jobid) }}">{{ s.job.title }}</a></h3>
+              </div>
+              <div class="company"><a href="{{ url_for('company_profile', slug=s.job.company_slug) }}">{{ s.job.company }}</a></div>
+              <div class="loc">{{ s.job.city }}</div>
+              <div class="actions-wrap">
+                <a href="#" class="actions-link">Actions</a>
+                <div class="list-row__actions-content">
+                  <a href="{{ url_for('job_detail', jobid=s.job.jobid) }}">View details</a>
+                  <a href="{{ url_for('job_apply', jobid=s.job.jobid) }}">Apply</a>
+                  <form method="post" action="{{ url_for('job_save', jobid=s.job.jobid) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">Remove from saved</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-note">You have no saved jobs. <a href="{{ url_for('jobs_search') }}">Search jobs</a> and pick &ldquo;Save to My Profile&rdquo;.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

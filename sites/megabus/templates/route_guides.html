@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Top bus routes and customer favorites | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Top bus routes</h1>
+    <p>Discover our most popular bus routes, with real schedules, stop information and
+      the fastest travel times for each corridor.</p>
+    <div class="teaser-grid mt-2">
+      {% for g in guides %}
+        <a class="teaser" href="{{ url_for('route_guide_detail', slug=g.slug) }}">
+          <img src="{{ url_for('static', filename='images/route-guide/US-route-guide-hero.jpg') }}" alt="{{ g.title }}">
+          <div class="teaser-body">
+            <h3>{{ g.link_title or g.title }}</h3>
+            <span class="text-grey">
+              {% if g.stats.get('duration') %}{{ g.stats.duration }}{% endif %}
+              {% if g.stats.get('departures') %} · {{ g.stats.departures }}{% endif %}
+            </span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

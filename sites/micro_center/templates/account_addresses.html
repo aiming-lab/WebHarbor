@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Address Book : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Address Book</h1>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      {% for address in addresses %}
+      <div class="surface" style="margin-bottom:10px">
+        <div class="summary-row">
+          <span><b>{{ address.full_name }}</b>{% if address.is_default %} <span class="pill pill-instock">Default</span>{% endif %}</span>
+          <span>
+            {% if not address.is_default %}
+            <form method="POST" action="/account/addresses/{{ address.id }}/default" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-link" type="submit">Make default</button>
+            </form>
+            {% endif %}
+            <form method="POST" action="/account/addresses/{{ address.id }}/delete" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-link" type="submit">Delete</button>
+            </form>
+          </span>
+        </div>
+        <p class="small">{{ address.one_line() }}<br>{{ address.city }}, {{ address.state }} {{ address.zip_code }}{% if address.phone %} &middot; {{ address.phone }}{% endif %}</p>
+      </div>
+      {% else %}
+      <p class="muted">No saved addresses.</p>
+      {% endfor %}
+      <div class="form-card wide" style="margin-top:18px">
+        <h3>Add a New Address</h3>
+        <form method="POST" action="/account/addresses">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="add">
+          <div class="form-row">
+            <label>Full name <span class="req">*</span></label>
+            <input type="text" name="full_name" required>
+          </div>
+          <div class="form-row">
+            <label>Street address <span class="req">*</span></label>
+            <input type="text" name="line1" required>
+          </div>
+          <div class="form-row">
+            <label>Apt / Suite / Unit</label>
+            <input type="text" name="line2">
+          </div>
+          <div class="two-col">
+            <div class="form-row"><label>City <span class="req">*</span></label><input type="text" name="city" required></div>
+            <div class="form-row"><label>State <span class="req">*</span></label><input type="text" name="state" maxlength="2" required></div>
+          </div>
+          <div class="two-col">
+            <div class="form-row"><label>ZIP code <span class="req">*</span></label><input type="text" name="zip_code" required></div>
+            <div class="form-row"><label>Phone</label><input type="tel" name="phone"></div>
+          </div>
+          <div class="form-row"><label>Label (e.g. Home, Work)</label><input type="text" name="label"></div>
+          <button class="btn btn-primary" type="submit">Add Address</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}OHID | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--login">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-6 col-lg-offset-1">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">OHID</h1>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    <p><strong>OHID</strong> provides users with a secure and private way to connect with State of Ohio services. You can use your single OHID account to access multiple systems and applications on virtually any device.</p>
+                    <p>For help with your OHID account, visit the&nbsp;<a href="https://ohid.ohio.gov/manage-account/help-center/contact-support" target="_blank">OHID Help</a>&nbsp;page.</p>
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>Sign in with your OHID</h2>
+                    <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label for="email">Email or username</label>
+                            <input type="text" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Sign in</button>
+                        <a class="btn btn-secondary margin-left-xs" href="{{ url_for('register') }}">Create an OHID</a>
+                    </form>
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <div class="odx-external-link margin-bottom-sm">
+                        <a href="https://ohid.ohio.gov/" class="odx-external-link__button btn-block btn btn-primary" target="_blank">
+                            <span class="uppercase"> Launch <i class="fas fa-external-link-square-alt" aria-hidden="true"></i> </span>
+                            <p class="odx-external-link__title"> Create or Manage an OHID </p>
+                        </a>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Apply | {{ job.title }} | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:18px">
+  <div class="breadcrumb"><a href="{{ url_for('job_detail', jobid=job.jobid) }}">&lt; Back to job detail</a></div>
+
+  {% if submitted %}
+    <div class="form-card">
+      <h1>Application submitted</h1>
+      <div class="flash success">Your application for <strong>{{ job.title }}</strong> at {{ job.company }} was submitted successfully.</div>
+      <p>Confirmation #: OMJ-{{ application.id }}-{{ job.jobid[-4:] }}</p>
+      <p>You can track the status under your account.</p>
+      <p>
+        <a class="btn" href="{{ url_for('account_applications') }}">Go to my applications</a>
+        <a class="btn secondary" href="{{ url_for('jobs_search') }}">Keep searching jobs</a>
+      </p>
+    </div>
+  {% else %}
+    <div class="form-card">
+      <h1>Apply to {{ job.title }}</h1>
+      <p>{{ job.company }} &middot; {{ job.city }} &middot; Job ID {{ job.jobid }}</p>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="two-col">
+          <div class="form-row">
+            <label for="first_name">First name</label>
+            <input type="text" id="first_name" name="first_name" value="{{ form.get('first_name', current_user.first_name) }}" required>
+          </div>
+          <div class="form-row">
+            <label for="last_name">Last name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ form.get('last_name', current_user.last_name) }}" required>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="form-row">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" value="{{ form.get('email', current_user.email) }}" required>
+          </div>
+          <div class="form-row">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" value="{{ form.get('phone', current_user.phone) }}">
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="cover_letter_id">Attach a cover letter (optional)</label>
+          <select id="cover_letter_id" name="cover_letter_id">
+            <option value="">Do not attach a cover letter</option>
+            {% for l in letters %}
+              <option value="{{ l.id }}" {% if form.get('cover_letter_id')|string == l.id|string %}selected{% endif %}>{{ l.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="hint">You can save up to 5 different cover letters in your profile.</div>
+        </div>
+        <button class="btn" type="submit">Submit application</button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

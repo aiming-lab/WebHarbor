@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Help search | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Help search</h1>
+    <form action="{{ url_for('help_search') }}" method="get" class="help-search">
+      <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+    {% if q %}
+      <p class="text-grey">{{ results|length }} answer{{ 's' if results|length != 1 }} found for "{{ q }}"</p>
+      <div class="accordion">
+        {% for f in results %}
+          <details class="card">
+            <summary class="card-heading"><span class="card-title"><a>{{ f.question }}</a></span></summary>
+            <div class="card-body">{{ f.answer }}</div>
+          </details>
+        {% else %}
+          <p>No answers matched your search. Try different words or browse the
+            <a href="{{ url_for('help_index') }}">help topics</a>.</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

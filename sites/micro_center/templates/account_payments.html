@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Payment Methods : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Payment Methods</h1>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      {% for card in cards %}
+      <div class="surface" style="margin-bottom:10px">
+        <div class="summary-row">
+          <span><b>{{ card.display() }}</b>{% if card.is_default %} <span class="pill pill-instock">Default</span>{% endif %}</span>
+          <span>
+            {% if not card.is_default %}
+            <form method="POST" action="/account/payments/{{ card.id }}/default" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-link" type="submit">Make default</button>
+            </form>
+            {% endif %}
+            <form method="POST" action="/account/payments/{{ card.id }}/delete" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-link" type="submit">Delete</button>
+            </form>
+          </span>
+        </div>
+        <p class="small">Expires {{ card.exp_month }}/{{ card.exp_year }}</p>
+      </div>
+      {% else %}
+      <p class="muted">No saved payment methods.</p>
+      {% endfor %}
+      <div class="form-card wide" style="margin-top:18px">
+        <h3>Add a New Card</h3>
+        <form method="POST" action="/account/payments">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="add">
+          <div class="two-col">
+            <div class="form-row">
+              <label>Card type</label>
+              <select name="card_brand"><option>Visa</option><option>Mastercard</option><option>American Express</option><option>Discover</option></select>
+            </div>
+            <div class="form-row">
+              <label>Card number <span class="req">*</span></label>
+              <input type="text" name="card_number" maxlength="19" placeholder="4242 4242 4242 4242" required>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="form-row"><label>Exp. month <span class="req">*</span></label><input type="text" name="exp_month" maxlength="2" placeholder="12" required></div>
+            <div class="form-row"><label>Exp. year <span class="req">*</span></label><input type="text" name="exp_year" maxlength="4" placeholder="2028" required></div>
+          </div>
+          <button class="btn btn-primary" type="submit">Add Card</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
