@@ -686,6 +686,9 @@ def valid_service(service_type, service_id):
                "rail": RAIL_BRANCHES["lirr"] + RAIL_BRANCHES["mnr"]}
     if service_type == "bus":
         return re.fullmatch(r"(?:BxM|Bx|BM|QM|SIM|B|M|Q|S|X)\d{1,3}(?:-SBS)?", service_id, re.I) is not None
+    if service_type == "rail" and service_id.startswith("Metro-North "):
+        name = service_id.removeprefix("Metro-North ").removesuffix(" Line")
+        return name in RAIL_BRANCHES["mnr"]
     return service_id in options.get(service_type, ())
 
 

@@ -34,3 +34,9 @@ def test_invalid_favorite_rejected(client):
 def test_related_guides_are_reachable(client):
     assert b'href="/guides/bikes/bike-regulations-lirr"' in client.get('/guides/bikes').data
     assert b'href="/transparency/leadership/board-members"' in client.get('/transparency').data
+
+
+def test_named_metro_north_favorite(client):
+    client.post('/account/login', data={'email':'bob.c@test.com','password':'TestPass123!'})
+    response = client.post('/account/favorites', data={'service_type':'rail','service_id':'Metro-North Harlem Line'}, follow_redirects=True)
+    assert response.status_code == 200 and b'Metro-North Harlem Line' in response.data
