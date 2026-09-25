@@ -33,7 +33,7 @@ def read_rows():
 
 def test_rows_have_exactly_the_basic_keys():
     rows = read_rows()
-    assert 25 <= len(rows) <= 35, f"expected ~30 tasks, found {len(rows)}"
+    assert 15 <= len(rows) <= 25, f"expected 15-25 deep-chain tasks, found {len(rows)}"
     for index, row in enumerate(rows):
         keys = set(row)
         assert REQUIRED_KEYS <= keys, f"row {index} missing keys: {REQUIRED_KEYS - keys}"

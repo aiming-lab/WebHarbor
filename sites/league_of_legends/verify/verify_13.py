@@ -1,65 +1,82 @@
 #!/usr/bin/env python3
-"""Verify League of Legends--13: champions changed in BOTH patch 26.19 and 26.18.
+"""Verify League of Legends--13: multi-account isolation (alice adds Yone, bob adds Milio).
 
-Accepted "changed in both" set (hardcoded, hand-verified against the two seeded articles):
-champions with a named change entry in both patch notes — a balance change block with
-before⇒after values (Master Yi, Kassadin, Nasus, Bard, Zeri, Nautilus) or, for the Classic
-section, either a change block or an explicit NEW champion introduction (Fiora, Galio,
-Poppy, Shyvana). Skin mentions and incidental prose mentions do NOT count.
-The answer must name at least two distinct champions from this set and describe one
-specific 26.18 change for one of the champions it named.
+Honest chain (25 atomic actions): Play Now -> Sign In -> fill alice email ->
+fill password -> submit -> Champions nav -> fill q='Yone' -> Apply -> open
+Yone -> Add to Favorites -> My Account -> Sign Out -> Play Now -> Sign In ->
+fill bob email -> fill password -> submit -> My Account -> Champions nav ->
+fill q='Milio' -> Apply -> open Milio -> Add to Favorites -> My Account ->
+answer.
+
+Frozen ground truth (seed DB):
+  * alice_j (id 1) starts with 5 favorites (Amumu, Draven, Kayle, Lee Sin,
+    Yunara); after adding Yone (champion id 162) -> 6.
+  * bob_c (id 2) keeps his seeded 5 favorites (Anivia, Annie, Cho'Gath, Renata
+    Glasc, Viego) — Yone is NOT among them; after adding Milio (id 84) -> 6.
+  * Database delta: exactly two favorite_champions rows added — (alice, Yone)
+    and (bob, Milio) — and nothing else.
 """
-from verify_lib import (check_read_only, check_trajectory_identity, champion_named,
-                        contains_any, contains_phrase, final_answer, navigated_article,
-                        run_verifier)
+from verify_lib import (bound_count, bound_phrase, champion_named,
+                        check_favorites_delta, check_only_tables_changed,
+                        check_trajectory_identity, contains_phrase,
+                        entered_identity, final_answer,
+                        navigated_champion, navigated_to_path, run_verifier)
 
 TASK_ID = "League of Legends--13"
-ARTICLES = [("game-updates", "league-of-legends-patch-26-19-notes"),
-            ("game-updates", "league-of-legends-patch-26-18-notes")]
-# 26.18 change ground truth per accepted champion (any one match satisfies the
-# "specific change" requirement for that champion).
-CHANGES_2618 = {
-    "Master Yi": ["33 + 4.5/Level", "33 + 5/Level", "Highlander",
-                  "35 / 45 / 55%", "40 / 50 / 60%", "armor growth",
-                  "Rageblade"],
-    "Kassadin": ["Null Sphere", "80% AP", "Riftwalk", "80 / 95 / 110",
-                 "70 / 90 / 110"],
-    "Nasus": ["Q stacks could crit", "Wither", "tenacity",
-              "top dog of top lane"],
-    "Bard": ["34 + 5/Level", "32 + 4.7/Level", "durability", "armor"],
-    "Zeri": ["Ultrashock Laser", "burst and waveclear"],
-    "Nautilus": ["61 + 3.3/Level", "58 + 3.3/Level", "Dredge Line",
-                 "85 / 125 / 165 / 205 / 245"],
-    "Fiora": ["2012-2015", "Riposte", "Blade Waltz", "Lunge",
-              "deadly duelist"],
-    "Galio": ["2010-2017", "Runic Skin", "Resolute Smite", "Bulwark",
-              "Idol of Durand"],
-    "Poppy": ["2010-2015", "Valiant Fighter", "Devastating Blow",
-              "immune to all enemies but one"],
-    "Shyvana": ["2011-2013", "Fury of the Dragonborn", "Twin Bite",
-                "Frozen Mallet"],
-}
+ALICE = "alice.j@test.com"
+BOB = "bob.c@test.com"
+ALICE_NAME = "alice"
+BOB_NAME = "bob"
+ADDED = [(1, 162, "2026-09-22"), (2, 84, "2026-09-22")]
+BOB_SEEDED = ["Anivia", "Annie", "Cho'Gath", "Renata Glasc", "Viego"]
 
 
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
-    for category, slug in ARTICLES:
-        judge.check(f"visited_{slug}", navigated_article(traj, category, slug),
-                    f"required: /news/{category}/{slug}/")
-    named = [c for c in CHANGES_2618 if champion_named(answer, c)]
-    judge.check("answer_two_both_changed", len(set(named)) >= 2,
-                f"expected at least two champions changed in both patches; matched {named!r}")
-    detail_ok = False
-    for champ in named:
-        if any(contains_phrase(answer, fact) for fact in CHANGES_2618[champ]):
-            detail_ok = True
-            break
-    judge.check("answer_specific_2618_change", detail_ok,
-                "expected a specific 26.18 change detail (values, ability names or quoted "
-                "wording from the 26.18 notes) for one of the named champions")
-    judge.check("answer_identifies_mode", contains_any(answer, ["standard", "Classic", "Arena", "ARAM"]), "identify the mode of the described change")
-    check_read_only(judge, initial_db, after_db)
+    judge.check("entered_alice_identity", entered_identity(traj, ALICE),
+                f"expected {ALICE!r} entered on the sign-in page")
+    judge.check("entered_bob_identity", entered_identity(traj, BOB),
+                f"expected {BOB!r} entered on the sign-in page")
+    judge.check("visited_signin_twice", navigated_to_path(traj, "/login"),
+                "required: /login (both sign-ins)")
+    judge.check("visited_yone_page", navigated_champion(traj, "yone"),
+                "required: /champions/yone/")
+    judge.check("visited_milio_page", navigated_champion(traj, "milio"),
+                "required: /champions/milio/")
+    judge.check("visited_account", navigated_to_path(traj, "/account"),
+                "required: /account (bob's unaffected favorites verified there)")
+
+    judge.check("answer_alice_total_6",
+                bound_count(answer, 6, ALICE_NAME, [BOB_NAME], mode="after", allow_misbound=True),
+                "expected alice's new total of 6 favorites attached to alice")
+    judge.check("answer_yone_named", champion_named(answer, "Yone"),
+                "expected Yone named as alice's addition")
+    judge.check("answer_yone_is_alices",
+                bound_phrase(answer, "Yone", ALICE_NAME, [BOB_NAME], allow_misbound=True),
+                "expected Yone attached to alice's account")
+    judge.check("answer_bob_unchanged_5",
+                bound_count(answer, 5, BOB_NAME, [ALICE_NAME], mode="after", allow_misbound=True),
+                "expected bob's unaffected 5 favorites attached to bob")
+    judge.check("answer_bob_seeded_names",
+                all(bound_phrase(answer, n, BOB_NAME, [ALICE_NAME], mode="after", allow_misbound=True)
+                    for n in BOB_SEEDED),
+                f"expected bob's seeded favorites attached to bob: {BOB_SEEDED}")
+    judge.check("answer_yone_absence",
+                contains_phrase(answer, "not") or contains_phrase(answer, "without")
+                or contains_phrase(answer, "no Yone") or contains_phrase(answer, "absent"),
+                "expected the answer to state Yone is not among bob's favorites")
+    judge.check("answer_bob_final_6",
+                bound_count(answer, 6, BOB_NAME, [ALICE_NAME], mode="after", allow_misbound=True),
+                "expected bob's final total of 6 favorites attached to bob")
+    judge.check("answer_milio_named", champion_named(answer, "Milio"),
+                "expected Milio named as bob's addition")
+    judge.check("answer_milio_is_bobs",
+                bound_phrase(answer, "Milio", BOB_NAME, [ALICE_NAME], allow_misbound=True),
+                "expected Milio attached to bob's account")
+
+    check_favorites_delta(judge, initial_db, after_db, added=ADDED)
+    check_only_tables_changed(judge, initial_db, after_db, {"favorite_champions"})
 
 
 if __name__ == "__main__":

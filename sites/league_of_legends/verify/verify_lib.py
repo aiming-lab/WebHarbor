@@ -330,6 +330,29 @@ def contains_phrase(text, phrase):
     return _affirmative_search(pattern, normalize_text(text))
 
 
+def contains_phrase_loose(text, phrase):
+    """Like contains_phrase but also tolerant of interleaved punctuation
+    ('Subject: Serenity', 'Safeguard / Iron Will', 'Dragon's Rage', 'Ruined King: Gameplay')."""
+    words = [re.escape(w) for w in normalize_text(phrase).replace("-", " ").replace("_", " ").replace(":", " ").split()]
+    if not words:
+        return False
+    pattern = r"(?<!\w)" + r"[\s_\-:,.!?()/|&'\";]*".join(words) + r"(?!\w)"
+    return _affirmative_search(pattern, normalize_text(text))
+
+
+def near_any(text, name, tokens, radius=140):
+    """True when every token occurs within +/-radius characters of some
+    whole-word occurrence of `name` (entity-scoped deterministic matching)."""
+    t = normalize_text(text)
+    pat = r"(?<!\w)" + re.escape(normalize_text(name)) + r"(?!\w)"
+    wanted = [normalize_text(x) for x in tokens]
+    for m in re.finditer(pat, t):
+        window = t[max(0, m.start() - radius): m.end() + radius]
+        if all(tok and tok in window for tok in wanted):
+            return True
+    return False
+
+
 def phrases_in_order(text, phrases):
     """Each phrase present (contains_phrase semantics) AND appearing left-to-right."""
     normalized = normalize_text(text)
@@ -344,6 +367,221 @@ def phrases_in_order(text, phrases):
             return False
         cursor += m.end()
     return True
+
+
+# ---------------------------------------------------------------- subject-bound matching
+# Multi-entity comparison facts (ability names, skin counts, dates, lists, account
+# counts, summoner/region values) must stay attached to the subject they belong to.
+# A swapped answer — every token present, each bound to the wrong entity — is the
+# classic false positive these gates close: an occurrence is MISBOUND when it sits
+# nearer a rival subject than its owner, WELL-BOUND when it sits within `radius` of
+# its owner and no closer to any rival, and neutral otherwise (summary restatements).
+_INF = float("inf")
+
+
+def _name_spans(text, names):
+    """Whole-word occurrence spans of any `names` variant (multi-word, join-
+    tolerant: 'Miss Fortune' == 'Miss  Fortune', 'LeeSin' == 'Lee Sin', and
+    punctuation-tolerant for titled subjects: 'Ruined King: Gameplay Deep Dive')."""
+    if isinstance(names, str):
+        names = [names]
+    normalized = normalize_text(text)
+    spans = []
+    for name in names:
+        words = [re.escape(w) for w in normalize_text(name).replace("-", " ").replace("_", " ").replace(":", " ").split()]
+        if not words:
+            continue
+        pattern = r"(?<!\w)" + r"[\s_\-:,.!?()/|&'\";]*".join(words) + r"(?!\w)"
+        spans.extend(m.span() for m in re.finditer(pattern, normalized))
+    return sorted(set(spans))
+
+
+def _loose_spans(text, phrase):
+    """Affirmative occurrence spans of `phrase` (contains_phrase_loose semantics)."""
+    normalized = normalize_text(text)
+    words = [re.escape(w) for w in normalize_text(phrase).replace("-", " ").replace("_", " ").replace(":", " ").split()]
+    if not words:
+        return []
+    pattern = r"(?<!\w)" + r"[\s_\-:,.!?()/|&'\";]*".join(words) + r"(?!\w)"
+    return [m.span() for m in re.finditer(pattern, normalized)
+            if _match_is_affirmative(normalized, m)]
+
+
+def _count_spans(text, number):
+    """Affirmative occurrence spans of an integer (plain, thousands-grouped, or
+    English word form)."""
+    normalized = normalize_text(text)
+    spans = []
+    for form in _digit_forms(int(number)):
+        pattern = r"(?<![\d.,])" + form + r"(?!\d|[.,]\d|\s*(?:st|nd|rd|th)\b)"
+        spans.extend(m.span() for m in re.finditer(pattern, normalized)
+                     if _match_is_affirmative(normalized, m))
+    word = _number_word(int(number))
+    if word:
+        spans.extend(m.span() for m in re.finditer(rf"\b{word}\b", normalized)
+                     if _match_is_affirmative(normalized, m))
+    return sorted(set(spans))
+
+
+def _date_spans(text, iso):
+    """Affirmative occurrence spans of a date in any accepted form ('2026-09-22',
+    'September 22, 2026', '9/22/2026')."""
+    normalized = normalize_text(text)
+    y, m, d = str(iso).split("-")
+    spans = []
+    iso_pattern = rf"(?<![\d-]){re.escape(y)}-{re.escape(m)}-{re.escape(d)}(?![\d-])"
+    spans.extend(m.span() for m in re.finditer(iso_pattern, normalized)
+                if _match_is_affirmative(normalized, m))
+    month_name = next((k for k, v in _MONTHS.items() if v == int(m)), "")
+    if month_name:
+        month_alts = {"september": "sept?(?:ember)?", "january": "jan(?:uary)?",
+                      "april": "apr?(?:il)?", "august": "aug?(?:ust)?"}.get(month_name, month_name)
+        name_pattern = rf"\b{month_alts}\.?\s+{int(d)}\s*,?\s+{re.escape(y)}\b"
+        spans.extend(m.span() for m in re.finditer(name_pattern, normalized)
+                     if _match_is_affirmative(normalized, m))
+    numeric = rf"(?<![\d.]){int(m)}/{int(d)}/{re.escape(y)}(?!\.?\d)"
+    spans.extend(m.span() for m in re.finditer(numeric, normalized)
+                 if _match_is_affirmative(normalized, m))
+    return sorted(set(spans))
+
+
+def _stem_spans(text, stem):
+    """Affirmative occurrence spans of a word stem ('delay' -> delay/delays/
+    delayed/delaying, but never 'delayed'-unrelated derivations like 'health')."""
+    normalized = normalize_text(text)
+    pattern = rf"(?<!\w){re.escape(normalize_text(stem))}(?:s|es|ed|d|ing)?(?!\w)"
+    return [m.span() for m in re.finditer(pattern, normalized)
+            if _match_is_affirmative(normalized, m)]
+
+
+def _span_gap(fact_span, name_span, mode):
+    """Distance between a fact occurrence and a subject occurrence. Overlapping
+    (embedded) spans are distance 0. mode='near' is the absolute gap; mode='after'
+    only counts subjects that end at or before the fact starts (possessive order:
+    'Hwei's W is ...')."""
+    fs, fe = fact_span
+    ns, ne = name_span
+    if ns < fe and fs < ne:
+        return 0
+    if mode == "after":
+        return (fs - ne) if ne <= fs else _INF
+    return (ns - fe) if ns >= fe else (fs - ne)
+
+
+def _fact_binding(text, fact_spans, owner, rivals, radius, mode, allow_misbound,
+                  only_if_present, optional_owner):
+    """Core subject-binding gate over precomputed fact occurrence spans."""
+    owners = _name_spans(text, owner)
+    # a fact word embedded in its owner's own name (e.g. 'Primer' inside the
+    # Council title) is a mention, not a claim — never counted as an occurrence
+    facts = [s for s in fact_spans
+             if not any(ns < s[1] and s[0] < ne for ns, ne in owners)]
+    if not facts:
+        return bool(only_if_present)
+    rival_spans = _name_spans(text, rivals)
+    well_bound = []
+    for span in facts:
+        d_own = min((_span_gap(span, o, mode) for o in owners), default=_INF)
+        d_riv = min((_span_gap(span, r, mode) for r in rival_spans), default=_INF)
+        if d_riv < d_own and d_riv <= radius:
+            if not allow_misbound:            # attached to the wrong subject
+                return False
+        elif d_own <= radius and d_own <= d_riv:
+            well_bound.append(span)
+    if optional_owner and not owners:       # no label to bind to (e.g. no field label)
+        return True
+    return bool(well_bound)
+
+
+def bound_phrase(text, phrase, owner, rivals=(), radius=140, mode="near",
+                 allow_misbound=False, only_if_present=False, optional_owner=False):
+    """`phrase` must be attached to its `owner` subject (and never nearer to any
+    `rivals` subject). mode='after' binds only owners preceding the fact."""
+    return _fact_binding(text, _loose_spans(text, phrase), owner, rivals, radius,
+                         mode, allow_misbound, only_if_present, optional_owner)
+
+
+def bound_phrase_any(text, phrases, owner, rivals=(), radius=140, mode="near",
+                     allow_misbound=False, only_if_present=False, optional_owner=False):
+    """Like bound_phrase over a phrase list: no occurrence may be misbound and at
+    least one occurrence must be owner-bound (contains_any + subject binding)."""
+    spans = [s for phrase in phrases for s in _loose_spans(text, phrase)]
+    return _fact_binding(text, spans, owner, rivals, radius, mode,
+                         allow_misbound, only_if_present, optional_owner)
+
+
+def bound_count(text, number, owner, rivals=(), radius=140, mode="near",
+                allow_misbound=False, only_if_present=False, optional_owner=False):
+    """`number` must be attached to its `owner` subject (contains_count + binding)."""
+    return _fact_binding(text, _count_spans(text, number), owner, rivals, radius,
+                         mode, allow_misbound, only_if_present, optional_owner)
+
+
+def bound_date(text, iso, owner, rivals=(), radius=140, mode="near",
+               allow_misbound=False, only_if_present=False, optional_owner=False):
+    """A date (any accepted form) must be attached to its `owner` subject."""
+    return _fact_binding(text, _date_spans(text, iso), owner, rivals, radius,
+                         mode, allow_misbound, only_if_present, optional_owner)
+
+
+def bound_stem(text, stem, owner, rivals=(), radius=140, mode="near",
+               allow_misbound=False, only_if_present=False, optional_owner=False):
+    """A word-stem fact ('delay'/'delays'/'delaying') must be attached to `owner`."""
+    return _fact_binding(text, _stem_spans(text, stem), owner, rivals, radius,
+                         mode, allow_misbound, only_if_present, optional_owner)
+
+
+def contains_stem(text, stem):
+    """Word-stem presence ('persist' matches persisted/persists/persisting)."""
+    return bool(_stem_spans(text, stem))
+
+
+def phrase_excluded_from(text, phrase, owner, rivals=(), radius=140, mode="near"):
+    """No affirmative occurrence of `phrase` may be attached to `owner` (nearer to
+    it than to any rival, within radius) — the negative half of subject binding:
+    a fact owned by rivals must never be attributed to `owner`."""
+    owners = _name_spans(text, owner)
+    facts = [s for s in _loose_spans(text, phrase)
+             if not any(ns < s[1] and s[0] < ne for ns, ne in owners)]
+    rival_spans = _name_spans(text, rivals)
+    for span in facts:
+        d_own = min((_span_gap(span, o, mode) for o in owners), default=_INF)
+        d_riv = min((_span_gap(span, r, mode) for r in rival_spans), default=_INF)
+        if d_own < d_riv and d_own <= radius:
+            return False
+    return True
+
+
+def _segment_bounds(normalized, pos):
+    """Sentence segment [start, end) around pos (split on . ! ? and newlines)."""
+    boundaries = [m.end() for m in re.finditer(r"[.!?\n]+", normalized)]
+    start = max((b for b in boundaries if b <= pos), default=0)
+    end = next((b for b in boundaries if b > pos), len(normalized))
+    return start, end
+
+
+def state_count_segment(text, number, owner, rivals=(), must_contain=(),
+                        forbid_after=(), radius=140, mode="near"):
+    """State-count check with list consistency: `number` must be bound to its
+    `owner` (as in bound_count), and the sentence segment of an owner-bound count
+    must contain every `must_contain` phrase (the state's membership list) while
+    none of the `forbid_after` phrases may appear after the count inside that
+    segment (an entity removed from the state must not reappear in its list)."""
+    normalized = normalize_text(text)
+    owners = _name_spans(text, owner)
+    rival_spans = _name_spans(text, rivals)
+    for span in _count_spans(text, number):
+        d_own = min((_span_gap(span, o, mode) for o in owners), default=_INF)
+        d_riv = min((_span_gap(span, r, mode) for r in rival_spans), default=_INF)
+        if not (d_own <= radius and d_own <= d_riv):
+            continue
+        seg_start, seg_end = _segment_bounds(normalized, span[0])
+        segment = normalized[seg_start:seg_end]
+        if all(_loose_spans(segment, phrase) for phrase in must_contain) and \
+                not any(seg_start + s[0] >= span[1] for phrase in forbid_after
+                        for s in _loose_spans(segment, phrase)):
+            return True
+    return False
 
 
 _NUMBER_WORDS = {
@@ -634,6 +872,61 @@ def bookmarks_of(db_path, user_id):
 def user_row(db_path, user_id):
     rows = db_query(db_path, "SELECT * FROM users WHERE id = ?", (user_id,))
     return dict(rows[0]) if rows else None
+
+
+def fav_triples(db_path, user_id=None):
+    """Sorted identity rows (user_id, champion_id, added_date) of favorite_champions."""
+    if user_id is None:
+        return sorted(tuple(r) for r in db_query(
+            db_path, "SELECT user_id, champion_id, added_date FROM favorite_champions"))
+    return sorted(tuple(r) for r in db_query(
+        db_path, "SELECT user_id, champion_id, added_date FROM favorite_champions WHERE user_id = ?",
+        (user_id,)))
+
+
+def bm_triples(db_path, user_id=None):
+    """Sorted identity rows (user_id, article_id, added_date) of bookmark_articles."""
+    if user_id is None:
+        return sorted(tuple(r) for r in db_query(
+            db_path, "SELECT user_id, article_id, added_date FROM bookmark_articles"))
+    return sorted(tuple(r) for r in db_query(
+        db_path, "SELECT user_id, article_id, added_date FROM bookmark_articles WHERE user_id = ?",
+        (user_id,)))
+
+
+def user_triples(db_path):
+    """Sorted identity rows (id, username, email) of users."""
+    return sorted(tuple(r) for r in db_query(
+        db_path, "SELECT id, username, email FROM users"))
+
+
+def check_set_delta(judge, before, after, expected_added, expected_removed, label, detail=""):
+    """Exact-set delta check: added/removed sets must equal the expectation exactly."""
+    got_added = [t for t in after if t not in before]
+    got_removed = [t for t in before if t not in after]
+    ok = sorted(got_added) == sorted(expected_added) and sorted(got_removed) == sorted(expected_removed)
+    return judge.check(label, ok,
+                       f"expected added={sorted(expected_added)} removed={sorted(expected_removed)}; "
+                       f"observed added={got_added} removed={got_removed}{(' ' + detail) if detail else ''}")
+
+
+def check_favorites_delta(judge, initial_db, after_db, added=(), removed=(), label="favorites_delta_exact"):
+    return check_set_delta(judge, fav_triples(initial_db), fav_triples(after_db),
+                           added, removed, label)
+
+
+def check_bookmarks_delta(judge, initial_db, after_db, added=(), removed=(), label="bookmarks_delta_exact"):
+    return check_set_delta(judge, bm_triples(initial_db), bm_triples(after_db),
+                           added, removed, label)
+
+
+def check_user_profile_delta(judge, initial_db, after_db, user_id, expected_changes,
+                              label="profile_delta_exact"):
+    """Exactly `expected_changes` {column: (before, after)} on one user row and no other edits."""
+    before, after = user_row(initial_db, user_id), user_row(after_db, user_id)
+    diffs = {k: (before[k], after[k]) for k in before if before[k] != after[k]}
+    return judge.check(label, diffs == expected_changes,
+                       f"expected={expected_changes}, observed={diffs}")
 
 
 # ---------------------------------------------------------------- judge harness
