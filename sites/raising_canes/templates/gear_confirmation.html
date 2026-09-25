@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Order Confirmed — Raising Cane’s Gear{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="form-card" style="text-align:center">
+    <h1 style="color:var(--canes-red)">Thanks for shopping Cane’s Gear!</h1>
+    <div class="summary-box" style="text-align:left; max-width:520px; margin:0 auto">
+      <div class="summary-line"><span>Order number</span><strong>{{ order.order_number }}</strong></div>
+      <div class="summary-line"><span>Ship to</span>
+        <span>{{ order.ship_name }}, {{ order.ship_line1 }}, {{ order.ship_city }}, {{ order.ship_state }} {{ order.ship_zip }}</span></div>
+      <div class="summary-line"><span>Email</span><span>{{ order.email }}</span></div>
+      <div class="summary-line"><span>Payment</span><span>{{ order.payment_method }}</span></div>
+      {% for line in order.items %}
+      <div class="summary-line">
+        <span>{{ line.product.title }} ({{ line.variant_title }}) × {{ line.qty }}</span>
+        <span>{{ (line.price * line.qty) | money }}</span>
+      </div>
+      {% endfor %}
+      <div class="summary-line"><span>Subtotal</span><span>{{ order.subtotal | money }}</span></div>
+      <div class="summary-line"><span>Shipping</span>
+        <span>{% if order.shipping %}{{ order.shipping | money }}{% else %}FREE{% endif %}</span></div>
+      <div class="summary-total summary-line"><span>Total</span><span>{{ order.total | money }}</span></div>
+    </div>
+    <p style="margin-top:18px"><a class="btn btn-primary" href="{{ url_for('gear_home') }}">Continue Shopping</a></p>
+  </div>
+</div>
+{% endblock %}

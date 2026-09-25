@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}{{ job.title }} | Careers at Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb"><a href="{{ url_for('careers') }}">Search All Jobs</a> › {{ job.title }}</div>
+  <h1>{{ job.title }}</h1>
+  <p class="muted">{{ job.street }}, {{ job.city }}, {{ job.state }} {{ job.zip_code }}</p>
+  <div class="badge-row">
+    <span class="tag">{{ job.department }}</span>
+    <span class="service-chip">{{ job.employment_type }}</span>
+    <span class="service-chip">Reference {{ job.reference }}</span>
+  </div>
+
+  <div class="section">
+    <h2>About This Role</h2>
+    <p>Raising Cane’s is hiring a {{ job.title | lower }} at our {{ job.city }}, {{ job.state_abbr }} Restaurant.
+      Crewmembers at Raising Cane’s make ONE LOVE® happen every day: craveable Chicken Finger Meals, a great Crew,
+      cool Culture and active Community involvement.</p>
+    <ul>
+      <li>Upbeat Crew environment with growth opportunities — most Restaurant Managers started as Crewmembers.</li>
+      <li>Competitive pay and benefits for qualifying positions.</li>
+      <li>Flexible scheduling around school and other commitments.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Apply</h2>
+    <p><a class="btn btn-primary" href="{{ url_for('careers') }}?q={{ job.city }}">See more jobs in {{ job.city }}</a>
+      <a class="btn btn-ghost" href="{{ url_for('careers') }}">Back to all jobs</a></p>
+  </div>
+</div>
+{% endblock %}

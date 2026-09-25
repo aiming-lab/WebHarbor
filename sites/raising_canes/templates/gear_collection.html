@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}{{ collection }} — Raising Cane’s Gear{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="breadcrumb"><a href="{{ url_for('gear_home') }}">Cane’s Gear</a> › {{ collection }}</div>
+  <h1>{{ collection | upper }}</h1>
+  <p class="muted">FREE Ground Shipping on all orders $50+ · {{ products | length }} product{{ '' if products|length == 1 else 's' }}</p>
+
+  <form class="form-card" method="get" action="{{ url_for('gear_collection', name=collection) }}" style="padding:14px 18px; margin-bottom:22px">
+    <label>Sort by</label>
+    <select name="sort" onchange="this.form.submit()">
+      <option value="featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+      <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price, low to high</option>
+      <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price, high to low</option>
+      <option value="name" {% if sort == 'name' %}selected{% endif %}>Alphabetically, A-Z</option>
+    </select>
+  </form>
+
+  <div class="card-grid">
+    {% for product in products %}
+    <a class="card" href="{{ url_for('gear_product', handle=product.handle) }}">
+      <img src="{{ url_for('static', filename='images/' + product.image_main) }}" alt="{{ product.title }}">
+      <div class="card-body">
+        {% if product.new_item %}<span class="tag tag-new">New Item!</span>{% endif %}
+        <h3>{{ product.title }}</h3>
+        <div class="card-meta">
+          <span>{{ product.tag_list() | join(', ') if product.tag_list() else product.collection }}</span>
+          <span class="price">{{ product.price | money }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

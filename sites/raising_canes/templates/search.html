@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Search | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Search Results</h1>
+  {% if not q %}
+  <p class="muted">Type a query in the search bar above to find menu items, restaurants, gear and jobs.</p>
+  {% else %}
+  <p class="muted">Results for “{{ q }}”</p>
+
+  {% if items %}
+  <div class="section">
+    <h2>Menu Items</h2>
+    <div class="card-grid">
+      {% for item in items %}
+      <a class="card" href="{{ url_for('menu_item', slug=item.slug) }}">
+        {% if item.image %}<img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}">{% endif %}
+        <div class="card-body"><h3>{{ item.name }}</h3>
+          <div class="card-meta"><span>{{ item.category.name }}</span>
+          {% if item.base_price %}<span class="price">{{ item.base_price | money }}</span>{% endif %}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if locations %}
+  <div class="section">
+    <h2>Restaurants</h2>
+    <div class="loc-list">
+      {% for loc in locations %}
+      <a class="loc-row" href="{{ url_for('location_detail', slug=loc.slug) }}">
+        <img class="loc-thumb" src="{{ url_for('static', filename='images/locations/restaurant_0.png') }}" alt="Raising Cane’s restaurant">
+        <div class="loc-main">
+          <h3>{{ loc.city }}, {{ loc.state }}</h3>
+          <p>{{ loc.address_line() }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if gear %}
+  <div class="section">
+    <h2>Cane’s Gear</h2>
+    <div class="card-grid">
+      {% for product in gear %}
+      <a class="card" href="{{ url_for('gear_product', handle=product.handle) }}">
+        <img src="{{ url_for('static', filename='images/' + product.image_main) }}" alt="{{ product.title }}">
+        <div class="card-body"><h3>{{ product.title }}</h3>
+          <div class="card-meta"><span>{{ product.collection }}</span><span class="price">{{ product.price | money }}</span></div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if jobs %}
+  <div class="section">
+    <h2>Careers</h2>
+    <div class="loc-list">
+      {% for job in jobs %}
+      <a class="loc-row" href="{{ url_for('job_detail', reference=job.reference) }}">
+        <div class="loc-main">
+          <h3>{{ job.title }}</h3>
+          <p>{{ job.street }}, {{ job.city }}, {{ job.state_abbr }}</p>
+        </div>
+        <span class="tag">{{ job.department }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if faqs %}
+  <div class="section">
+    <h2>FAQ</h2>
+    {% for faq in faqs %}
+    <details class="faq-item">
+      <summary>{{ faq.question }}</summary>
+      <div class="answer">{{ faq.answer }}</div>
+    </details>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not (items or locations or gear or jobs or faqs) %}
+  <p>No results found. Try a different search.</p>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

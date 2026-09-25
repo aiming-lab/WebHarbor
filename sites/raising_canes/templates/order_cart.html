@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Your Order | Raising Cane’s Order Ahead{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>Your Order</h1>
+  <div class="order-progress">
+    <span>1. Restaurant</span><span>2. Menu</span><span class="active">3. Cart</span><span>4. Checkout</span>
+  </div>
+
+  {% if lines %}
+  {% if loc %}
+  <p class="pill-note">Ordering from <strong>Raising Cane’s — {{ loc.city }}, {{ loc.state }}</strong>
+    ({{ loc.address_line() }}) · <a href="{{ url_for('order_location_menu', slug=loc.slug) }}">Add more items</a></p>
+  {% endif %}
+
+  {% for line in lines %}
+  <div class="cart-line">
+    {% if line.item.image %}
+    <img src="{{ url_for('static', filename='images/' + line.item.image) }}" alt="{{ line.item.name }}">
+    {% endif %}
+    <div class="grow">
+      <h4>{{ line.item.name }} <span class="tag">Qty {{ line.quantity_label }}</span></h4>
+      {% if line.selections %}
+      <div class="cart-selections">{{ line.selections | join(' · ') }}</div>
+      {% endif %}
+      <form method="post" action="{{ url_for('order_cart_remove') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="index" value="{{ loop.index0 }}">
+        <button class="btn btn-sm btn-ghost" type="submit">Remove</button>
+      </form>
+    </div>
+    <span class="price">{{ line.line_total | money }}</span>
+  </div>
+  {% endfor %}
+
+  <div class="checkout-grid section">
+    <div>
+      <form method="post" action="{{ url_for('order_cart_clear') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost" type="submit">Clear order</button>
+      </form>
+    </div>
+    <div class="summary-box">
+      <div class="summary-line"><span>Subtotal</span><span>{{ subtotal | money }}</span></div>
+      <div class="summary-line"><span>Sales tax ({{ (tax_rate * 100) | round(2) }}%)</span><span>{{ (subtotal * tax_rate) | round(2) | money }}</span></div>
+      <div class="summary-total summary-line"><span>Estimated total</span><span>{{ (subtotal * (1 + tax_rate)) | round(2) | money }}</span></div>
+      <p><a class="btn btn-primary" href="{{ url_for('order_checkout') }}">Proceed to Checkout</a></p>
+    </div>
+  </div>
+  {% else %}
+  <p>Your order is empty. <a href="{{ url_for('order_start') }}">Pick a restaurant</a> to get started —
+    this is where the Restaurant locations from your most recent orders will display. It looks like you need to start eating more Raising Cane’s.</p>
+  {% endif %}
+</div>
+{% endblock %}

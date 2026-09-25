@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Raising Cane’s® Catering #{{ loc.slug }} | Order Ahead{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="breadcrumb"><a href="{{ url_for('order_start') }}">Order Ahead</a> › {{ loc.city }}, {{ loc.state }}</div>
+
+  <div class="form-card" style="margin-bottom: 22px;">
+    <div class="two-col">
+      <div>
+        <h1 style="font-size:1.8rem">Raising Cane’s — {{ loc.city }}, {{ loc.state }}</h1>
+        <p class="muted">{{ loc.address_line() }}</p>
+        <p class="muted">{{ loc.phone }}</p>
+        <div class="loc-services">{% for a in loc.amenity_list() %}<span class="service-chip">{{ a }}</span>{% endfor %}</div>
+      </div>
+      <div>
+        <span class="tag">Ordering for Pickup</span>
+        <p class="muted" style="margin-top:8px">Choose Pickup or Curbside at checkout. Online ordering hours follow the
+          restaurant’s dine-in schedule.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="order-progress">
+    <span>1. Restaurant</span><span class="active">2. Menu</span><span>3. Cart</span><span>4. Checkout</span>
+  </div>
+
+  {% for cat in categories %}
+  <div class="section" id="cat-{{ cat.slug }}">
+    <h2>{{ cat.name }}</h2>
+    {% if cat.description %}<p class="muted">{{ cat.description }}</p>{% endif %}
+    <div class="card-grid">
+      {% for item in cat.items %}
+      <a class="card" href="{{ url_for('order_item', slug=loc.slug, item_id=item.id) }}">
+        {% if item.image %}
+        <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}">
+        {% endif %}
+        <div class="card-body">
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.description.split('\n')[0] }}</p>
+          <div class="card-meta">
+            <span>{{ item.calorie_label() }}</span>
+            {% if item.base_price %}<span class="price">{{ item.base_price | money }}</span>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

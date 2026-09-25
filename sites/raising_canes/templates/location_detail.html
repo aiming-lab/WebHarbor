@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}{{ loc.city }}, {{ loc.state }} | Raising Cane’s Locations{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb"><a href="{{ url_for('locations_page') }}">Locations</a> › {{ loc.state }} › {{ loc.city }}</div>
+  <div class="two-col">
+    <div>
+      <h1>Raising Cane’s Chicken Fingers</h1>
+      <p class="muted">{{ loc.street }}<br>{{ loc.city }}, {{ loc.state }} {{ loc.zip_code }}</p>
+      <p>Phone: <strong>{{ loc.phone or 'Call 1-833-HI-CANES' }}</strong></p>
+      <div class="badge-row">
+        {% for a in loc.amenity_list() %}<span class="tag">{{ a }}</span>{% endfor %}
+      </div>
+      <div class="badge-row">
+        {% for o in loc.offer_list() %}
+        <span class="service-chip">{% if o == 'IN_STORE_PICKUP' %}In-Store Pickup{% elif o == 'CURBSIDE_PICKUP' %}Curbside Pickup{% else %}{{ o }}{% endif %}</span>
+        {% endfor %}
+      </div>
+      <p style="margin-top:14px">
+        <a class="btn btn-primary" href="{{ url_for('order_location_menu', slug=loc.slug) }}">Order at this Restaurant</a>
+        <form method="post" action="{{ url_for('toggle_favorite', slug=loc.slug) }}" style="display:inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost" type="submit">{{ '♥ Favorited' if is_fav else '♡ Add to Favorites' }}</button>
+        </form>
+      </p>
+    </div>
+    <img src="{{ url_for('static', filename='images/locations/restaurant_0.png') }}" alt="Raising Cane’s restaurant" style="border-radius:14px">
+  </div>
+
+  {% if loc.description %}
+  <p class="pill-note">{{ loc.description }}</p>
+  {% endif %}
+
+  <div class="two-col section">
+    <div>
+      <h2>Dine-In Hours</h2>
+      {% if loc.dine_hours() %}
+      <table class="data-table">
+        {% for day, hours in loc.dine_hours().items() %}
+        <tr><th style="width:40%">{{ day }}</th><td>{{ hours }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="muted">Dine-in hours vary — call the restaurant for details.</p>
+      {% endif %}
+    </div>
+    <div>
+      <h2>Drive-Thru Hours</h2>
+      {% if loc.drive_hours() %}
+      <table class="data-table">
+        {% for day, hours in loc.drive_hours().items() %}
+        <tr><th style="width:40%">{{ day }}</th><td>{{ hours }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="muted">No drive-thru at this location.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

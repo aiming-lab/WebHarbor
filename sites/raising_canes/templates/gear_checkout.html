@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Checkout — Raising Cane’s Gear{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Checkout</h1>
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ url_for('gear_checkout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="checkout-grid">
+      <div>
+        <div class="form-card">
+          <h2 style="margin-top:0">Shipping Details</h2>
+          <div class="form-grid">
+            <div class="field full"><label>Full name</label>
+              <input type="text" name="ship_name" value="{{ form.get('ship_name', current_user.name if current_user.is_authenticated else '') }}"></div>
+            <div class="field full"><label>Street address</label>
+              <input type="text" name="ship_line1" value="{{ form.get('ship_line1', '') }}"></div>
+            <div class="field"><label>City</label>
+              <input type="text" name="ship_city" value="{{ form.get('ship_city', '') }}"></div>
+            <div class="field"><label>State</label>
+              <input type="text" name="ship_state" value="{{ form.get('ship_state', '') }}"></div>
+            <div class="field"><label>ZIP code</label>
+              <input type="text" name="ship_zip" value="{{ form.get('ship_zip', '') }}"></div>
+            <div class="field"><label>Email</label>
+              <input type="email" name="email" value="{{ form.get('email', current_user.email if current_user.is_authenticated else '') }}"></div>
+          </div>
+        </div>
+        <div class="form-card" style="margin-top:16px">
+          <h2 style="margin-top:0">Payment</h2>
+          <div class="field">
+            <label>Payment method</label>
+            <select name="payment_method">
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="Discover">Discover</option>
+              <option value="American Express">American Express</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="summary-box">
+        <h2 style="margin-top:0">Order Summary</h2>
+        {% for line in lines %}
+        <div class="summary-line">
+          <span>{{ line.product.title }} ({{ line.variant }}) × {{ line.qty }}</span>
+          <span>{{ (line.price * line.qty) | money }}</span>
+        </div>
+        {% endfor %}
+        <div class="summary-line"><span>Subtotal</span><span>{{ subtotal | money }}</span></div>
+        <div class="summary-line"><span>Shipping</span>
+          <span>{% if shipping %}{{ shipping | money }}{% else %}FREE{% endif %}</span></div>
+        <div class="summary-total summary-line"><span>Total</span><span>{{ total | money }}</span></div>
+        <p><button class="btn btn-primary" type="submit" style="width:100%">Place Order</button></p>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

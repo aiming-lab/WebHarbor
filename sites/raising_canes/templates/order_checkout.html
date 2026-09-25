@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | Raising Cane’s Order Ahead{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Checkout</h1>
+  <div class="order-progress">
+    <span>1. Restaurant</span><span>2. Menu</span><span>3. Cart</span><span class="active">4. Checkout</span>
+  </div>
+
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+  {% if offer_error %}<div class="form-error">{{ offer_error }}</div>{% endif %}
+
+  {% if loc %}
+  <p class="pill-note">Pickup at <strong>Raising Cane’s — {{ loc.city }}, {{ loc.state }}</strong>,
+    {{ loc.address_line() }}</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('order_checkout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="checkout-grid">
+      <div>
+        <div class="form-card">
+          <h2 style="margin-top:0">Handoff</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label>Pickup mode</label>
+              <select name="pickup_mode">
+                <option value="Pickup" {% if form.get('pickup_mode') == 'Pickup' %}selected{% endif %}>Pickup — walk in to collect</option>
+                <option value="Curbside" {% if form.get('pickup_mode') == 'Curbside' %}selected{% endif %}>Curbside — we bring it out</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Pickup date</label>
+              <select name="pickup_date">
+                <option value="2026-09-24" {% if form.get('pickup_date') == '2026-09-24' %}selected{% endif %}>Today, 2026-09-24</option>
+                <option value="2026-09-25" {% if form.get('pickup_date') == '2026-09-25' %}selected{% endif %}>Tomorrow, 2026-09-25</option>
+                <option value="2026-09-26" {% if form.get('pickup_date') == '2026-09-26' %}selected{% endif %}>2026-09-26</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Pickup time</label>
+              <select name="pickup_time">
+                {% for t in ['11:00 AM','11:15 AM','11:30 AM','12:00 PM','12:15 PM','12:30 PM','1:00 PM','1:15 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','5:15 PM','5:30 PM','6:00 PM','6:15 PM','6:30 PM','7:00 PM','7:15 PM','7:30 PM','8:00 PM','8:30 PM','9:00 PM'] %}
+                <option value="{{ t }}" {% if form.get('pickup_time') == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label>Name for the order</label>
+              <input type="text" name="contact_name" value="{{ form.get('contact_name', current_user.name if current_user.is_authenticated else '') }}">
+            </div>
+            <div class="field">
+              <label>Phone number</label>
+              <input type="tel" name="contact_phone" value="{{ form.get('contact_phone', current_user.phone if current_user.is_authenticated else '') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card" style="margin-top:18px">
+          <h2 style="margin-top:0">Caniac Club Offer</h2>
+          <p class="muted" style="font-size:0.9rem">Have a Caniac Club offer code? Enter it here — the discount applies before tax.</p>
+          <div class="field">
+            <label>Offer code</label>
+            <input type="text" name="caniac_offer" value="{{ form.get('caniac_offer', '') }}" placeholder="e.g. BDAY-BOX">
+          </div>
+          {% if offer %}
+          <p class="flash flash-success" style="padding:8px 12px">Offer applied: {{ offer.title }}</p>
+          {% endif %}
+        </div>
+
+        <div class="form-card" style="margin-top:18px">
+          <h2 style="margin-top:0">Payment</h2>
+          <div class="field">
+            <label>Payment method</label>
+            <select name="payment_method">
+              {% for card in saved_cards %}
+              <option value="{{ card.brand }} ending {{ card.last4 }}" {% if form.get('payment_method') == card.brand ~ ' ending ' ~ card.last4 %}selected{% endif %}>{{ card.brand }} ending {{ card.last4 }}</option>
+              {% endfor %}
+              <option value="Pay at Restaurant" {% if form.get('payment_method') == 'Pay at Restaurant' %}selected{% endif %}>Pay at Restaurant</option>
+              <option value="Gift Card" {% if form.get('payment_method') == 'Gift Card' %}selected{% endif %}>Gift Card</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Gift card number (if paying by gift card)</label>
+            <input type="text" name="gift_card_number" value="{{ form.get('gift_card_number', '') }}" placeholder="16-digit number — check your balance first">
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h2 style="margin-top:0">Order Summary</h2>
+        {% for line in lines %}
+        <div class="summary-line">
+          <span>{{ line.item.name }} ({{ line.quantity_label }})</span>
+          <span>{{ line.line_total | money }}</span>
+        </div>
+        {% endfor %}
+        <div class="summary-line"><span>Subtotal</span><span>{{ subtotal | money }}</span></div>
+        {% if discount %}
+        <div class="summary-line"><span>Offer discount</span><span>−{{ discount | money }}</span></div>
+        {% endif %}
+        <div class="summary-line"><span>Sales tax</span><span>{{ tax | money }}</span></div>
+        <div class="summary-total summary-line"><span>Total</span><span>{{ total | money }}</span></div>
+        <p><button class="btn btn-primary" type="submit" style="width:100%">Place Order</button></p>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

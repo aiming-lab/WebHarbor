@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Log In | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>LOG IN</h1>
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+  <form class="form-card" method="post" action="{{ url_for('login', next=request.args.get('next')) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label>Email</label><input type="email" name="email"></div>
+    <div class="field"><label>Password</label><input type="password" name="password"></div>
+    <p style="margin-top:14px"><button class="btn btn-primary" type="submit">Log In</button>
+      <a class="btn btn-ghost" href="{{ url_for('register') }}">Sign Up</a></p>
+  </form>
+</div>
+{% endblock %}

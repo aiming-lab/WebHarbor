@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Allergen and Nutrition | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Allergen &amp; Nutritional Information</h1>
+  <p class="muted">AUGUST 2026 | Nutritional &amp; Allergen Information (WEB). 2,000 calories a day is used for
+    general nutrition advice, but calorie needs vary.</p>
+
+  {% for section, rows in sections.items() %}
+  <div class="section">
+    <h2>{{ section }}</h2>
+    <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Item</th><th>Serving</th><th>Calories</th><th>Total Fat (g)</th>
+          <th>Sat. Fat (g)</th><th>Trans Fat (g)</th><th>Cholesterol (mg)</th>
+          <th>Sodium (mg)</th><th>Total Carb (g)</th><th>Fiber (g)</th>
+          <th>Sugars (g)</th><th>Protein (g)</th><th>Allergens</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.item_name }}</td><td>{{ row.serving }}</td><td>{{ row.calories }}</td>
+          <td>{{ row.total_fat }}</td><td>{{ row.sat_fat }}</td><td>{{ row.trans_fat }}</td>
+          <td>{{ row.cholesterol }}</td><td>{{ row.sodium }}</td><td>{{ row.total_carbs }}</td>
+          <td>{{ row.fiber }}</td><td>{{ row.sugars }}</td><td>{{ row.protein }}</td>
+          <td>{{ row.allergens }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="pill-note">
+    <strong>Allergen Key:</strong> E=Eggs, S=Soy, F=Fish (Anchovies), M=Milk, N=Nuts, W=Wheat, SS=Sesame.<br>
+    *May contain Eggs, Milk, and Wheat from shared fry oil. Our Cane’s Sauce®, Coleslaw and Beverages are
+    gluten-free. Products containing gluten are prepared in our kitchens.
+  </div>
+</div>
+{% endblock %}

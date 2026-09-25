@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Order Ahead - Pickup and Curbside | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>Order Ahead — Pickup and Curbside</h1>
+  <p class="muted">Pick a Restaurant Near You:</p>
+
+  <div class="order-progress">
+    <span class="active">1. Restaurant</span><span>2. Menu</span><span>3. Cart</span><span>4. Checkout</span>
+  </div>
+
+  <form class="form-card" method="get" action="{{ url_for('order_start') }}">
+    <div class="form-grid">
+      <div class="field full">
+        <label for="q">Enter your address or ZIP code</label>
+        <input type="text" id="q" name="q" value="{{ q }}" placeholder="City, state or ZIP (e.g. Houston, TX)">
+      </div>
+    </div>
+    <p style="margin:14px 0 0"><button class="btn btn-primary" type="submit">CLICK TO FIND YOUR CANE’S</button></p>
+  </form>
+
+  <div class="section">
+    <h2>Your Recent &amp; Favorite Restaurants</h2>
+    {% if current_user.is_authenticated %}
+      {% set favs = current_user.id %}
+    {% endif %}
+    <p class="muted">Select the heart icon next to your preferred Restaurants on the
+      <a href="{{ url_for('locations_page') }}">Locations page</a> to create favorites and quickly reorder.</p>
+    {% if q and locations %}
+    <h3>Results for “{{ q }}”</h3>
+    <div class="loc-list">
+      {% for loc in locations %}
+      <div class="loc-row">
+        <img class="loc-thumb" src="{{ url_for('static', filename='images/locations/restaurant_1.png') }}" alt="Raising Cane’s restaurant">
+        <div class="loc-main">
+          <h3>Raising Cane’s — {{ loc.city }}, {{ loc.state }}</h3>
+          <p>{{ loc.address_line() }}</p>
+          <div class="loc-services">{% for a in loc.amenity_list() %}<span class="service-chip">{{ a }}</span>{% endfor %}</div>
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('order_location_menu', slug=loc.slug) }}">Start Order</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% elif q %}
+    <p>No restaurants matched your search. Try a nearby city or ZIP code.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

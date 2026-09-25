@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Menu – Order Now | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Our Menu</h1>
+  <p class="muted">Quality you can taste. It’s our ONE LOVE® — craveable Chicken Finger Meals.</p>
+  <div class="cat-strip">
+    {% for cat in nav_categories %}
+    <a class="cat-chip" href="#{{ cat.slug }}">{{ cat.name }}</a>
+    {% endfor %}
+  </div>
+
+  {% for cat in nav_categories %}
+  <div class="section" id="{{ cat.slug }}">
+    <h2>{{ cat.name }}</h2>
+    {% if cat.description %}<p class="muted">{{ cat.description }}</p>{% endif %}
+    <div class="card-grid">
+      {% for item in cat.items %}
+      <a class="card" href="{{ url_for('menu_item', slug=item.slug) }}">
+        {% if item.image %}
+        <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}">
+        {% endif %}
+        <div class="card-body">
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.description.split('\n')[0] }}</p>
+          <div class="card-meta">
+            <span>{{ item.calorie_label() }}</span>
+            {% if item.base_price %}<span class="price">{{ item.base_price | money }}</span>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="pill-note">
+    2,000 calories a day is used for general nutrition advice, but calorie needs vary.
+    Additional nutritional and allergen information is available on our
+    <a href="{{ url_for('allergens') }}">Allergen &amp; Nutritional Information</a> page.
+  </div>
+</div>
+{% endblock %}

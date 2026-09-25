@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Gift Cards | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>GIFT CARDS</h1>
+  <p class="muted">Give the Gift of ONE LOVE! Shop our assortment of seasonal physical and eGift cards now.</p>
+
+  <div class="cat-strip">
+    <a class="cat-chip active" href="{{ url_for('gift_cards') }}">Shop Gift Cards</a>
+    <a class="cat-chip" href="{{ url_for('gift_card_check') }}">Check My Gift Card Balance</a>
+  </div>
+
+  <div class="section">
+    <div class="card-grid">
+      {% for product in designs %}
+      <a class="card" href="{{ url_for('gear_product', handle=product.handle) }}">
+        <img src="{{ url_for('static', filename='images/' + product.image_main) }}" alt="{{ product.title }}">
+        <div class="card-body">
+          <h3>{{ product.title }}</h3>
+          <p>{{ product.description.split('.')[0] }}</p>
+          <div class="card-meta"><span>Physical &amp; eGift</span><span class="price">From {{ product.price | money }}</span></div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pill-note">
+    If your gift card does not have a PIN/REG number, or for any additional questions, please call us at
+    1-833-HI-CANES (442-2637) or visit HiCanes.com.
+  </div>
+</div>
+{% endblock %}

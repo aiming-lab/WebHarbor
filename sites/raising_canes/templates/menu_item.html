@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.name }} | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb"><a href="{{ url_for('menu_page') }}">Our Menu</a> › {{ item.category.name }} › {{ item.name }}</div>
+  <div class="two-col">
+    <div>
+      <h1>{{ item.name }}</h1>
+      <div class="badge-row">
+        <span class="tag">{{ item.category.name }}</span>
+        <span class="tag">{{ item.calorie_label() }}</span>
+      </div>
+      <p style="white-space: pre-line;">{{ item.description }}</p>
+      {% if item.base_price %}
+      <p class="big-price">{{ item.base_price | money }}</p>
+      {% endif %}
+      <a class="btn btn-primary" href="{{ url_for('order_start') }}">Order Now</a>
+    </div>
+    {% if item.image %}
+    <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}" style="border-radius:14px">
+    {% endif %}
+  </div>
+
+  {% if groups %}
+  <div class="section">
+    <h2>Ordering Options</h2>
+    {% for group in groups %}
+    <div class="option-group">
+      <h3>{{ group.name }}</h3>
+      <p class="hint">{% if group.mandatory %}Required{% else %}Optional{% endif %}
+        {% if group.multi %} — pick all that apply{% endif %}</p>
+      {% for option in group.options %}
+      <div class="option-row">
+        <label>{{ option.name }}</label>
+        <span class="option-price">
+          {% if option.price_delta %}{{ '+' if option.price_delta > 0 else '−' }}{{ option.price_delta | abs | money }}{% else %}Included{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if nutrition %}
+  <div class="section">
+    <h2>Nutrition Facts</h2>
+    <table class="data-table">
+      <tr><th>Serving</th><td>{{ nutrition.serving }}</td></tr>
+      <tr><th>Calories</th><td>{{ nutrition.calories }}</td></tr>
+      <tr><th>Total Fat</th><td>{{ nutrition.total_fat }} g</td></tr>
+      <tr><th>Saturated Fat</th><td>{{ nutrition.sat_fat }} g</td></tr>
+      <tr><th>Trans Fat</th><td>{{ nutrition.trans_fat }} g</td></tr>
+      <tr><th>Cholesterol</th><td>{{ nutrition.cholesterol }} mg</td></tr>
+      <tr><th>Sodium</th><td>{{ nutrition.sodium }} mg</td></tr>
+      <tr><th>Total Carbohydrates</th><td>{{ nutrition.total_carbs }} g</td></tr>
+      <tr><th>Fiber</th><td>{{ nutrition.fiber }} g</td></tr>
+      <tr><th>Sugars</th><td>{{ nutrition.sugars }} g</td></tr>
+      <tr><th>Protein</th><td>{{ nutrition.protein }} g</td></tr>
+      <tr><th>Allergens</th><td>{{ nutrition.allergens or '—' }}</td></tr>
+    </table>
+    <p class="muted" style="font-size:0.85rem">Allergen Key: E=Eggs, S=Soy, F=Fish (Anchovies), M=Milk, N=Nuts, W=Wheat, SS=Sesame.
+      See the <a href="{{ url_for('allergens') }}">full Allergen &amp; Nutritional Information</a> page.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
