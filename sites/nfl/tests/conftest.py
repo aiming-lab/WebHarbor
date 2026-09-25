@@ -11,6 +11,17 @@ import shutil
 import sys
 
 import pytest
+from flask.testing import FlaskClient
+
+
+class FormClient(FlaskClient):
+    def post(self, *args, **kwargs):
+        self.get("/")
+        with self.session_transaction() as sess:
+            token = sess.get("csrf_token")
+        kwargs["data"] = {**kwargs.get("data", {}), "csrf_token": token}
+        return super().post(*args, **kwargs)
+
 
 SITE = pathlib.Path(__file__).resolve().parent.parent
 SEED = SITE / "instance_seed" / "nfl.db"
@@ -29,6 +40,7 @@ def app(tmp_path):
     try:
         import app as app_module
         importlib.reload(app_module)
+        app_module.app.test_client_class = FormClient
         with app_module.app.app_context():
             pass
         yield app_module.app

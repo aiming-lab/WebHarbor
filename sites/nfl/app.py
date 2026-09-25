@@ -638,6 +638,41 @@ def luhn_ok(digits: str) -> bool:
 # Public routes
 # --------------------------------------------------------------------------- #
 
+
+# Mutating forms use per-session CSRF tokens; redirects stay on this site.
+def csrf_token():
+    import secrets
+    from flask import session
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+    return session["csrf_token"]
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def protect_forms():
+    import hmac
+    from flask import session
+    if request.method == "POST":
+        expected = session.get("csrf_token", "")
+        supplied = request.form.get("csrf_token", "")
+        if not expected or not hmac.compare_digest(expected, supplied):
+            abort(400, "Invalid form token. Reload the page and try again.")
+
+
+def safe_redirect_target(value, fallback):
+    from urllib.parse import urlsplit
+    value = value or ""
+    parts = urlsplit(value)
+    if (value.startswith("/") and not value.startswith("//") and
+            "\\" not in value and not parts.netloc and not parts.scheme and
+            not any(ord(c) < 32 for c in value)):
+        return value
+    return fallback
+
+
 @app.route("/")
 def index():
     top_story = NewsArticle.query.order_by(NewsArticle.published.desc()).first()
@@ -1021,6 +1056,10 @@ def plus_subscribe(code: str):
             errors.append("Enter a valid expiration month (1-12).")
         if not (exp_year.isdigit() and len(exp_year) in (2, 4)):
             errors.append("Enter a valid expiration year.")
+        if exp_year.isdigit() and len(exp_year) in (2, 4) and exp_month.isdigit():
+            year = int(exp_year) + (2000 if len(exp_year) == 2 else 0)
+            if (year, int(exp_month)) < (MIRROR_DATE.year, MIRROR_DATE.month):
+                errors.append("This card has expired.")
         if not (cvv.isdigit() and 3 <= len(cvv) <= 4):
             errors.append("Enter the 3- or 4-digit security code.")
         if errors:
@@ -1031,7 +1070,6 @@ def plus_subscribe(code: str):
         existing = current_user.subscription
         if existing:
             existing.status = "cancelled"
-            db.session.commit()
 
         amount = plan["amount"]
         tax = round(amount * 0.0895, 2)
@@ -1039,6 +1077,11 @@ def plus_subscribe(code: str):
         ref = "NFL-" + hashlib.sha256(
             f"{current_user.id}:{code}:{MIRROR_DATE}".encode()
         ).hexdigest()[:6].upper()
+        original_ref = ref
+        suffix = 2
+        while PlusOrder.query.filter_by(order_ref=ref).first():
+            ref = f"{original_ref}-{suffix}"
+            suffix += 1
         order = PlusOrder(
             user_id=current_user.id,
             order_ref=ref,
@@ -1124,7 +1167,7 @@ def register():
         db.session.commit()
         login_user(user)
         flash("Welcome to NFL.com.")
-        return redirect(request.args.get("next") or url_for("account"))
+        return redirect(safe_redirect_target(request.args.get("next"), url_for("account")))
     return render_template("register.html", form={})
 
 
@@ -1138,11 +1181,11 @@ def login():
             flash("Email or password is incorrect.")
             return render_template("login.html", form=request.form)
         login_user(user)
-        return redirect(request.args.get("next") or url_for("account"))
+        return redirect(safe_redirect_target(request.args.get("next"), url_for("account")))
     return render_template("login.html", form={})
 
 
-@app.route("/account/signout/")
+@app.route("/account/signout/", methods=["POST"])
 @login_required
 def logout():
     logout_user()
@@ -1191,14 +1234,14 @@ def newsletter():
     team_abbr = request.form.get("team", "").strip().upper()
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
         flash("Enter a valid email address to sign up for the newsletter.")
-        return redirect(request.referrer or url_for("index"))
+        return redirect(url_for("index"))
     db.session.add(NewsletterSignup(
         email=email,
         team_abbr=team_abbr if Team.query.filter_by(abbr=team_abbr).first() else "",
     ))
     db.session.commit()
     flash("You're signed up for the NFL newsletter.")
-    return redirect(request.referrer or url_for("index"))
+    return redirect(url_for("index"))
 
 
 # --------------------------------------------------------------------------- #

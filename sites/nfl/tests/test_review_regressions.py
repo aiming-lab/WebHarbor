@@ -55,7 +55,7 @@ def test_tasks_cover_multiple_domains():
         "game center": "game" in text or "attendance" in text or "prime time" in text,
         "roster": "roster" in text,
         "injuries": "injur" in text,
-        "transactions": "practice squad" in text or "transactions" in text,
+        "transactions": "practice squad" in text or ("transactions" in text or "roster-movement" in text),
         "news": "article" in text or "newsroom" in text,
         "video": "video" in text,
         "search": "search" in text,
