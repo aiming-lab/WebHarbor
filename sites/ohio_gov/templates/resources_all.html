@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}All Resources | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">All Resources</h1>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    <form class="form-inline margin-bottom-sm" method="get" action="{{ url_for('resources_all') }}">
+                        <div class="form-group">
+                            <label for="q">Keyword</label>
+                            <input type="text" class="form-control" id="q" name="q" value="{{ q }}">
+                        </div>
+                        <div class="form-group margin-left-xs">
+                            <label for="audience">Section</label>
+                            <select class="form-control" id="audience" name="audience">
+                                <option value="">All sections</option>
+                                {% for a in ['residents', 'tourism', 'jobs', 'business', 'government'] %}
+                                <option value="{{ a }}" {{ 'selected' if a == audience else '' }}>{{ a | capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-sm margin-left-xs" type="submit">Filter</button>
+                    </form>
+
+                    <h2 class="odx-bold">{{ total }} resources</h2>
+                    <div class="odx-ads-container odx-ads-container--two-columns">
+                        {% for r in items %}
+                        <div class="odx-ads-item odx-ads-item--large odx-ads-item--stackable odx-ads-item--title-primary-color" style="display: block;">
+                            <a href="{{ r.path }}" class="odx-ads-item__link">
+                                {% if r.image %}<div class="odx-ads-item__image" style="background-image: url({{ r.image }})"></div>{% endif %}
+                                <div class="odx-ads-item__content">
+                                    <div class="odx-ads-item__main">
+                                        <p class="odx-ads-item__title">{{ r.title }}</p>
+                                        <p class="odx-ads-item__summary">{{ r.summary }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% set pages = ((total + per - 1) / per) | int %}
+                    {% if pages > 1 %}
+                    <div class="odx-pagination margin-top-sm">
+                        {% for p in range(1, pages + 1) %}
+                        <a class="{{ 'active' if p == page else '' }}" href="{{ url_for('resources_all', page=p, q=q, audience=audience) }}">{{ p }}</a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

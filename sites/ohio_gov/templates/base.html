@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Ohio.gov | Official Website of the State of Ohio{% endblock %}</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ohio-fonts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/odx-layout.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/odx-main-red.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site-main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/red.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site-app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mashup-head.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome-all.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome-v4-shims.css') }}">
+</head>
+<body class="odx-red">
+<div id="aw-main-wrapper">
+    <header>
+        <div id="aw-header-top" class="clearfix">
+            <div id="aw-header-top-left">
+                <div id="oficialSite" class="oficialSite__container closed">
+                    <span class="oficialSite__text">An official State of Ohio site.</span>
+                    <a href="#" role="button" class="oficialSite__link" aria-label="Here’s how you know this is an Ohio government website">Here’s how you know</a>
+                    <i class="oficialSite__icon fas fa-angle-down"></i>
+                    <i class="oficialSite__icon fas fa-angle-up hidden"></i>
+                </div>
+            </div>
+            <div id="aw-header-top-right">
+            </div>
+        </div>
+    </header>
+
+    <div id="oficialSiteDropdown" class="oficialSiteDropdown__container closed" style="display: none" role="dialog" aria-hidden="true" tabindex="0">
+        <div class="container">
+            <div class="oficialSiteDropdown__list">
+                <div class="oficialSiteDropdown__feature">
+                    <h3 class="oficialSiteDropdown__feature-title">Official websites use Ohio.gov</h3>
+                    <p class="oficialSiteDropdown__feature-description">An Ohio.gov website belongs to an official government organization in the State of Ohio.</p>
+                </div>
+                <div class="oficialSiteDropdown__feature">
+                    <h3 class="oficialSiteDropdown__feature-title">Secure .gov websites use HTTPS</h3>
+                    <p class="oficialSiteDropdown__feature-description">A lock <i class="fas fa-lock-alt"></i> or https:// means you've safely connected to the .gov website. Share sensitive information only on official, secure websites.</p>
+                </div>
+                <div class="oficialSiteDropdown__feature">
+                    <h3 class="oficialSiteDropdown__feature-title">Trusted applications are secured by OHID</h3>
+                    <p class="oficialSiteDropdown__feature-description">When you log in with OHID, your privacy, data, and personal information are protected by federal and state digital security standards.</p>
+                </div>
+                <div id="js-btn-close-official-site-dropdown" class="btn oficialSiteDropdown__close-btn" role="button" tabindex="0">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                    <span>Close</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <div class="aw-header-bottom">
+                        <div id="aw-header-bottom-left">
+                            <div class="odx-logo-wrapper">
+                                <div class="odx-logo">
+                                    <a href="{{ url_for('index') }}">
+                                        <span class="sr-only">Ohio.gov</span>
+                                        <img class="hidden-xs hidden-sm" src="{{ url_for('static', filename='icons/ohio-gov-logo__thoia.png') }}" alt="Ohio.gov">
+                                        <img class="hidden-md hidden-lg" src="{{ url_for('static', filename='icons/ohio-gov-logo-mobile__thoia.png') }}" alt="Ohio.gov">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="aw-header-navigation">
+                            <nav id="main-nav-container" class="">
+                                <div id="button-collapse-navigator"><span class="sr-only">Menu</span></div>
+                                <ul class="awesome-navigator navList1">
+                                    <li class="{% if request.path == '/' %}current{% endif %} hidden">
+                                        <a href="{{ url_for('index') }}">Home</a>
+                                    </li>
+                                    <li class="hidden"><a href="{{ url_for('outage_notification') }}">Outage Notification</a></li>
+                                    <li class="{% if request.path.startswith('/residents') %}current{% endif %}">
+                                        <a href="{{ url_for('landing', audience='residents') }}">Services for
+                                            <div class="odx-page-description">Residents</div>
+                                        </a>
+                                    </li>
+                                    <li class="{% if request.path.startswith('/tourism') %}current{% endif %}">
+                                        <a href="{{ url_for('landing', audience='tourism') }}">Travel and
+                                            <div class="odx-page-description">Tourism</div>
+                                        </a>
+                                    </li>
+                                    <li class="{% if request.path.startswith('/jobs') %}current{% endif %}">
+                                        <a href="{{ url_for('landing', audience='jobs') }}">Find
+                                            <div class="odx-page-description">Jobs</div>
+                                        </a>
+                                    </li>
+                                    <li class="{% if request.path.startswith('/business') %}current{% endif %}">
+                                        <a href="{{ url_for('landing', audience='business') }}">Tools for
+                                            <div class="odx-page-description">Business</div>
+                                        </a>
+                                    </li>
+                                    <li class="{% if request.path.startswith('/government') %}current{% endif %}">
+                                        <a href="{{ url_for('landing', audience='government') }}">Our state
+                                            <div class="odx-page-description">Government</div>
+                                        </a>
+                                    </li>
+                                    <li class="hidden"><a href="{{ url_for('all_news') }}">Media Center</a></li>
+                                    <li class="hidden"><a href="{{ url_for('responsible_gambling') }}">Ohio for Responsible Gambling</a></li>
+                                    <li class="hidden"><a href="{{ url_for('help_center') }}">Help Center</a></li>
+                                    <li class="hidden"><a href="{{ url_for('search') }}">Search</a></li>
+                                    <li class="hidden"><a href="{{ url_for('alerts') }}">Alerts</a></li>
+                                    <li class="hidden"><a href="{{ url_for('login') }}">Login</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                        <div id="aw-header-bottom-right">
+                            <div class="odx-header-bottom-right">
+                                <div class="iop-utility-toolbar__list">
+                                    <a id="js-helplink-desktop" class="iop-utility-toolbar__item" href="{{ url_for('help_center') }}">
+                                        <i class="fas fa-question-circle iop-utility-toolbar__item-icon" aria-hidden="true"></i>
+                                        <span class="iop-utility-toolbar__item-title">
+                                            <span class="multilingual">Help</span>
+                                        </span>
+                                    </a>
+                                    <a id="js-alertlink-desktop" class="iop-utility-toolbar__item" href="{{ url_for('alerts') }}">
+                                        <i class="fas fa-bell iop-utility-toolbar__item-icon" aria-hidden="true"></i>
+                                        <span class="iop-utility-toolbar__item-title">
+                                            <span class="multilingual">Alerts</span>
+                                        </span>
+                                    </a>
+                                    <a id="js-loginlink-desktop" class="iop-utility-toolbar__item" href="{{ url_for('login') if not current_user.is_authenticated else url_for('account') }}">
+                                        <i class="fas fa-user iop-utility-toolbar__item-icon" aria-hidden="true"></i>
+                                        <span class="iop-utility-toolbar__item-title">
+                                            <span class="multilingual">{{ current_user.display_name or 'Login' if current_user.is_authenticated else 'Login' }}</span>
+                                        </span>
+                                    </a>
+                                    <div id="js-search-button-desktop" class="iop-utility-toolbar__item iop-utility-toolbar__item--search" role="button" tabindex="0">
+                                        <i class="fas fa-search iop-utility-toolbar__item-icon" aria-hidden="true"></i>
+                                        <span class="iop-utility-toolbar__item-title">
+                                            <span class="multilingual">Search</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="js-searchbox" class="iop-searchbox__container hidden">
+                        <form id="js-search-form-desktop" class="iop-searchbox__form" action="{{ url_for('search') }}" method="get" role="search">
+                            <label for="js-search-input-desktop" class="sr-only">Type in your search keywords and hit enter to submit or escape to close</label>
+                            <div class="iop-searchbox__input-wrapper">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                <input type="text" id="js-search-input-desktop" class="iop-searchbox__input" name="search_query" tabindex="0" placeholder="Search">
+                            </div>
+                            <div class="iop-searchbox__buttons">
+                                <button class="iop-searchbox__button iop-searchbox__button--search" type="submit" tabindex="0" aria-label="Submit your search">
+                                    <span class="iop-searchbox__button-title"><span class="multilingual">Search</span></span>
+                                </button>
+                                <div id="js-cancel-search-desktop" class="iop-searchbox__button iop-searchbox__button--close" role="button" tabindex="0" aria-label="Close search">
+                                    <span class="fas fa-times iop-searchbox__button-icon"></span>
+                                    <span class="iop-searchbox__button-title"><span class="multilingual">Close</span></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container" style="padding-top: 12px;">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}" role="alert" style="margin-bottom: 8px;">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="content-body">
+    <main id="odx-main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <div class="wptheme1Col single-column-footer">
+    <div class="component-container wpthemeLeft wpthemeSecondaryContainer ibmDndColumn">
+    <div class="component-control">
+    <nav aria-label="Footer">
+    <footer class="odx_primary-footer">
+        <div class="container">
+            <div class="ohio-footer-navigation" aria-label="Primary Footer" role="list">
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="{{ url_for('ohio_assistant') }}" class="ohio-footer-navigation__title">Ohio Assistant</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="{{ url_for('state_directory') }}" class="ohio-footer-navigation__title">State Directory</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="https://careers.ohio.gov/" class="ohio-footer-navigation__title">Careers</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="https://ohio.org/" class="ohio-footer-navigation__title">Tourism</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="https://ohid.ohio.gov/" class="ohio-footer-navigation__title">OHID</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="https://myohio.gov/" class="ohio-footer-navigation__title">MyOhio</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="https://benefits.ohio.gov/" class="ohio-footer-navigation__title">Ohio Benefits</a>
+                </div>
+                <div class="odx-footer-navigation__main-item" role="listitem">
+                    <a href="https://gateway.ohio.gov/" class="ohio-footer-navigation__title">Ohio Business Gateway</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <footer class="odx_secondary-footer" aria-label="Secondary Footer">
+        <div class="container">
+            <div class="odx_secondary-footer__logo">
+                <ul>
+                    <li>
+                        <div class="footer-bar__logo-link">
+                            <span class="powered-by">Powered by</span>
+                            <img src="{{ url_for('static', filename='icons/IOP-logo-white(1).png') }}" alt="Innovate Ohio Platform" width="130" height="33">
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="odx_secondary-footer__links">
+                <ul>
+                    <li><a href="{{ url_for('privacy') }}">Privacy Notice and Policies</a></li>
+                    <li><a href="{{ url_for('accessibility') }}">Accessibility</a></li>
+                    <li><a href="https://checkbook.ohio.gov/">Ohio Checkbook</a></li>
+                </ul>
+            </div>
+            <div class="odx_secondary-footer__social">
+                <ul>
+                    <li>
+                        <a target="_blank" href="https://x.com/ohgov"><i class="fa-brands fa-x-twitter footer-bar__social-icon" aria-hidden="true"></i><span class="sr-only">X icon</span></a>
+                    </li>
+                    <li>
+                        <a target="_blank" href="https://www.instagram.com/ohiogov/"><i class="fab fa-instagram footer-bar__social-icon" aria-hidden="true"></i><span class="sr-only">Instagram icon</span></a>
+                    </li>
+                    <li>
+                        <a target="_blank" href="https://www.threads.net/@ohiogov"><i class="fab fa-threads footer-bar__social-icon" aria-hidden="true"></i><span class="sr-only">Threads icon</span></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+    </nav>
+    </div>
+    </div>
+    </div>
+    </div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

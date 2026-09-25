@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Help Center | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--landing-page">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">Help Center</h1>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section">
+                    <h2>Frequently Asked Questions</h2>
+                    <p>Choose a category to browse common questions and answers.</p>
+                    <div class="odx-ads-container odx-ads-container--two-columns">
+                        {% for c in cats %}
+                        <div class="odx-ads-item odx-ads-item--large odx-ads-item--stackable odx-ads-item--title-primary-color" style="display: block;">
+                            <a href="{{ url_for('faq_category', cat=c.slug) }}" class="odx-ads-item__link">
+                                <div class="odx-ads-item__content">
+                                    <div class="odx-ads-item__main">
+                                        <p class="odx-ads-item__title">{{ c.title }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Find a person</h2>
+                        <p>Use the <a href="{{ url_for('phone_search') }}">State of Ohio Phone Search</a> tool.</p>
+                    </section>
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Find an agency</h2>
+                        <p>Browse the <a href="{{ url_for('state_directory') }}">State Directory</a>.</p>
+                    </section>
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Been scammed?</h2>
+                        <p><a href="{{ url_for('report_scam') }}">Report a scam</a> to the Ohio Attorney General&rsquo;s office with the online complaint form &mdash; no sign-in needed.</p>
+                    </section>
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Need help?</h2>
+                        <p>Ask the <a href="{{ url_for('ohio_assistant') }}">Ohio Assistant</a>.</p>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

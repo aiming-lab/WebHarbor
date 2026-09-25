@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}State of Ohio Phone Search | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--phone-search">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">State of Ohio Phone Search</h1>
+                            <div class="odx-content__summary">
+                                Find phone numbers for state employees and agencies.
+                            </div>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section">
+                    <form method="get" action="{{ url_for('phone_search') }}">
+                        <div class="row">
+                            <div class="col-sm-3 col-md-3 col-lg-3 col-xs-12">
+                                <label for="firstName">First Name
+                                    <input type="text" id="firstName" name="firstName" value="{{ first }}" placeholder="Enter First Name" class="ohio-field-input">
+                                </label>
+                            </div>
+                            <div class="col-sm-3 col-md-3 col-lg-3 col-xs-12">
+                                <label for="lastName">Last Name
+                                    <input type="text" id="lastName" name="lastName" value="{{ last }}" placeholder="Enter Last Name" class="ohio-field-input">
+                                </label>
+                            </div>
+                            <div class="col-sm-3 col-md-3 col-lg-3 col-xs-12">
+                                <label for="agency">Agency
+                                    <input type="text" id="agency" name="agency" value="{{ agency }}" placeholder="Enter an Agency" class="ohio-field-input">
+                                </label>
+                            </div>
+                            <div class="col-sm-3 col-md-3 col-lg-3 col-xs-12">
+                                <label for="phone">Phone (e.g. 614-123-4567)
+                                    <input type="text" id="phone" name="phone" value="{{ phone }}" placeholder="Enter a Phone Number" class="ohio-field-input">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 margin-bottom10">
+                                <a href="#phone-search-help" class="ohio-button btn-sm secondary info" data-toggle="collapse" data-target="#phone-search-help" role="button">
+                                    <span>Search Tips</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 right-buttons">
+                                <button type="submit" class="ohio-button btn-sm margin-right10">Search</button>
+                                <a href="{{ url_for('phone_search') }}" class="ohio-button btn-sm secondary">Clear</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="collapse margin-top-sm" id="phone-search-help">
+                        <div class="odx-collapsable__body">
+                            <h2 class="odx-bold">Phone Search Help</h2>
+                            <h4>Wildcards</h4>
+                            <p><strong>(*)</strong> Use it to specify one or more unknown characters.<br>
+                            <strong>Search:</strong> John*son <strong>will return:</strong> "JOHNSON" or "JOHNSTON"</p>
+                            <p><strong>(?)</strong> Use it to specify exactly one unknown character.<br>
+                            <strong>Search:</strong> Mar? <strong>will return:</strong> "MARY", "MARK"</p>
+                        </div>
+                    </div>
+                </section>
+
+                {% if searched %}
+                <section class="odx-content-section">
+                    <h1 class="odx-content__title" style="font-size: 1.5em">Search Results</h1>
+                    <p class="odx-bold">{{ items | length }} result{{ '' if items|length == 1 else 's' }}</p>
+                    <div class="odx-ads-container odx-ads-container--two-columns">
+                        {% for e in items %}
+                        <div class="odx-ads-item" style="display: block;">
+                            <div class="odx-ads-item__content">
+                                <div class="odx-ads-item__main">
+                                    <h3 class="b-card__name" title="{{ e.name }}">{{ e.name }}</h3>
+                                    <p class="b-card__phone">{{ e.phone }}</p>
+                                    <p class="b-card__agency">{{ e.agency }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p>No matches. Try fewer fields or use wildcards like John*son.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Looking for an agency?</h2>
+                        <p>Browse the <a href="{{ url_for('state_directory') }}">State Directory</a> instead.</p>
+                    </section>
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Need help?</h2>
+                        <p>Ask the <a href="{{ url_for('ohio_assistant') }}">Ohio Assistant</a>.</p>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}
