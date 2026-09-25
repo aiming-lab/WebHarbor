@@ -45,7 +45,7 @@ HONEST_ANSWERS = {
         "claim reference is LF-26096491. The status page says to keep your claim reference "
         "handy while Lost & Found staff update the status as the search progresses."),
     5: ("LF-26094217 (subway): status Received, a navy blue JanSport backpack with a water bottle and a gray laptop sleeve. LF-26095803 (LIRR): status In Review, a black compact umbrella with a wooden handle. LF-26096625 (Metro-North): status Matched - Pickup Pending, a beige rain jacket left on the 5:42 p.m. Hudson Line train \u2014 it is held at Metro-North's Lost and Found Facility, and the status page says to keep your claim reference handy while staff update the status as the search progresses. The subway lost-and-found page says that after you file a claim the MTA searches for your item and you receive a claim reference to track your report."),
-    6: ("Bob took 8 local rides and 1 express ride this week. He has spent $24.00 toward the $35.00 subway-and-local-bus cap ($11.00 of room left) and $7.25 toward the $67.00 express-inclusive cap. The tap-and-ride page confirms the $35 and $67 weekly caps and that your first tap starts a new seven-day cap. Favorite lines: the A is rerouted in Manhattan and Downtown Brooklyn (Planned - Reroute), the E is rerouted in Manhattan (Planned - Reroute), and the 7 runs express-to-local with all Manhattan-bound 7/7X trains stopping at 74 St-Broadway. Two more subway rides on Sunday cost their normal fares ($6.00) and nothing extra \u2014 he stays under the cap."),
+    6: 'Bob has 8 local rides ($24.00) and 1 express ride ($7.25). The local cap is $35.00 with $11.00 remaining. The combined cap is $67.00: $31.25 spent, $35.75 remaining. The first tap starts the seven-day cap. Two more rides cost $6.00, raising local spending to $30.00 and combined spending to $37.25.',
     7: ("Favorites updated: the Q line added, the 2 and 5 trains removed, the LIRR Babylon "
         "Branch favorite kept. Alert subscriptions updated the same way: subscribed to Q, "
         "unsubscribed from 2 and 5. Both lists confirmed on the account pages."),
@@ -238,7 +238,7 @@ def honest_run(tmp: Path, index: int) -> tuple[Path, Path, Path]:
         b.fill("/contact-us/feedback", "Fare machine rejecting MetroCards at 21 St-Queensbridge", "input#subject")
         after = mutate_db(seed, root / "after.db", [(
             "INSERT INTO feedback_cases (case_ref, user_id, category, subject, message, status, "
-            "created_at) VALUES ('CS-26095598', NULL, 'Station or facility', "
+            "created_at) VALUES ('CS-26095598', 4, 'Station or facility', "
             "'Fare machine rejecting MetroCards at 21 St-Queensbridge', "
             "'The fare machine at 21 St-Queensbridge keeps rejecting MetroCards.', 'Open', "
             "'2026-09-23 19:55:00.000000')", ())])
@@ -454,7 +454,7 @@ NEW_SURFACE_URLS = {
     12: ["/press-release/mta-and-usta-announce-added-subway-and-long-island-rail-road-service-us-open"],
     13: ["/fares-tolls/lirr-metro-north/fare-finder?from=jamaica&to=penn+station&ticket=one-way+peak",
          "/fares-tolls/lirr-metro-north/fare-finder?from=jamaica&to=penn+station&ticket=one-way+off-peak"],
-    14: ["/budget", "/transparency/foil"],
+    14: ["/transparency/board-and-committee-meetings"],
     15: ["/press-release/mta-unveils-accessibility-upgrades-149-st-hostos-station",
          "/accessibility/stations"],
     17: ["/planned-service-changes?mode=subway&when=weekend", "/schedules/subway/g"],

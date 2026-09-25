@@ -9,7 +9,7 @@
   {% if errors %}
   <div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
   {% endif %}
-  <form class="stack" method="post" action="{{ url_for('account_register') }}">
+  <form class="stack" method="post" action="{{ url_for('account_register') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="display_name">Full name</label>
     <input type="text" id="display_name" name="display_name" value="{{ form.get('display_name', '') }}">
     <label for="username">Username</label>

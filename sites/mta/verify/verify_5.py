@@ -79,6 +79,7 @@ def run_checks(judge, traj, initial_db, after_db):
                                              "make an appointment", "schedule an appointment"]),
                 "after filing: the MTA searches and issues a claim reference to track the "
                 "report (or, per the process steps: wait to be contacted, then make an appointment)")
+    judge.check("claim3_bound_status_item", _claim_sentence_has(answer, "lf-26096625", "matched") and _claim_sentence_has(answer, "lf-26096625", "jacket"), "Bind the matched jacket to LF-26096625")
     check_read_only(judge, initial_db, after_db)
 
 

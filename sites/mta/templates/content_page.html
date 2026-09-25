@@ -38,4 +38,8 @@
     <img src="{{ url_for('static', filename='images/' ~ hero_file) }}" alt="{{ page.title }}">
   {% endif %}
 </div>
+{% set related = related_pages(page.path) %}
+{% if related %}<section class="card"><h2>More in this section</h2><ul class="quick-links">
+{% for child in related %}<li><a href="{{ child.path }}">{{ child.label or child.title or child.path }}</a></li>{% endfor %}
+</ul></section>{% endif %}
 {% endblock %}

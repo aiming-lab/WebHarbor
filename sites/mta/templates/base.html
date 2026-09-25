@@ -21,7 +21,7 @@
     <div class="topbar-links">
       {% if current_user.is_authenticated %}
         <a class="account-link" href="{{ url_for('account_home') }}">My MTA ({{ current_user.display_name }})</a>
-        <a href="{{ url_for('account_logout') }}">Sign out</a>
+        <form class="logout-form" method="post" action="{{ url_for('account_logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign out</button></form>
       {% else %}
         <a class="signin" href="{{ url_for('account_login') }}">Sign in</a>
       {% endif %}
