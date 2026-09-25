@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}NFL Stats - Official League Statistics | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>NFL STATS</h1>
+  <p class="page-sub">2026 Regular Season league leaders</p>
+</div>
+<div class="channel-tabs">
+  {% for slug, name in stat_categories %}
+  <a class="channel-tab" href="{{ url_for('stats_category', category=slug) }}">{{ name }}</a>
+  {% endfor %}
+</div>
+{% for cat, leaders in featured.items() %}
+<section class="section">
+  <h2 class="section-title"><a href="{{ url_for('stats_category', category=cat) }}">{{ cat | upper }} LEADERS</a></h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Player</th><th>Team</th>
+        {% for k in leaders[0].stat_map.keys() %}<th>{{ k }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in leaders %}
+      <tr>
+        <td>{{ l.rank }}</td>
+        <td>
+          {% if l.player_slug %}<a href="{{ url_for('player_detail', slug=l.player_slug) }}">{{ l.player_name }}</a>
+          {% else %}{{ l.player_name }}{% endif %}
+        </td>
+        <td>{{ l.team_abbr }}</td>
+        {% for v in l.stat_map.values() %}<td>{{ v }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+{% endblock %}

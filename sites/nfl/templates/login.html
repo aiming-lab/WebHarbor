@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Sign In | NFL.com{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <section class="panel auth-panel">
+    <h1>SIGN IN</h1>
+    <p class="fine-print">Sign in to your NFL.com account to manage your NFL+ subscription, favorite team and newsletter preferences.</p>
+    <form method="post" class="checkout-form" action="{{ url_for('login', next=request.args.get('next','')) }}">
+      <label>Email
+        <input type="email" name="email" required value="{{ form.get('email','') }}" placeholder="you@example.com">
+      </label>
+      <label>Password
+        <input type="password" name="password" required placeholder="Your password">
+      </label>
+      <button class="btn btn-red" type="submit">Sign In</button>
+    </form>
+    <p class="fine-print">New to NFL.com? <a href="{{ url_for('register', next=request.args.get('next','')) }}">Create an account</a></p>
+  </section>
+</div>
+{% endblock %}

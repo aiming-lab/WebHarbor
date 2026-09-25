@@ -297,8 +297,13 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohio_gov
 RUN cd /opt/WebSyn/ohio_gov && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
+# nfl: validate source assets and build the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/nfl
+RUN cd /opt/WebSyn/nfl && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40091
+EXPOSE 8101 40000-40092
 
 CMD ["/opt/websyn_start.sh"]

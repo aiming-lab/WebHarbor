@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}NFL Football Highlights, Clips &amp; Analysis | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>NFL VIDEO</h1>
+  <p class="page-sub">NFL Football Highlights, Clips &amp; Analysis</p>
+</div>
+<div class="channel-tabs">
+  {% for slug, name in channel_names.items() %}
+  <a class="channel-tab {{ 'active' if slug == channel else '' }}" href="{{ url_for('videos_index', channel=slug) }}">{{ name }}</a>
+  {% endfor %}
+</div>
+<div class="video-grid">
+  {% for v in videos %}
+  <a class="card card-video" href="{{ url_for('video_detail', slug=v.slug) }}">
+    <figure>
+      <img src="{{ v.image }}" alt="{{ v.title }}">
+      <span class="play-badge">▶</span>
+    </figure>
+    <div class="card-body">
+      <span class="kicker">{{ v.category }}</span>
+      <h4>{{ v.title }}</h4>
+      <p class="byline">{{ v.description }}</p>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ away.full_name }} at {{ home.full_name }} - Week {{ game.week }} Game Center | NFL.com{% endblock %}
+{% block content %}
+<div class="game-hero" style="--home: {{ home.primary_color }}; --away: {{ away.primary_color }}">
+  <div class="game-hero-inner">
+    <p class="game-hero-meta">
+      {% if game.status.startswith('FINAL') %}{{ game.status }} · {% endif %}
+      WEEK {{ game.week }} · {% if game.date %}{{ game.date_display }}{% if game.time_display %}, {{ game.time_display }} ET{% endif %}{% else %}DATE/TIME TBD{% endif %}
+      {% if game.category %} · {{ game.category }}{% endif %}
+    </p>
+    <div class="game-hero-teams">
+      <div class="ght {% if game.winner == game.away_abbr %}winner{% endif %}">
+        <img src="{{ away.logo }}" alt="{{ away.nickname }}">
+        <h1>{{ away.full_name }}</h1>
+        <p>{{ away.abbr }} · {{ away.record }}</p>
+        {% if game.status.startswith('FINAL') %}<span class="ght-score">{{ game.away_score }}</span>{% endif %}
+      </div>
+      <div class="ght-sep">AT</div>
+      <div class="ght {% if game.winner == game.home_abbr %}winner{% endif %}">
+        <img src="{{ home.logo }}" alt="{{ home.nickname }}">
+        <h1>{{ home.full_name }}</h1>
+        <p>{{ home.abbr }} · {{ home.record }}</p>
+        {% if game.status.startswith('FINAL') %}<span class="ght-score">{{ game.home_score }}</span>{% endif %}
+      </div>
+    </div>
+    <p class="game-hero-venue">{{ game.venue }}{% if game.venue_city %} · {{ game.venue_city }}{% endif %}{% if game.network_display %} · {{ game.network_display }}{% endif %}</p>
+    {% if current_user.is_authenticated and (current_user.favorite_team == home.abbr or current_user.favorite_team == away.abbr) %}
+    <p class="game-hero-note">You're following the {{ (home if current_user.favorite_team == home.abbr else away).nickname }}.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="tabs">
+  <span class="tab active">OVERVIEW</span>
+  <a class="tab" href="{{ url_for('team_roster', slug=home.slug) }}">ROSTER</a>
+  <a class="tab" href="{{ url_for('team_schedule', slug=home.slug) }}">SCHEDULE</a>
+</div>
+
+{% if game.status.startswith('FINAL') %}
+<section class="panel">
+  <h2 class="panel-title">SCORE BY QUARTER</h2>
+  <table class="data-table data-table--center">
+    <thead>
+      <tr><th>TEAM</th><th>1ST</th><th>2ND</th><th>3RD</th><th>4TH</th><th>OT</th><th>FINAL</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="team-cell"><img src="{{ away.logo }}" alt=""> {{ away.full_name }}</td>
+        {% for q in game.away_quarter_scores %}<td>{{ q }}</td>{% endfor %}
+        <td class="strong">{{ game.away_score }}</td>
+      </tr>
+      <tr>
+        <td class="team-cell"><img src="{{ home.logo }}" alt=""> {{ home.full_name }}</td>
+        {% for q in game.home_quarter_scores %}<td>{{ q }}</td>{% endfor %}
+        <td class="strong">{{ game.home_score }}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% if game.attendance or game.weather %}
+  <p class="fine-print">Attendance: {{ game.attendance or '—' }}{% if game.weather %} · {{ game.weather }}{% endif %}</p>
+  {% endif %}
+</section>
+{% else %}
+<section class="panel panel-plus">
+  <img src="/static/images/global/nflplus-mlp-logo.png" alt="NFL+">
+  <h2>Watch this game live with NFL+</h2>
+  <p>Live local and prime-time games on mobile with NFL+; RedZone and full replays with NFL+ Premium.</p>
+  <a class="btn btn-red" href="{{ url_for('plus') }}">Subscribe Now</a>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2 class="panel-title">REGULAR SEASON AT A GLANCE</h2>
+  <table class="data-table glance-table">
+    <thead>
+      <tr>
+        <th>{{ away.full_name }}</th>
+        <th></th>
+        <th>{{ home.full_name }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in glance %}
+      <tr>
+        <td class="{{ 'strong' if row.home_leads else '' }}">{{ row.home }}</td>
+        <td class="glance-label">{{ row.label }}</td>
+        <td class="{{ 'strong' if row.away_leads else '' }}">{{ row.away }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<div class="two-col">
+  <section class="panel">
+    <h2 class="panel-title">TEAM LEADERS — {{ away.abbr }}</h2>
+    {% for item in away_leaders %}
+    <div class="leader-row">
+      <span class="leader-label">{{ item.label }}</span>
+      {% if item.leader.player_slug %}
+      <a class="leader-name" href="{{ url_for('player_detail', slug=item.leader.player_slug) }}">{{ item.leader.player_name }}</a>
+      {% else %}
+      <span class="leader-name">{{ item.leader.player_name }}</span>
+      {% endif %}
+      <span class="leader-stats">{{ item.leader.stat_map.values() | list | first }}</span>
+    </div>
+    {% else %}
+    <p class="fine-print">No leaders recorded yet.</p>
+    {% endfor %}
+  </section>
+  <section class="panel">
+    <h2 class="panel-title">TEAM LEADERS — {{ home.abbr }}</h2>
+    {% for item in home_leaders %}
+    <div class="leader-row">
+      <span class="leader-label">{{ item.label }}</span>
+      {% if item.leader.player_slug %}
+      <a class="leader-name" href="{{ url_for('player_detail', slug=item.leader.player_slug) }}">{{ item.leader.player_name }}</a>
+      {% else %}
+      <span class="leader-name">{{ item.leader.player_name }}</span>
+      {% endif %}
+      <span class="leader-stats">{{ item.leader.stat_map.values() | list | first }}</span>
+    </div>
+    {% else %}
+    <p class="fine-print">No leaders recorded yet.</p>
+    {% endfor %}
+  </section>
+</div>
+
+<section class="panel">
+  <h2 class="panel-title">INJURY REPORT</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="inj-team">{{ away.nickname }}</h3>
+      {% if away_injuries %}
+      <table class="data-table">
+        <thead><tr><th>Player</th><th>Position</th><th>Injuries</th><th>Practice Status</th><th>Game Status</th></tr></thead>
+        <tbody>
+          {% for i in away_injuries %}
+          <tr>
+            <td>{{ i.player }}</td><td>{{ i.position }}</td><td>{{ i.injury or '—' }}</td>
+            <td>{{ i.practice_status }}</td><td>{{ i.game_status or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="fine-print">No injuries reported.</p>
+      {% endif %}
+    </div>
+    <div>
+      <h3 class="inj-team">{{ home.nickname }}</h3>
+      {% if home_injuries %}
+      <table class="data-table">
+        <thead><tr><th>Player</th><th>Position</th><th>Injuries</th><th>Practice Status</th><th>Game Status</th></tr></thead>
+        <tbody>
+          {% for i in home_injuries %}
+          <tr>
+            <td>{{ i.player }}</td><td>{{ i.position }}</td><td>{{ i.injury or '—' }}</td>
+            <td>{{ i.practice_status }}</td><td>{{ i.game_status or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="fine-print">No injuries reported.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
