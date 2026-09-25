@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Porsche Finder{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Porsche Finder</h1>
+  <p class="page-sub">New and pre-owned cars for sale. {{ total }} vehicle{% if total == 1 %} matches your filters{% else %}s match your filters{% endif %}.</p>
+
+  <form method="get" class="filter-bar">
+    <div class="filter-group">
+      <label for="condition">Condition</label>
+      <select id="condition" name="condition">
+        <option value="">Any condition</option>
+        <option value="new" {% if f.condition == 'new' %}selected{% endif %}>New</option>
+        <option value="preowned" {% if f.condition == 'preowned' %}selected{% endif %}>Pre-Owned</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="range">Model line</label>
+      <select id="range" name="range">
+        <option value="">All model lines</option>
+        {% for r in facets.ranges %}<option value="{{ r }}" {% if r == f.range %}selected{% endif %}>{{ r }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="body">Body style</label>
+      <select id="body" name="body">
+        <option value="">All body styles</option>
+        {% for b in facets.bodies %}<option value="{{ b }}" {% if b == f.body %}selected{% endif %}>{{ b }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="transmission">Transmission</label>
+      <select id="transmission" name="transmission">
+        <option value="">All</option>
+        {% for t in facets.transmissions %}<option value="{{ t }}" {% if t == f.transmission %}selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="drivetrain">Drivetrain</label>
+      <select id="drivetrain" name="drivetrain">
+        <option value="">All</option>
+        {% for d in facets.drivetrains %}<option value="{{ d }}" {% if d == f.drivetrain %}selected{% endif %}>{{ d }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fuel">Engine</label>
+      <select id="fuel" name="fuel">
+        <option value="">All</option>
+        {% for x in facets.fuels %}<option value="{{ x }}" {% if x == f.fuel %}selected{% endif %}>{{ x }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="color">Exterior color</label>
+      <select id="color" name="color">
+        <option value="">All colors</option>
+        {% for c in facets.colors %}<option value="{{ c }}" {% if c == f.color %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="dealer">Porsche Center</label>
+      <select id="dealer" name="dealer">
+        <option value="">All centers</option>
+        {% for d in facets.dealers %}<option value="{{ d }}" {% if d == f.dealer %}selected{% endif %}>{{ d }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="min_price">Min price ($)</label>
+      <input id="min_price" name="min_price" type="number" min="0" step="1000" value="{{ f.min_price or '' }}">
+    </div>
+    <div class="filter-group">
+      <label for="max_price">Max price ($)</label>
+      <input id="max_price" name="max_price" type="number" min="0" step="1000" value="{{ f.max_price or '' }}">
+    </div>
+    <div class="filter-group">
+      <label for="min_year">Min model year</label>
+      <input id="min_year" name="min_year" type="number" min="2010" max="2030" value="{{ f.min_year or '' }}">
+    </div>
+    <div class="filter-group">
+      <label for="max_mileage">Max mileage (mi)</label>
+      <input id="max_mileage" name="max_mileage" type="number" min="0" step="1000" value="{{ f.max_mileage or '' }}">
+    </div>
+    <div class="filter-group">
+      <label for="sort">Sort by</label>
+      <select id="sort" name="sort">
+        {% for key, label in sorts.items() %}<option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-sm" type="submit">Apply filters</button>
+      <a class="btn btn-sm btn-secondary" href="/finder/us/en-US/search">Reset</a>
+    </div>
+  </form>
+
+  {% if items %}
+  <div class="grid grid-3">
+    {% for v in items %}
+    <a class="card" href="/finder/us/en-US/details/{{ v.slug }}">
+      <img class="card-img" src="{{ v.image }}" alt="{{ v.name }}">
+      <div class="card-body">
+        <span class="badge {% if v.condition == 'new' %}badge-new{% else %}badge-pre{% endif %}">{{ v.condition_badge }}</span>
+        <div class="card-title">{{ v.name }}</div>
+        <div class="card-meta">{{ v.full_title or v.name }} ({{ v.model_generation }})</div>
+        <div class="card-meta">{{ v.color }} · {{ v.hp }} hp · {{ v.transmission }}</div>
+        {% if v.mileage %}<div class="card-meta">{{ '{:,}'.format(v.mileage) }} mi · {{ v.previous_owners }} previous owner(s)</div>{% endif %}
+        <div class="card-price">{{ money(v.price) }}</div>
+        <div class="card-meta">{{ v.dealer_name }} · {{ v.dealer_city }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <nav class="pagination" aria-label="Search result pages">
+    {% if prev_url %}<a href="{{ prev_url }}">&larr; Prev</a>{% endif %}
+    {% for link in page_links %}
+      {% if link.p is none %}<span>…</span>
+      {% elif link.current %}<span class="current">{{ link.p }}</span>
+      {% else %}<a href="{{ link.href }}">{{ link.p }}</a>{% endif %}
+    {% endfor %}
+    {% if next_url %}<a href="{{ next_url }}">Next &rarr;</a>{% endif %}
+  </nav>
+  {% else %}
+  <p class="muted">No vehicles match these filters. <a href="/finder/us/en-US/search">Reset filters</a>.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ rng }} Models{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Porsche {{ rng }}</h1>
+  <p class="page-sub">{{ models|length }} model variants in the {{ rng }} model line.</p>
+  <div class="grid grid-3">
+    {% for m in models %}
+    <a class="card" href="/usa/models/{{ m.range_slug }}/{{ m.series_slug }}/{{ m.detail_slug }}/">
+      <img class="card-img" src="{{ m.image }}" alt="{{ m.model_name }}">
+      <div class="card-body">
+        <div class="card-title">{{ m.model_name }}</div>
+        <div class="card-meta">{{ m.body_type }} · {{ m.fuel_type }} · {{ m.hp_formatted }}</div>
+        <div class="card-price">{{ m.price_formatted or money(m.price_value) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <p class="mt3"><a href="/usa/models/">&larr; All models</a></p>
+</section>
+{% endblock %}

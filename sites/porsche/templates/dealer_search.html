@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Find your Porsche Center{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Find your Porsche Center</h1>
+  <p class="page-sub">US Center Search - browse all states or search by name, city or ZIP code.</p>
+
+  <form method="get" class="filter-bar">
+    <div class="filter-group">
+      <label for="q">Search</label>
+      <input id="q" name="q" type="text" placeholder="Name, city or ZIP" value="{{ q }}">
+    </div>
+    <div class="filter-group">
+      <label for="state">State</label>
+      <select id="state" name="state">
+        <option value="">All states</option>
+        {% for s in states %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ STATE_NAMES.get(s, s) }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-sm" type="submit">Search</button>
+      <a class="btn btn-sm btn-secondary" href="/usa/dealersearch/">Reset</a>
+    </div>
+  </form>
+
+  {% if not state and not q %}
+  <h2 class="section-title">Browse by state</h2>
+  <div class="state-grid">
+    {% for s in states %}
+    <a href="/usa/dealersearch/?state={{ s }}">
+      <span>{{ STATE_NAMES.get(s, s) }}</span><span class="n">{{ counts.get(s, 0) }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h2 class="section-title">
+    {% if state %}Porsche Centers in {{ STATE_NAMES.get(state, state) }}{% elif q %}Results for "{{ q }}"{% else %}All Porsche Centers{% endif %}
+    ({{ dealers|length }})
+  </h2>
+  {% for d in dealers %}
+  <div class="dealer-row">
+    <div>
+      <h3>{{ d.name }}</h3>
+      <p class="addr">{{ d.street }}<br>{{ d.city }}, {{ d.state }} {{ d.zip }}</p>
+      <p class="addr">Partner no. {{ d.partner_no }}</p>
+    </div>
+    <div>
+      <p class="addr">Phone: {{ d.phone }}</p>
+      {% if d.email %}<p class="addr">Email: {{ d.email }}</p>{% endif %}
+      {% if d.homepage %}<p class="addr"><a href="{{ d.homepage }}">Center homepage</a></p>{% endif %}
+      <p class="addr">In-stock vehicles: <a href="/finder/us/en-US/search?dealer={{ d.name|urlencode }}">{{ d.inventory_count }}</a></p>
+    </div>
+    <div>
+      <ul class="hours-list">
+        {% for h in d.contact %}
+        <li><span>{{ day_label(h.day) }}</span><span>{{ h.open }} - {{ h.close }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% else %}
+  <p class="muted">No Porsche Centers match your search.</p>
+  {% endfor %}
+</section>
+{% endblock %}

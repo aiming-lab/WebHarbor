@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}My Porsche profile{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Hi, {{ current_user.first_name }}</h1>
+  <p class="page-sub">{{ current_user.email }} · member since {{ current_user.created_at }} · <a href="/my-porsche/sign-out">Sign out</a></p>
+  <div class="grid grid-3 mb3">
+    <a class="card" href="/my-porsche/saved-vehicles">
+      <div class="card-body"><div class="card-title">Saved vehicles</div><div class="card-meta">{{ saved|length }} vehicle(s) saved from Porsche Finder</div></div>
+    </a>
+    <a class="card" href="/my-porsche/saved-builds">
+      <div class="card-body"><div class="card-title">Saved builds</div><div class="card-meta">{{ builds|length }} configurator build(s)</div></div>
+    </a>
+    <a class="card" href="/shop/">
+      <div class="card-body"><div class="card-title">Shop orders</div><div class="card-meta">{{ orders|length }} order(s)</div></div>
+    </a>
+  </div>
+
+  {% if orders %}
+  <h2 class="section-title">Recent orders</h2>
+  <table class="data">
+    {% for o in orders %}
+    <tr><td><a href="/shop/order/{{ o.order_number }}">{{ o.order_number }}</a></td><td>{{ o.placed_on }}</td><td class="right">${{ '{:,.2f}'.format(o.total_cents / 100) }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</section>
+{% endblock %}

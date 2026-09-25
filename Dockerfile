@@ -307,8 +307,14 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/mta
 RUN cd /opt/WebSyn/mta && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
+# Porsche rebuilds its deterministic, version-marked SQLite seed from tracked source data.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/porsche
+RUN cd /opt/WebSyn/porsche && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40093
+EXPOSE 8101 40000-40124
 
 CMD ["/opt/websyn_start.sh"]

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} - Porsche Shop{% endblock %}
+{% block content %}
+<section class="wrap">
+  <p class="mb1"><a href="/shop/">&larr; Porsche Shop</a></p>
+  <h1 class="page-title">{{ label }}</h1>
+  <p class="page-sub">{{ products|length }} products</p>
+
+  <form method="get" class="filter-bar">
+    <div class="filter-group">
+      <label for="brand">Brand</label>
+      <select id="brand" name="brand">
+        <option value="">All brands</option>
+        {% for b in brands %}<option value="{{ b }}" {% if b == brand_f %}selected{% endif %}>{{ b }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="sort">Sort by</label>
+      <select id="sort" name="sort">
+        <option value="featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+        <option value="price-asc" {% if sort == 'price-asc' %}selected{% endif %}>Price - low to high</option>
+        <option value="price-desc" {% if sort == 'price-desc' %}selected{% endif %}>Price - high to low</option>
+        <option value="name" {% if sort == 'name' %}selected{% endif %}>Name A-Z</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-sm" type="submit">Apply</button>
+      <a class="btn btn-sm btn-secondary" href="/shop/us/en-US/c/{{ category_slug }}">Reset</a>
+    </div>
+  </form>
+
+  <div class="grid grid-4">
+    {% for p in products %}
+    <a class="card" href="/shop/us/en-US/p/{{ p.slug }}">
+      {% if p.image_list %}<img class="card-img" src="{{ p.image_list[0] }}" alt="{{ p.name }}">{% endif %}
+      <div class="card-body">
+        <div class="card-meta">{{ p.brand }}{% if not p.in_stock %} · Sold out{% endif %}</div>
+        <div class="card-title" style="font-size:0.95rem;">{{ p.name }}</div>
+        {% if p.color_list %}<div class="card-meta">{{ p.color_list|join(', ') }}</div>{% endif %}
+        <div class="card-price">{{ p.price_display }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

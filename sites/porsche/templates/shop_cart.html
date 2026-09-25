@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Your bag - Porsche Shop{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Your bag</h1>
+  {% if items %}
+  <form method="post" action="/shop/cart/update">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for it in items %}
+    <div class="cart-row">
+      {% if it.product.image_list %}<img src="{{ it.product.image_list[0] }}" alt="{{ it.product.name }}">{% endif %}
+      <div>
+        <div class="card-title"><a href="/shop/us/en-US/p/{{ it.product.slug }}">{{ it.product.name }}</a></div>
+        <div class="card-meta">{{ it.product.brand }} · SKU {{ it.product.sku }}</div>
+        <div class="card-meta">{{ it.product.price_display }} each</div>
+      </div>
+      <div>
+        <label class="form-note" for="qty_{{ it.product.id }}">Quantity</label>
+        <input class="qty" id="qty_{{ it.product.id }}" name="qty_{{ it.product.id }}" type="number" min="0" value="{{ it.qty }}">
+      </div>
+      <div class="right"><strong>${{ '{:,.2f}'.format(it.line_total / 100) }}</strong></div>
+    </div>
+    {% endfor %}
+    <button class="btn btn-sm mt2" type="submit">Update bag</button>
+  </form>
+  <div class="cart-totals">
+    <div><span>Subtotal</span><span>${{ '{:,.2f}'.format(subtotal / 100) }}</span></div>
+    <div><span>Shipping</span><span>${{ '{:,.2f}'.format(shipping / 100) }}</span></div>
+    <div class="grand"><span>Total</span><span>${{ '{:,.2f}'.format(total / 100) }}</span></div>
+  </div>
+  <p class="form-note mb2">Free standard shipping on orders of $150.00 or more.</p>
+  <a class="btn btn-red" href="/shop/checkout">Proceed to checkout</a>
+  {% else %}
+  <p class="muted">Your bag is empty. <a href="/shop/">Browse the Porsche Shop</a>.</p>
+  {% endif %}
+</section>
+{% endblock %}

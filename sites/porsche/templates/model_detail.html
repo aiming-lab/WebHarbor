@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ model.model_name }}{% endblock %}
+{% block content %}
+<section class="wrap">
+  <p class="mb1"><a href="/usa/models/">&larr; All models</a> · <a href="/usa/models/{{ model.range_slug }}/">Porsche {{ model.model_range }}</a></p>
+  <h1 class="page-title">{{ model.model_name }}</h1>
+  <p class="page-sub">{{ model.body_type }} · Model year {{ model.model_year }} · {{ model.fuel_type }} · {{ model.gear_type }} · {{ model.wheel_drive }} · {{ model.seats }} seats</p>
+
+  <div class="detail-grid">
+    <div>
+      <img src="{{ model.image }}" alt="{{ model.model_name }}" style="width:100%; border-radius:6px;">
+      {% if model.gallery_images %}
+      <h3 class="section-title">Gallery</h3>
+      <div class="grid grid-3">
+        {% for g in model.gallery_images %}
+        <img src="{{ g }}" alt="{{ model.model_name }} photo {{ loop.index }}" style="border-radius:4px; aspect-ratio:16/9; object-fit:cover;">
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if model.highlight_attrs or model.highlights_image %}
+      <div class="spec-table mt3">
+        <h3>Highlights</h3>
+        {% if model.highlights_image %}
+        <img src="{{ model.highlights_image }}" alt="Technical top shot of the Porsche {{ model.model_name }}" style="max-width:320px; margin-bottom:1rem;">
+        {% endif %}
+        <dl>
+          {% for a in model.highlight_attrs %}
+          <dt>{{ a.label }}</dt><dd>{{ a.value }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+      {% endif %}
+
+      {% if model.equipment %}
+      <div class="spec-table">
+        <h3>Standard equipment highlights</h3>
+        <ul>
+          {% for e in model.equipment %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% for cat in model.tech %}
+      <div class="spec-table">
+        <h3>{{ cat.label }}</h3>
+        <dl>
+          {% for at in cat.attributes %}
+          <dt>{{ at.label }}</dt><dd>{{ at.value }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+      {% endfor %}
+    </div>
+
+    <aside>
+      <div class="cfg-summary">
+        <div class="muted mb1">{{ model.price_formatted and 'Starting from' or 'Price' }}</div>
+        <div class="total">{{ model.price_formatted or money(model.price_value) }}</div>
+        <dl style="font-size:0.92rem;">
+          {% if model.hp_formatted %}<dt>Max. power</dt><dd>{{ model.hp_formatted }}</dd>{% endif %}
+          {% if model.accel_0_60 %}<dt>0-60 mph</dt><dd>{{ model.accel_0_60 }}</dd>{% endif %}
+          {% if model.top_speed %}<dt>Top track speed</dt><dd>{{ model.top_speed }}</dd>{% endif %}
+          {% if model.leasing_monthly %}<dt>Leasing example</dt><dd>{{ model.leasing_monthly }}</dd>{% endif %}
+        </dl>
+        <p class="form-note mb1">MSRP excludes options; taxes; title; registration; delivery, processing and handling fee; dealer charges.</p>
+        {% if model.configure_code and option_count %}
+        <a class="btn btn-red" style="width:100%; text-align:center; margin-bottom:0.6rem;" href="/configurator/en-US/mode/model/{{ model.model_type }}">Configure</a>
+        {% endif %}
+        <a class="btn btn-secondary" style="width:100%; text-align:center;" href="/finder/us/en-US/search?range={{ model.model_range }}">Search inventory</a>
+      </div>
+
+      <h3 class="section-title">{{ model.model_range }} variants</h3>
+      <table class="data">
+        {% for s in siblings %}
+        <tr {% if s.id == model.id %}style="background:var(--soft);"{% endif %}>
+          <td><a href="/usa/models/{{ s.range_slug }}/{{ s.series_slug }}/{{ s.detail_slug }}/">{{ s.model_name }}</a></td>
+          <td class="right">{{ money(s.price_value) }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </aside>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}{{ v.full_title or v.name }}{% endblock %}
+{% block content %}
+<section class="wrap">
+  <p class="mb1"><a href="/finder/us/en-US/search">&larr; Porsche Finder</a>{% if v.model_range %} · <a href="/finder/us/en-US/search?range={{ v.model_range }}">More {{ v.model_range }} listings</a>{% endif %}</p>
+  <div class="detail-grid">
+    <div>
+      <img src="{{ v.image }}" alt="{{ v.name }}" style="width:100%; border-radius:6px;">
+      <h1 class="page-title mt2">{{ v.full_title or v.name }}</h1>
+      <p class="page-sub">
+        <span class="badge {% if v.condition == 'new' %}badge-new{% else %}badge-pre{% endif %}">{{ v.condition_badge }}</span>
+        {{ v.color }} · {{ v.interior_color }} · {{ v.fuel }} · {{ v.hp }} hp
+      </p>
+
+      <div class="spec-table">
+        <h3>Vehicle details</h3>
+        <dl>
+          <dt>Model line</dt><dd>{{ v.model_range }}</dd>
+          <dt>Model generation</dt><dd>{{ v.model_generation }}</dd>
+          <dt>Body style</dt><dd>{{ v.body_type }}</dd>
+          <dt>Transmission</dt><dd>{{ v.transmission }}</dd>
+          <dt>Drivetrain</dt><dd>{{ v.drivetrain }}</dd>
+          <dt>Model year</dt><dd>{{ v.model_year }}</dd>
+          <dt>Mileage</dt><dd>{{ '{:,}'.format(v.mileage or 0) }} mi</dd>
+          <dt>Previous owners</dt><dd>{{ v.previous_owners }}</dd>
+          <dt>Exterior color</dt><dd>{{ v.color }}</dd>
+          <dt>Interior</dt><dd>{{ v.interior_color }}</dd>
+          <dt>Max. power</dt><dd>{{ v.hp }} hp</dd>
+          {% if v.weight_kg %}<dt>Weight</dt><dd>{{ '{:,}'.format(v.weight_kg) }} kg</dd>{% endif %}
+          <dt>VIN</dt><dd class="vin">{{ v.vin }}</dd>
+        </dl>
+      </div>
+
+      {% if v.breakdown %}
+      <div class="spec-table">
+        <h3>Price details</h3>
+        <table class="data">
+          {% for cat in v.breakdown %}
+          <tr>
+            <th colspan="2">{{ cat['label'] or 'Total price' }}</th>
+          </tr>
+          {% for it in cat['items'] %}
+          <tr><td>{{ it['label'] }}</td><td class="right">{{ it['value'] }}</td></tr>
+          {% endfor %}
+          <tr><td><strong>{{ cat['label'] or 'Total price' }}</strong></td><td class="right"><strong>{{ cat['value'] }}</strong></td></tr>
+          {% endfor %}
+        </table>
+        <p class="form-note">Exclusions apply - see Price Details. Dealer sets actual selling price.</p>
+      </div>
+      {% endif %}
+
+      {% if v.lease_payment %}
+      <div class="spec-table">
+        <h3>Payment estimate</h3>
+        <p>{{ v.lease_payment.lstrip('$') }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="cfg-summary">
+        <div class="total">{{ money(v.price) }}</div>
+        <p class="muted mb2">{{ v.condition_badge }} · Listed at {{ v.dealer_name }}</p>
+        <div class="spec-table">
+          <h3>This Porsche Center</h3>
+          <p>{{ v.dealer_name }}</p>
+          <p class="muted">{{ v.dealer_street }}<br>{{ v.dealer_city }}{% if v.dealer_zip %} · {{ v.dealer_zip }}{% endif %}</p>
+          <a class="btn btn-secondary btn-sm mt2" style="display:inline-block;" href="/usa/dealersearch/?q={{ v.dealer_name|urlencode }}">View center</a>
+        </div>
+        <form method="post" action="/finder/us/en-US/details/{{ v.slug }}/save">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-red" style="width:100%;" type="submit">
+            {% if saved %}Saved to My Porsche{% else %}Save this vehicle{% endif %}
+          </button>
+        </form>
+        <p class="form-note mt2">Saving a vehicle requires a signed-in My Porsche account.</p>
+      </div>
+
+      {% if similar %}
+      <h3 class="section-title">Similar {{ v.model_range }} listings</h3>
+      <table class="data">
+        {% for s in similar %}
+        <tr>
+          <td><a href="/finder/us/en-US/details/{{ s.slug }}">{{ s.name }}</a></td>
+          <td class="right">{{ money(s.price) }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </aside>
+  </div>
+</section>
+{% endblock %}
