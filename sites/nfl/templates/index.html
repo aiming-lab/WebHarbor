@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+{% if fav_team and fav_game %}
+<section class="hero-band" style="--team-color: {{ fav_team.primary_color }}">
+  <div class="hero-band-inner">
+    <img src="{{ fav_team.logo }}" alt="{{ fav_team.nickname }} logo" class="hero-band-logo">
+    <div>
+      <p class="hero-band-eyebrow">MY TEAM</p>
+      <h2>{{ fav_team.full_name }} ({{ fav_team.record }})</h2>
+      <p class="hero-band-sub">{{ fav_team.division_ordinal }} {{ fav_team.division }} · Week {{ current_week }}:
+        {{ fav_game.away.full_name }} at {{ fav_game.home.full_name }}
+        — {{ fav_game.day_display }}{% if fav_game.time_display %} {{ fav_game.time_display }}{% endif %} ET</p>
+    </div>
+    <a class="btn btn-red" href="{{ url_for('game_detail', slug=fav_game.slug) }}">Game Center</a>
+  </div>
+</section>
+{% endif %}
+
+<section class="home-grid">
+  <div class="home-main">
+    {% if top_story %}
+    <a class="headline-hero" href="{{ url_for('article_detail', slug=top_story.slug) }}">
+      <figure><img src="{{ top_story.image }}" alt="{{ top_story.title }}"></figure>
+      <div class="headline-hero-body">
+        <span class="kicker">{{ top_story.section or 'NEWS' }}</span>
+        <h1>{{ top_story.title }}</h1>
+        <p>{{ top_story.description }}</p>
+      </div>
+    </a>
+    {% endif %}
+    <div class="headline-row">
+      {% for a in headlines[:3] %}
+      <a class="card card-news" href="{{ url_for('article_detail', slug=a.slug) }}">
+        <figure><img src="{{ a.image }}" alt="{{ a.title }}"></figure>
+        <div class="card-body">
+          <span class="kicker">{{ a.section or 'NEWS' }}</span>
+          <h3>{{ a.title }}</h3>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="headline-row">
+      {% for a in headlines[3:7] %}
+      <a class="card card-news card-news--compact" href="{{ url_for('article_detail', slug=a.slug) }}">
+        <figure><img src="{{ a.image }}" alt="{{ a.title }}"></figure>
+        <div class="card-body">
+          <span class="kicker">{{ a.section or 'NEWS' }}</span>
+          <h4>{{ a.title }}</h4>
+          <p class="byline">{{ a.published_display }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="home-side">
+    <section class="panel">
+      <h2 class="panel-title"><a href="{{ url_for('scores') }}">WEEK {{ current_week }} SCOREBOARD</a></h2>
+      <ul class="mini-scores">
+        {% for g in week_games %}
+        <li>
+          <a href="{{ url_for('game_detail', slug=g.slug) }}">
+            <span class="mini-day">{{ g.day_display }}{% if g.time_display %} {{ g.time_display }}{% endif %}</span>
+            <span class="mini-teams">
+              <span><img src="{{ g.away.logo }}" alt=""> {{ g.away_abbr }} <em>{{ g.away.record }}</em></span>
+              <span><img src="{{ g.home.logo }}" alt=""> {{ g.home_abbr }} <em>{{ g.home.record }}</em></span>
+            </span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section class="panel">
+      <h2 class="panel-title"><a href="{{ url_for('standings') }}">STANDINGS</a></h2>
+      {% for (conf, div), rows in divisions.items() %}
+      {% if rows[0].division_rank <= 2 and (div.endswith('East') or div.endswith('North')) %}
+      <table class="mini-table">
+        <caption>{{ div.upper() }}</caption>
+        <tbody>
+          {% for t in rows[:2] %}
+          <tr>
+            <td class="mini-team"><a href="{{ url_for('team_detail', slug=t.slug) }}">{{ t.full_name }}</a></td>
+            <td>{{ t.record }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% endfor %}
+    </section>
+    <section class="panel panel-plus">
+      <h2 class="panel-title">NFL+</h2>
+      <img src="/static/images/global/nflplus-mlp-logo.png" alt="NFL+">
+      <p>Live local &amp; prime-time games on mobile, NFL RedZone and NFL Network with NFL+ Premium.</p>
+      <a class="btn btn-red btn-sm" href="{{ url_for('plus') }}">Subscribe Now</a>
+    </section>
+  </aside>
+</section>
+
+<section class="section">
+  <h2 class="section-title"><a href="{{ url_for('videos_index') }}">VIDEO HIGHLIGHTS</a></h2>
+  <div class="video-row">
+    {% for v in videos %}
+    <a class="card card-video" href="{{ url_for('video_detail', slug=v.slug) }}">
+      <figure>
+        <img src="{{ v.image }}" alt="{{ v.title }}">
+        <span class="play-badge">▶</span>
+      </figure>
+      <div class="card-body">
+        <span class="kicker">{{ v.category }}</span>
+        <h4>{{ v.title }}</h4>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

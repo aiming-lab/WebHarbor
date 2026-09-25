@@ -287,16 +287,23 @@ RUN cd /opt/WebSyn/michaels && rm -rf instance instance_seed && \
 RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/micro_center
 RUN python3 /opt/WebSyn/micro_center/migrate_seed.py
 
-# MTA ships upstream-sourced media in the pinned asset bundle and rebuilds
-# its deterministic SQLite seed (real GTFS timetables, railroad fare tables
-# parsed from the official PDFs, the accessible-stations snapshot) from the
-# tracked source_data/ at build time.
-RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/mta && \
-    cd /opt/WebSyn/mta && rm -rf instance instance_seed && \
+# OhioMeansJobs: source-backed images and deterministic catalog seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohiomeansjobs
+RUN cd /opt/WebSyn/ohiomeansjobs && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__ instance_build
+
+# Ohio.gov: source-backed images and database-backed landing content.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohio_gov
+RUN cd /opt/WebSyn/ohio_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# nfl: validate source assets and build the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/nfl
+RUN cd /opt/WebSyn/nfl && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40116
+EXPOSE 8101 40000-40092
 
 CMD ["/opt/websyn_start.sh"]

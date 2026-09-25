@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Get Your 2026 Ohio Travel Guide | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--travel-guide">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">Get Your 2026 Ohio Travel Guide</h1>
+                            <div class="odx-content__summary">
+                                View online, download the app, or request a copy in the mail.
+                            </div>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    <p>The 2026 Ohio Travel Guide is packed with scenic towns, state parks, arts and culture, and award-winning culinary experiences across the state. Request your copy below and it will be mailed to you.</p>
+
+                    <form method="post" action="{{ url_for('travel_guide') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="full_name">Full name</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" required value="{{ current_user.display_name or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" required value="{{ current_user.email or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="address_line1">Street address</label>
+                            <input type="text" class="form-control" id="address_line1" name="address_line1" required value="{{ current_user.address_line1 or '' if current_user.is_authenticated else '' }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-5">
+                                <div class="form-group">
+                                    <label for="city">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" required value="{{ current_user.city or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label for="state">State</label>
+                                    <input type="text" class="form-control" id="state" name="state" required value="{{ current_user.state or 'Ohio' if current_user.is_authenticated else 'Ohio' }}">
+                                </div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="form-group">
+                                    <label for="zip">ZIP</label>
+                                    <input type="text" class="form-control" id="zip" name="zip" required value="{{ current_user.zip or '' if current_user.is_authenticated else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="format">Format</label>
+                            <select class="form-control" id="format" name="format">
+                                <option>Standard print</option>
+                                <option>Large print</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Request my guide</button>
+                    </form>
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Explore more</h2>
+                        <ul class="list-unstyled">
+                            <li class="margin-bottom-xs"><a href="https://ohio.org/" target="_blank">Ohio.org</a></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('landing', audience='tourism') }}">Tourism on Ohio.gov</a></li>
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

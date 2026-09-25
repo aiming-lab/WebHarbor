@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}For Employers | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="page-hero" style="background-image:linear-gradient(rgba(6,70,122,.72),rgba(10,48,95,.85)),url('{{ url_for('static', filename='images/hero/employers-hero.jpg') }}')">
+  <div class="container">
+    <h1>For Employers</h1>
+    <p>Find top talent on OhioMeansJobs.com - a One-Stop-shop for Ohio-based companies.</p>
+  </div>
+</div>
+<section class="section">
+  <div class="container">
+    <div class="stat-row">
+      <div class="stat-box"><div class="n">{{ '{:,}'.format(employers_on_board) }}</div><div class="l">Employers on board</div></div>
+      <div class="stat-box"><div class="n">{{ '{:,}'.format(resumes_available) }}</div><div class="l">Resumes available</div></div>
+      <div class="stat-box"><div class="n">{{ total_jobs }}</div><div class="l">Active job postings</div></div>
+      <div class="stat-box"><div class="n">{{ companies }}</div><div class="l">Companies hiring</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="cta-band">
+        <h3>Login or Sign Up</h3>
+        <p>Register your company to post jobs, search resumes, and access workforce data.</p>
+        <a class="btn" href="{{ url_for('account_register') }}">Login or Sign Up</a>
+      </div>
+      <div class="cta-band" style="border-left-color:#f2a900">
+        <h3>Recruiters &amp; Employers Toolbox</h3>
+        <p>Hire a veteran, sponsor an apprentice program, claim tax benefits, and more.</p>
+        <a class="btn gold" href="{{ url_for('employer_resources') }}">Resources For Employers</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

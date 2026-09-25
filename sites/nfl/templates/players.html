@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}NFL Players | Past &amp; Current NFL Players | NFL.com{% endblock %}
+{% block subnav %}
+<div class="subnav">
+  <div class="subnav-inner">
+    <span class="subnav-title">PLAYERS</span>
+    <a href="{{ url_for('players_directory') }}">Player Directory</a>
+    <a href="{{ url_for('injuries') }}">Injuries</a>
+    <a href="{{ url_for('transactions') }}">Transactions</a>
+    <a href="#">Health &amp; Safety</a>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>NFL PLAYER DIRECTORY</h1>
+  <p class="page-sub">{{ total }} players match your filters</p>
+</div>
+
+<form class="filter-bar" method="get" action="{{ url_for('players_directory') }}">
+  <label>Search by player name
+    <input type="text" name="query" value="{{ q }}" placeholder="Search by player name" aria-label="Search by player name">
+  </label>
+  <label>Position
+    <select name="position">
+      <option value="">All</option>
+      {% for p in ['QB','RB','FB','WR','TE','OL','OT','G','C','LS','DL','DE','DT','LB','CB','S','SAF','DB','K','P'] %}
+      <option value="{{ p }}" {{ 'selected' if pos == p else '' }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Team
+    <select name="team">
+      <option value="">All</option>
+      {% for t in all_teams %}
+      <option value="{{ t.abbr }}" {{ 'selected' if team == t.abbr else '' }}>{{ t.full_name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button class="btn btn-red btn-sm" type="submit">Search Players</button>
+  {% if q or pos or team %}
+  <a class="btn btn-outline btn-sm" href="{{ url_for('players_directory') }}">Clear</a>
+  {% endif %}
+</form>
+
+<section class="panel">
+  <table class="data-table roster-table">
+    <thead>
+      <tr><th></th><th>Player</th><th>Team</th><th>No.</th><th>Pos</th><th>Status</th><th>Height</th><th>Weight</th><th>Exp</th><th>College</th></tr>
+    </thead>
+    <tbody>
+      {% for p in results %}
+      <tr>
+        <td class="roster-photo">
+          {% if p.has_headshot %}<a href="{{ url_for('player_detail', slug=p.slug) }}"><img src="{{ p.headshot }}" alt="{{ p.name }}"></a>{% endif %}
+        </td>
+        <td><a href="{{ url_for('player_detail', slug=p.slug) }}">{{ p.name }}</a></td>
+        <td><a href="{{ url_for('team_detail', slug=p.team.slug) }}">{{ p.team_abbr }}</a></td>
+        <td>{{ p.number }}</td>
+        <td>{{ p.pos }}</td>
+        <td>{{ p.status }}</td>
+        <td>{{ p.height_display }}</td>
+        <td>{{ p.weight }}</td>
+        <td>{{ p.experience_display }}</td>
+        <td>{{ p.college }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10">No players match your search.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if total > 80 %}
+  <p class="fine-print">Showing the first 80 of {{ total }} matching players. Refine your search to narrow results.</p>
+  {% endif %}
+</section>
+{% endblock %}

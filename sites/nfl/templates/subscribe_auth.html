@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Subscribe to {{ plan.title }} | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>SUBSCRIBE TO {{ plan.title | upper }}</h1>
+  <p class="page-sub">${{ '%.2f' | format(plan.amount) }} per {{ plan.cycle }}
+    {% if current_user.is_authenticated %}· signed in as {{ current_user.email }}{% endif %}</p>
+</div>
+
+{% if not current_user.is_authenticated %}
+<section class="panel">
+  <h2 class="panel-title">SIGN IN OR CREATE AN ACCOUNT</h2>
+  <p class="fine-print">An NFL.com account is required to subscribe to NFL+.</p>
+  <div class="auth-choice">
+    <div class="auth-choice-box">
+      <h3>Already have an account?</h3>
+      <a class="btn btn-red" href="{{ url_for('login', next=request.path) }}">Sign In</a>
+    </div>
+    <div class="auth-choice-box">
+      <h3>New to NFL.com?</h3>
+      <a class="btn btn-outline" href="{{ url_for('register', next=request.path) }}">Create Account</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

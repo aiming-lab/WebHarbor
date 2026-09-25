@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Events | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Events</h1>
+    <p>Career fairs, hiring events, and workshops across Ohio.</p>
+  </div>
+</div>
+<div class="container content-page" style="padding-top:20px">
+  {% for n in [
+    ('November 2025 Hire-a-Veteran Month Events', '2025-10-22', 'Veteran service highlights and major events for the month of November. Local OhioMeansJobs centers host employer meet-and-greets, resume labs, and benefits briefings for veterans and military spouses.'),
+    ('OhioMeansJobs Center Workshops', '2025-09-15', 'County OhioMeansJobs Centers run weekly workshops: resume writing, interview practice, job search basics, and computer skills. Check your nearest center for the schedule.'),
+    ('Virtual Job Fairs', '2025-08-20', 'Meet employers from across Ohio without leaving home. Virtual job fairs connect job seekers with hiring managers through live chat and video sessions.'),
+  ] %}
+    <div class="news-item">
+      <h3>{{ n[0] }}</h3>
+      <div class="meta">{{ n[1] }}</div>
+      <p>{{ n[2] }}</p>
+    </div>
+  {% endfor %}
+  <div class="cta-band">
+    <h3>Find events near you</h3>
+    <p>Your local OhioMeansJobs Center posts hiring events and workshop schedules.</p>
+    <a class="btn" href="{{ url_for('local_help') }}">Find a Job Center</a>
+  </div>
+</div>
+{% endblock %}

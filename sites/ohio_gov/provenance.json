@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-09-23",
+  "records": [
+    {
+      "path": "app.py",
+      "classification": "mirror-code",
+      "scope": "Flask application implementing the ohio.gov mirror: homepage with the ODX hero search box, the five audience landing pages (Residents, Tourism, Jobs, Business, Government) with their category carousels, topic-hub pages with keyword filtering, resource detail pages, scored token-overlap search with Resources/News/FAQs/Agencies/Licenses tabs and pagination, the news-and-events listing with agency filter plus article pages, the Licenses & Permits professional-license directory with search and agency filter, the Help Center with the 23-category FAQ accordions, the State of Ohio Phone Search with wildcard support, the State Directory agency table with search and pagination, the Ohio Assistant resource-search page, OHID authentication (login/register/logout), the account area (profile edit, saved resources, alert subscriptions), the alerts and outage-notification pages, the 2026 Ohio Travel Guide request form, and the consumer scam-report form. Route patterns and page structure follow the upstream site."
+    },
+    {
+      "path": "models.py",
+      "classification": "mirror-code",
+      "scope": "SQLAlchemy models for the mirror (User, Agency, TopicHub, Resource, NewsArticle, License, PhoneEntry, FAQCategory, FAQ, SavedResource, AlertItem, AlertSubscription, TravelGuideRequest, ScamReport, ContactMessage, AssistantQuery). Split from app.py so the seeder can import models without re-running the app bootstrap."
+    },
+    {
+      "path": "seed_data.py",
+      "classification": "mirror-code",
+      "scope": "Deterministic build-time/boot-time seeder. Content rows come from the tracked data/*.json snapshot; every seed function early-returns on a populated database, keeping /reset/ohio_gov byte-identical. Seeds the four benchmark users with saved resources, alert subscriptions, one travel-guide request and one scam report."
+    },
+    {
+      "path": "data/resources.json",
+      "classification": "captured-upstream-content",
+      "scope": "242 real ohio.gov resource pages (title, summary, body HTML and body text, launch URL, published date, related agencies, card image, search summary) captured from the live site on 2026-09-23 by driving a real browser over the topic-hub listings and resource detail pages. Upstream image URLs are rewritten to mirror-relative static paths; external agency links keep their real upstream hrefs."
+    },
+    {
+      "path": "data/topic_hubs.json + data/landing_sections.json + data/home_sections.json",
+      "classification": "captured-upstream-content",
+      "scope": "The 31 topic-hub definitions (title, audience, parent category) and the per-landing category carousels with their card titles, summaries and images, extracted from the rendered upstream landing pages; home_sections.json holds the homepage featured cards, popular-topics carousel, news highlights, divisions carousel and the travel-guide banner."
+    },
+    {
+      "path": "data/news.json",
+      "classification": "captured-upstream-content",
+      "scope": "14 real ohio.gov news releases (title, slug, published date, source agency, body HTML, card image) captured from the upstream Media Center / all-news pages on 2026-09-23."
+    },
+    {
+      "path": "data/licenses.json",
+      "classification": "captured-upstream-content",
+      "scope": "272 professional and occupational license entries (license name, issuing agency, contact method and their real upstream URLs) captured from the upstream Licenses & Permits directory table on 2026-09-23."
+    },
+    {
+      "path": "data/agencies.json",
+      "classification": "captured-upstream-content",
+      "scope": "190 state agencies, boards and commissions (name, website, contact method, contact URL, social-media links) captured from the upstream State Directory table across all 8 paginated pages on 2026-09-23."
+    },
+    {
+      "path": "data/phones.json",
+      "classification": "captured-upstream-content",
+      "scope": "179 State of Ohio employee phone-directory entries (name, phone, agency) captured from the upstream State Employee Phone Search tool on 2026-09-23 by querying common last names and agency phone prefixes."
+    },
+    {
+      "path": "data/faqs.json + data/faq_categories.json",
+      "classification": "captured-upstream-content",
+      "scope": "119 real question-and-answer pairs across the 23 upstream Help Center FAQ categories (assistance programs, business, child support, consumers, disability, driving, education, environment, government, health, housing, hunting & fishing, job search, labor law, new residents, professional licenses, safety, seniors, state parks, taxes, tourism, unemployment, veterans), captured from the upstream FAQ pages on 2026-09-23."
+    },
+    {
+      "path": "data/ohio_facts.json",
+      "classification": "captured-upstream-content",
+      "scope": "The four Ohio Facts pages (State Symbols, Geography, Plants and Animals, Entertainment Sports and Leisure) captured from the upstream government resources on 2026-09-23; folded into the resources seed."
+    },
+    {
+      "path": "seed_data.py (alerts, benchmark users, form fixtures)",
+      "classification": "fixture-data",
+      "scope": "The four outage/alert notices follow the upstream ODX site-alert pattern with pinned dates; the four benchmark accounts (alice.j/bob.c/carol.d/david.k @test.com, password TestPass123!) with their saved resources, alert subscriptions, travel-guide request and scam report are fictional fixture data created for this benchmark environment."
+    },
+    {
+      "path": "static/images/",
+      "classification": "captured-upstream-media",
+      "scope": "Real ohio.gov media files downloaded from the upstream pages on 2026-09-23: the Ohio.gov logo (desktop and mobile), homepage hero (Wingfoot Lake State Park), homepage featured and popular-topic card images, travel-guide spotlight banner, landing-page hero and category card images, news card images, resource card images, division icons, and FAQ card images. 547 files total; each file's byte length and SHA-256 together with its source URL are pinned in asset_inventory.json."
+    },
+    {
+      "path": "static/css/ + static/fonts/ + static/webfonts/",
+      "classification": "captured-upstream-media",
+      "scope": "The real ODX Common Design stylesheets served by ohio.gov (odx-layout.min.css, odx-main-red.css, site-main.css, the red theme, the site app CSS, the portal mashup CSS, print CSS) plus Font Awesome 6 CSS and their webfonts, and the Source Sans Pro webfonts (Google Fonts woff2 subsets and the ODX woff/ttf/eot/svg variants). Font and icon URLs inside the stylesheets are rewritten to mirror-relative ../fonts/ and ../webfonts/ paths; no other edits."
+    },
+    {
+      "path": "static/js/app.js",
+      "classification": "mirror-code",
+      "scope": "Minimal vanilla-JS interaction layer implementing the ODX behaviors the upstream site provides via jQuery: the 'Here's how you know' official-site banner dropdown, the header search toggle, and the bootstrap-3-style collapse accordions used by the FAQ and outage pages."
+    },
+    {
+      "path": "templates/",
+      "classification": "mirror-code",
+      "scope": "28 Jinja2 templates reproducing the upstream ODX layout (banner, header, navigation, search box, hero, featured cards, card carousels, topic hubs, resource details, search results, news, tables, accordions, forms, primary and secondary footers) using the same class names as the real site."
+    }
+  ]
+}

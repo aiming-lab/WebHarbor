@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | Latest NFL News, Analysis &amp; Updates | NFL.com{% endblock %}
+{% block content %}
+<article class="article">
+  <header class="article-head">
+    <span class="kicker">{{ article.section or 'NEWS' }}</span>
+    <h1>{{ article.title }}</h1>
+    <p class="article-byline">
+      Published: {{ article.published_display }} ·
+      <a href="#">{{ article.author }}</a>
+    </p>
+  </header>
+  <figure class="article-hero">
+    <img src="{{ article.image }}" alt="{{ article.title }}">
+  </figure>
+  <div class="article-body">
+    <p class="article-desc">{{ article.description }}</p>
+    {% for p in article.paragraphs %}
+    <p>{{ p }}</p>
+    {% endfor %}
+  </div>
+</article>
+
+<section class="section">
+  <h2 class="section-title">RELATED CONTENT</h2>
+  <div class="headline-row">
+    {% for a in related %}
+    <a class="card card-news card-news--compact" href="{{ url_for('article_detail', slug=a.slug) }}">
+      <figure><img src="{{ a.image }}" alt="{{ a.title }}"></figure>
+      <div class="card-body">
+        <span class="kicker">{{ a.section or 'NEWS' }}</span>
+        <h4>{{ a.title }}</h4>
+        <p class="byline">{{ a.published_display }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
