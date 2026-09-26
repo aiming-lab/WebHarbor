@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% set header_mode = 'search' %}
+{% block title %}{{ heading }} | REMAX{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="container-wide">
+    <h1>{{ heading }}</h1>
+    <p class="sub">{{ sub }}</p>
+  </div>
+</div>
+<div class="container-wide">
+  <h2 style="padding-top:16px; font-size:20px; color:#000E35;">Search Listings By State</h2>
+  <div class="state-cols">
+    {% for st, count in states %}
+    <div class="col-item"><a href="{{ url_for('state_page', state=st.lower()) if mode == 'sale' else url_for('rentals_page') }}">{{ STATES.get(st, st) }} {{ 'Homes for Sale' if mode == 'sale' else 'Homes for Rent' }}</a></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

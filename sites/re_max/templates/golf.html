@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Real Estate for the Golf Lifestyle | REMAX{% endblock %}
+{% block content %}
+<div class="hero" style="height:480px;">
+  <img class="hero-bg" src="{{ url_for('static', filename='images/homepage/golf_lifestyle.jpg') }}" alt="Golf community home">
+  <div class="hero-overlay">
+    <h1>Real Estate for the Golf Lifestyle</h1>
+    <p>Explore golf communities with agents who know the market.</p>
+    <a class="btn btn-cream" href="#homes">EXPLORE GOLF LIFESTYLES</a>
+  </div>
+</div>
+<section class="section" id="homes">
+  <div class="container-wide">
+    <h2 class="section-heading">Homes in Golf Communities</h2>
+    <p class="section-sub">Explore properties near the fairways with agents who know these markets.</p>
+    <div class="listing-grid">
+      {% for l in listings %}{% include '_listing_card.html' %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

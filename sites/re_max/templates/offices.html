@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Find a REMAX Real Estate Office | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="breadcrumb">Home &gt; Office Search</div>
+  <div class="page-head">
+    <h1>Find a REMAX Real Estate Office</h1>
+    <p class="sub">We know the market, schools and communities — both as agents and neighbors. Use our search below to find a REMAX office or contact us so we can connect you with someone that will be the perfect fit for your needs. We look forward to the opportunity to serve you.</p>
+  </div>
+
+  <form method="get" action="{{ url_for('offices_page') }}" class="filter-bar">
+    <div class="filter-bar-inner">
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">LANGUAGE ▾</button>
+        <div class="filter-menu">
+          {% for lang in all_languages %}
+          <label><input type="radio" name="language" value="{{ lang }}" {% if args.get('language') == lang %}checked{% endif %}> {{ lang }}</label>
+          {% endfor %}
+          <label><input type="radio" name="language" value="" {% if not args.get('language') %}checked{% endif %}> Any language</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">SPECIALTY ▾</button>
+        <div class="filter-menu">
+          {% for sp in all_specialties[:24] %}
+          <label><input type="radio" name="specialty" value="{{ sp }}" {% if args.get('specialty') == sp %}checked{% endif %}> {{ sp }}</label>
+          {% endfor %}
+          <label><input type="radio" name="specialty" value="" {% if not args.get('specialty') %}checked{% endif %}> Any specialty</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">SORT ▾</button>
+        <div class="filter-menu">
+          <label><input type="radio" name="sort" value="" {% if not args.get('sort') %}checked{% endif %}> No Sort</label>
+          <label><input type="radio" name="sort" value="name" {% if args.get('sort') == 'name' %}checked{% endif %}> Name (A-Z)</label>
+        </div>
+      </div>
+      <div class="filter-actions-right">
+        <button type="submit" class="filter-btn" style="color:#0043FF;">APPLY</button>
+        <a class="link-plain" href="{{ url_for('offices_page') }}">RESET</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="srp-meta"><div class="srp-count">{{ total }} Results</div></div>
+
+  {% if offices %}
+  <div class="people-grid">
+    {% for o in offices %}
+    <article class="person-card">
+      <div class="person-photo">
+        {% if o.photo %}<img src="{{ url_for('static', filename='images/' + o.photo) }}" alt="{{ o.name }}" loading="lazy">
+        {% else %}<span>no photo</span>{% endif %}
+      </div>
+      <div class="person-body">
+        <div class="person-name"><a href="{{ o.detail_url() }}" style="color:inherit;">{{ o.name }}</a></div>
+        <div class="person-meta">{{ o.address }}</div>
+        {% if o.phone %}<div class="person-meta">{{ o.phone }}</div>{% endif %}
+        <div class="person-actions">
+          <a href="{{ o.detail_url() }}">DETAILS</a>
+          <a href="{{ o.detail_url() }}#contact">CONTACT</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No offices match your filters.</div>
+  {% endif %}
+</div>
+{% endblock %}

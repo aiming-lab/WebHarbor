@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}{{ city }}, {{ state }} Homes For Sale & Real Estate | REMAX{% endblock %}
+{% block content %}
+<div class="filter-bar">
+  <div class="container-wide filter-bar-inner">
+    <form method="get" action="{{ url_for('city_srp', state=state.lower(), city=city.lower().replace(' ', '-')) }}" id="filter-form">
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">FOR SALE ▾</button>
+        <div class="filter-menu">
+          <label><input type="radio" name="status" value="" {% if not args.get('status') %}checked{% endif %}> Any status</label>
+          <label><input type="radio" name="status" value="active" {% if args.get('status') == 'active' %}checked{% endif %}> For Sale</label>
+          <label><input type="radio" name="status" value="pending" {% if args.get('status') == 'pending' %}checked{% endif %}> Pending</label>
+          <label><input type="radio" name="status" value="coming_soon" {% if args.get('status') == 'coming_soon' %}checked{% endif %}> Coming Soon</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">HOME TYPE ▾</button>
+        <div class="filter-menu">
+          {% for t in home_types %}
+          <label><input type="radio" name="home_type" value="{{ t }}" {% if args.get('home_type') == t %}checked{% endif %}> {{ t }}</label>
+          {% endfor %}
+          <label><input type="radio" name="home_type" value="" {% if not args.get('home_type') %}checked{% endif %}> Any type</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">PRICE ▾</button>
+        <div class="filter-menu">
+          <label>Minimum price<br><input type="number" name="price_min" placeholder="No Min" value="{{ args.get('price_min', '') }}" style="font-family:inherit;font-size:14px;padding:8px;border:1px solid #A9AEB8;margin-top:4px;width:100%;"></label>
+          <label>Maximum price<br><input type="number" name="price_max" placeholder="No Max" value="{{ args.get('price_max', '') }}" style="font-family:inherit;font-size:14px;padding:8px;border:1px solid #A9AEB8;margin-top:4px;width:100%;"></label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">BED/BATH ▾</button>
+        <div class="filter-menu">
+          <label>Beds (min)<br>
+            <select name="beds" style="font-family:inherit;font-size:14px;padding:8px;border:1px solid #A9AEB8;margin-top:4px;width:100%;">
+              <option value="">Any</option>
+              {% for n in [1,2,3,4,5] %}<option value="{{ n }}" {% if args.get('beds')|int(default=0) == n %}selected{% endif %}>{{ n }}+</option>{% endfor %}
+            </select>
+          </label>
+          <label>Baths (min)<br>
+            <select name="baths" style="font-family:inherit;font-size:14px;padding:8px;border:1px solid #A9AEB8;margin-top:4px;width:100%;">
+              <option value="">Any</option>
+              {% for n in [1,2,3,4] %}<option value="{{ n }}" {% if args.get('baths')|int(default=0) == n %}selected{% endif %}>{{ n }}+</option>{% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">FILTERS ▾</button>
+        <div class="filter-menu">
+          <label><input type="checkbox" name="open_house" value="1" {% if args.get('open_house') %}checked{% endif %}> Open houses only</label>
+        </div>
+      </div>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <div class="filter-actions-right">
+        <button type="submit" class="filter-btn" style="color:#0043FF;">APPLY</button>
+        <a class="link-plain" href="{{ url_for('city_srp', state=state.lower(), city=city.lower().replace(' ', '-')) }}">RESET</a>
+      </div>
+    </form>
+    <div class="filter-actions-right">
+      <a class="link-plain" href="{{ url_for('open_houses_state', state=state.lower()) }}">Show Open Houses</a>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('saved_search_add') }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.url }}">
+        <input type="hidden" name="city" value="{{ city }}">
+        <input type="hidden" name="state" value="{{ state }}">
+        <input type="hidden" name="home_type" value="{{ args.get('home_type', '') }}">
+        <input type="hidden" name="min_price" value="{{ args.get('price_min', '') }}">
+        <input type="hidden" name="max_price" value="{{ args.get('price_max', '') }}">
+        <input type="hidden" name="beds" value="{{ args.get('beds', '') }}">
+        <button class="filter-btn" type="submit">SAVE THIS SEARCH</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('alerts_subscribe') }}" style="display:inline-flex; align-items:center; gap:6px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.url }}">
+        <input type="hidden" name="city" value="{{ city }}">
+        <input type="hidden" name="state" value="{{ state }}">
+        <input type="email" name="email" placeholder="Email for alerts" required aria-label="Email for listing alerts" style="padding:8px 10px; border:1px solid #A9AEB8; font-family:inherit; font-size:13px; width:170px;">
+        <button class="filter-btn" type="submit">GET LISTING ALERTS</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="breadcrumb">Home &gt; <a href="{{ url_for('state_page', state=state.lower()) }}">{{ state_name }}</a> &gt; {{ city }}, {{ state }} Real Estate</div>
+  {% if sponsor %}
+    <div class="sponsored">Sponsored by {{ sponsor.name }}</div>
+  {% endif %}
+  <div class="srp-head"><h1 class="srp-title">{{ city }}, {{ state }} Homes For Sale &amp; Real Estate</h1></div>
+  <div class="srp-meta">
+    <div class="srp-count">{{ total }} Results</div>
+    <div class="sort-wrap">
+      <label for="sort">Sort:</label>
+      <form method="get" id="sort-form" style="display:inline;">
+        {% for k in ['home_type','price_min','price_max','beds','baths','status','open_house'] %}
+          {% if args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ args.get(k) }}">{% endif %}
+        {% endfor %}
+        <select name="sort" id="sort" onchange="document.getElementById('sort-form').submit();">
+          {% for key, label in sort_options.items() %}
+            <option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+
+  {% if listings %}
+  <div class="listing-grid">
+    {% for l in listings %}{% include '_listing_card.html' %}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No listings match your filters in {{ city }}, {{ state }}. Try widening your search.</div>
+  {% endif %}
+
+  <div style="padding: 32px 0;">
+    <h3 style="font-size:16px; color:#000E35; font-weight:600;">Get real-estate advice trusted by thousands worldwide</h3>
+    <form method="post" action="{{ url_for('newsletter_subscribe') }}" style="display:flex; gap:8px; margin:12px 0; flex-wrap:wrap;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.url }}">
+      <input type="email" name="email" placeholder="Email Address" required style="padding:12px; border:1px solid #A9AEB8; font-family:inherit; min-width:280px;">
+      <select name="buyer_type" style="padding:12px; border:1px solid #A9AEB8; font-family:inherit;">
+        <option value="">Buyer Type</option>
+        <option>First time home buyer</option>
+        <option>Move-up buyer</option>
+        <option>Downsizer</option>
+        <option>Luxury Buyer</option>
+        <option>Renter</option>
+      </select>
+      <button class="btn btn-primary" type="submit" style="padding:12px 24px;">SUBSCRIBE TO ADVICE</button>
+    </form>
+  </div>
+  <div class="trusted-band" style="padding: 32px 0;">
+    <div class="star">★★★★★</div>
+    <h2>Voted the Most Trusted Agents in Real Estate*</h2>
+    <a class="btn btn-primary" href="{{ url_for('agents_page') }}">FIND A REMAX AGENT</a>
+  </div>
+  <div class="disclaimer">
+    Listings courtesy of the local MLS. Based on information submitted to the MLS GRID. All data is obtained from various sources and may not have been verified by broker or MLS GRID. Supplied Open House Information is subject to change without notice. All information should be independently reviewed and verified for accuracy. Properties may or may not be listed by the office/agent presenting the information. Listing information is provided for consumers' personal, non-commercial use, solely to identify prospective properties for potential purchase; all other use is strictly prohibited and may violate relevant federal and state law. Information deemed reliable but not guaranteed. Copyright © 2026 MLS GRID. All Rights Reserved.
+  </div>
+</div>
+{% endblock %}

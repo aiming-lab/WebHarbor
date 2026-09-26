@@ -1,0 +1,29 @@
+<article class="listing-card">
+  <a href="{{ l.detail_url() }}">
+    <div class="listing-photo">
+      <div class="badges">
+        <span class="badge badge-{{ 'pending' if l.status == 'pending' else ('contingent' if l.status == 'contingent' else ('coming' if l.status == 'coming_soon' else 'active')) }}">{{ l.status_label() }}</span>
+        {% for b in l.badge_list() %}
+          {% if b == 'OPEN HOUSE' %}<span class="badge badge-open-house">OPEN HOUSE</span>
+          {% elif b == 'NEW LISTING' %}<span class="badge badge-new">NEW LISTING</span>
+          {% elif 'VIRTUAL TOUR' in b %}<span class="badge badge-tour">{{ b }}</span>{% endif %}
+        {% endfor %}
+      </div>
+      <img src="{{ url_for('static', filename='images/' + l.photo) }}" alt="{{ l.street }}, {{ l.city }}, {{ l.state }} {{ l.zip }}" loading="lazy">
+    </div>
+  </a>
+  <div class="listing-body">
+    <a href="{{ l.detail_url() }}" style="color: inherit; text-decoration: none;">
+      <div class="listing-price">{{ l.price_str() }}</div>
+      <div class="listing-addr">{{ l.street }}</div>
+      <div class="listing-city">{{ l.city }}, {{ l.state }} {{ l.zip }}</div>
+    </a>
+    <div class="listing-specs">
+      <span class="spec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>{{ l.beds or '—' }}</span>
+      <span class="spec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16v8H4zM7 12V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6M7 16h.01M17 16h.01"/></svg>{{ l.baths or '—' }}</span>
+      <span class="spec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V9l8-6 8 6v12H4zM9 21v-6h6v6"/></svg>{{ '{:,}'.format(l.sqft) if l.sqft else '—' }} SQ FT</span>
+    </div>
+    <div class="listing-broker">Listing by {{ l.broker }}{% if l.agent %} - {{ l.agent }}{% endif %}{% if l.agent_phone %} - {{ l.agent_phone }}{% endif %}</div>
+    <div class="listing-mls">MLS® #: {{ l.mls }}</div>
+  </div>
+</article>

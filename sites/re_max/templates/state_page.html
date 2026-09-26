@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}{{ state_name }} Real Estate | REMAX{% endblock %}
+{% block content %}
+<div class="breadcrumb container-wide">Home &gt; {{ state_name }}</div>
+<div class="page-head">
+  <div class="container-wide">
+    <h1>{{ state_name }} Real Estate</h1>
+    <p class="sub">Browse homes for sale across {{ total }} listings in {{ state_name }}.</p>
+  </div>
+</div>
+<div class="container-wide">
+  <h2 style="padding-top:16px; font-size:20px; color:#000E35;">Cities in {{ state_name }}</h2>
+  <div class="state-cols">
+    {% for city, count in cities %}
+    <div class="col-item"><a href="{{ url_for('city_srp', state=state.lower(), city=city.lower().replace(' ', '-')) }}">{{ city }} Real Estate</a> ({{ count }})</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}My Favorites | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="page-head"><h1>My Favorite Homes</h1></div>
+  {% if favorites %}
+  <div class="listing-grid">
+    {% for f in favorites %}{% with l = f.listing %}{% include '_listing_card.html' %}{% endwith %}
+      <form method="post" action="{{ url_for('favorite_remove', fid=f.id) }}" style="margin-top:-16px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="action-chip" type="submit">REMOVE FROM FAVORITES</button>
+      </form>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">You haven't saved any homes yet. Tap FAVORITE on any listing to save it here.</div>
+  {% endif %}
+</div>
+{% endblock %}

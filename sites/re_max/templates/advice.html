@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}REMAX Blog - Real Estate Articles and Advice | REMAX{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="container-wide">
+    <h1>Real Estate Articles and Advice</h1>
+    <p class="sub">Market updates, expert selling tips, and real estate advice from the REMAX HomeHQ blog.</p>
+  </div>
+</div>
+<section class="section">
+  <div class="container-wide">
+    <div class="advice-grid">
+      {% for p in posts %}
+      <article class="advice-card">
+        <div class="photo">
+          {% if p.image %}<a href="{{ url_for('advice_post', slug=p.slug) }}"><img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}" loading="lazy"></a>{% endif %}
+        </div>
+        <div class="body">
+          <div class="cat">ADVICE</div>
+          <h3><a href="{{ url_for('advice_post', slug=p.slug) }}">{{ p.title }}</a></h3>
+          <p style="font-size:13px; color:#555961; margin-top:6px;">{{ p.excerpt(140) }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    <div style="display:flex; gap: 24px; margin-top: 32px; flex-wrap:wrap;">
+      <a class="btn btn-ghost" href="{{ url_for('advice_post', slug='buying-a-home-in-august-2026-as-a-first-time-buyer') }}">Homebuyer's Guide</a>
+      <a class="btn btn-ghost" href="{{ url_for('advice_post', slug='selling-home-mortgage-rates-near-7') }}">Home Seller's Guide</a>
+      <a class="btn btn-ghost" href="{{ url_for('advice_post', slug='fall-home-staging-ideas') }}">Staging to Sell</a>
+      <a class="btn btn-ghost" href="{{ url_for('advice_post', slug='interest-rate-announcement') }}">Interest Rate News</a>
+      <a class="btn btn-ghost" href="{{ url_for('advice_post', slug='what-not-to-fix-when-selling-a-house' if false else 'how-much-does-20-down-save') }}">Selling &amp; Renos</a>
+      <a class="btn btn-ghost" href="{{ url_for('advice_post', slug='seller-concessions-2026') }}">Conditions in Real Estate</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

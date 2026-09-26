@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Real Estate, Homes for Sale and Rent, Home Values, Agents and Advice | REMAX{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/brand/REMAX-logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/remax.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container-wide header-inner">
+    <a class="header-logo" href="{{ url_for('index') }}" aria-label="RE/MAX Home">
+      <img src="{{ url_for('static', filename='images/brand/REMAX-logo.svg') }}" alt="RE/MAX Logo">
+    </a>
+    {% if header_mode == 'search' %}
+      <form class="header-search-bar" action="{{ url_for('global_search') }}" method="get">
+        <input type="text" name="q" placeholder="Address, City, ZIP, and More" aria-label="Search">
+        <button class="btn btn-ghost" type="submit" aria-label="Search" style="padding:4px 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        </button>
+      </form>
+      <nav class="header-nav">
+        <a href="{{ url_for('state_directory') }}">Buy</a>
+        <a href="{{ url_for('advice') }}">Sell</a>
+        <a href="{{ url_for('rent_directory') }}">Rent</a>
+        <a href="{{ url_for('agents_page') }}">Agents</a>
+        <a href="{{ url_for('advice') }}">More</a>
+      </nav>
+      <div class="header-cta">
+        {% if current_user.is_authenticated %}
+          <a class="btn btn-outline" href="{{ url_for('account') }}">Hi, {{ current_user.first_name }}</a>
+        {% else %}
+          <a class="btn btn-outline" href="{{ url_for('login') }}">Log In</a>
+          <a class="btn btn-primary" href="{{ url_for('register') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    {% else %}
+      <nav class="header-nav">
+        <a href="{{ url_for('state_directory') }}">Buy</a>
+        <a href="{{ url_for('advice') }}">Sell</a>
+        <a href="{{ url_for('agents_page') }}">Find an Agent</a>
+        <a href="{{ url_for('advice') }}">Advice</a>
+      </nav>
+      <div class="header-cta">
+        {% if current_user.is_authenticated %}
+          <a class="btn btn-outline" href="{{ url_for('account') }}">Hi, {{ current_user.first_name }}</a>
+        {% else %}
+          <a class="btn btn-ghost" href="{{ url_for('login') }}">Log In</a>
+          <a class="btn btn-outline" href="{{ url_for('register') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container-wide footer-inner">
+    <div class="footer-col">
+      <h4>Real Estate</h4>
+      <a href="{{ url_for('new_listings') }}">New homes for sale</a>
+      <a href="{{ url_for('state_directory') }}">Homes for sale</a>
+      <a href="{{ url_for('open_house_directory') }}">Open houses</a>
+      <a href="{{ url_for('rent_directory') }}">Homes for rent</a>
+      <a href="{{ url_for('offices_page') }}">Find a REMAX office</a>
+      <a href="{{ url_for('state_directory') }}">Popular searches</a>
+      <a href="{{ url_for('golf_lifestyles') }}">REMAX Golf Lifestyles</a>
+    </div>
+    <div class="footer-col">
+      <h4>REMAX Websites</h4>
+      <a href="{{ url_for('luxury') }}">The REMAX Collection</a>
+      <a href="{{ url_for('luxury') }}">REMAX Commercial</a>
+      <a href="{{ url_for('index') }}">REMAX Global</a>
+      <a href="{{ url_for('advice') }}">Real Estate Articles and Advice</a>
+      <a href="{{ url_for('advice') }}">REMAX News</a>
+    </div>
+    <div class="footer-col">
+      <h4>Popular Cities</h4>
+      {% for city, st in content_popular_cities %}
+        <a href="{{ url_for('city_srp', state=st.lower(), city=city.lower().replace(' ', '-')) }}">{{ city }} Real Estate</a>
+      {% endfor %}
+    </div>
+    <div class="footer-col">
+      <h4>Search Homes for Sale by State</h4>
+      <a href="{{ url_for('state_page', state='wa') }}">Washington Real Estate</a>
+      <a href="{{ url_for('state_page', state='tx') }}">Texas Real Estate</a>
+      <a href="{{ url_for('state_page', state='fl') }}">Florida Real Estate</a>
+      <a href="{{ url_for('state_page', state='co') }}">Colorado Real Estate</a>
+      <a href="{{ url_for('state_page', state='il') }}">Illinois Real Estate</a>
+      <a href="{{ url_for('state_page', state='ga') }}">Georgia Real Estate</a>
+    </div>
+  </div>
+  <div class="container-wide footer-bottom">
+    <div>
+      <p>Each office independently owned and operated.</p>
+      <p>RE/MAX, LLC is an Equal Opportunity Employer and supports the Fair Housing Act and equal opportunity housing.</p>
+      <p>* Voted most trusted Real Estate Agency brand by American shoppers based on the BrandSpark® American Trust Study, years 2022-2024 and 2019.</p>
+    </div>
+    <div>© 2026 RE/MAX, LLC. All Rights Reserved. · <a href="{{ url_for('advice') }}" style="display:inline;">Privacy Notice</a> · <a href="{{ url_for('advice') }}" style="display:inline;">Terms of Use</a> · <a href="{{ url_for('advice') }}" style="display:inline;">Accessibility</a></div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/remax.js') }}"></script>
+</body>
+</html>

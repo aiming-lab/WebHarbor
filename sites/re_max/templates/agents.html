@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Find a REMAX Real Estate Agent Near You | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="breadcrumb">Home &gt; Agent Search</div>
+  <div class="page-head">
+    <h1>Find a REMAX Real Estate Agent Near You</h1>
+    <p class="sub">We know the market, schools and communities — both as agents and neighbors. Use our search below to find a REMAX agent or contact us so we can connect you with someone that will be the perfect fit for your needs. We look forward to the opportunity to serve you.</p>
+  </div>
+
+  <form method="get" action="{{ url_for('agents_page') }}" class="filter-bar">
+    <div class="filter-bar-inner">
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">LANGUAGE ▾</button>
+        <div class="filter-menu">
+          {% for lang in all_languages %}
+          <label><input type="radio" name="language" value="{{ lang }}" {% if args.get('language') == lang %}checked{% endif %}> {{ lang }}</label>
+          {% endfor %}
+          <label><input type="radio" name="language" value="" {% if not args.get('language') %}checked{% endif %}> Any language</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">SPECIALTY ▾</button>
+        <div class="filter-menu">
+          {% for sp in all_specialties[:24] %}
+          <label><input type="radio" name="specialty" value="{{ sp }}" {% if args.get('specialty') == sp %}checked{% endif %}> {{ sp }}</label>
+          {% endfor %}
+          <label><input type="radio" name="specialty" value="" {% if not args.get('specialty') %}checked{% endif %}> Any specialty</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">YEARS OF EXPERIENCE ▾</button>
+        <div class="filter-menu">
+          <label><input type="radio" name="years" value="" {% if not args.get('years') %}checked{% endif %}> Any</label>
+          {% for n in [5, 10, 15, 20, 30] %}
+          <label><input type="radio" name="years" value="{{ n }}" {% if args.get('years')|int(default=0) == n %}checked{% endif %}> {{ n }}+ years</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">LICENSED IN ▾</button>
+        <div class="filter-menu">
+          {% for st in ['WA','TX','FL','CO','IL','GA','NC','AZ','PA','CA','NJ','NY','MD','SC','MI','VA','TN','MO','OK','NV','CT','DE','ME','NE','RI','KY','IN'] %}
+          <label><input type="radio" name="licensed" value="{{ st }}" {% if args.get('licensed') == st %}checked{% endif %}> {{ st }}</label>
+          {% endfor %}
+          <label><input type="radio" name="licensed" value="" {% if not args.get('licensed') %}checked{% endif %}> Any state</label>
+        </div>
+      </div>
+      <div class="filter-wrap" data-filter>
+        <button type="button" class="filter-btn">SORT ▾</button>
+        <div class="filter-menu">
+          <label><input type="radio" name="sort" value="" {% if not args.get('sort') %}checked{% endif %}> No Sort</label>
+          <label><input type="radio" name="sort" value="name" {% if args.get('sort') == 'name' %}checked{% endif %}> Name (A-Z)</label>
+          <label><input type="radio" name="sort" value="experience" {% if args.get('sort') == 'experience' %}checked{% endif %}> Most Experience</label>
+        </div>
+      </div>
+      <div class="filter-actions-right">
+        <button type="submit" class="filter-btn" style="color:#0043FF;">APPLY</button>
+        <a class="link-plain" href="{{ url_for('agents_page') }}">RESET</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="srp-meta">
+    <div class="srp-count">{{ total }}+ Results</div>
+  </div>
+
+  {% if agents %}
+  <div class="people-grid">
+    {% for a in agents %}
+    <article class="person-card">
+      <div class="person-photo">
+        {% if a.photo %}<img src="{{ url_for('static', filename='images/' + a.photo) }}" alt="{{ a.name }}" loading="lazy">
+        {% else %}<span>no photo</span>{% endif %}
+      </div>
+      <div class="person-body">
+        <div class="person-name"><a href="{{ a.detail_url() }}" style="color:inherit;">{{ a.name }}</a></div>
+        <div class="person-title">{{ a.title }}</div>
+        <div class="person-meta">Licensed in {{ a.licensed }}</div>
+        <div class="person-meta">{{ a.city }}, {{ a.state }}</div>
+        <div class="person-office">{{ a.office_name }}</div>
+        {% if a.phone %}<div class="person-meta">{{ a.phone }}</div>{% endif %}
+        <div class="person-actions">
+          <a href="{{ a.detail_url() }}">DETAILS</a>
+          <a href="{{ a.detail_url() }}#contact">CONTACT</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No agents match your filters. Try removing some filters.</div>
+  {% endif %}
+</div>
+{% endblock %}

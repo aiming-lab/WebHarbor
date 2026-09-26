@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% set header_mode = 'search' %}
+{% block title %}New Real Estate - Find Homes For Sale | REMAX{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="container-wide">
+    <h1>New Real Estate - Find Homes For Sale</h1>
+    <p class="sub">Find the newest homes and condos for sale with REMAX. Search through the newest homes below, or browse all listings.</p>
+  </div>
+</div>
+<div class="container-wide">
+  <table class="data-table">
+    <thead>
+      <tr><th>Address</th><th>Price</th><th>Bed/Bath/Sqft</th><th>Home Type</th><th>Date Added</th></tr>
+    </thead>
+    <tbody>
+      {% for l in listings %}
+      <tr>
+        <td><a href="{{ l.detail_url() }}">{{ l.street|title }}, {{ l.city }}, {{ l.state }} {{ l.zip }} For Sale</a></td>
+        <td>{{ l.price_str() }}</td>
+        <td>{{ l.beds }} beds, {{ l.baths }} baths, {{ '{:,}'.format(l.sqft) if l.sqft else '—' }} sqft</td>
+        <td>{{ l.home_type }}</td>
+        <td>{{ l.listed_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

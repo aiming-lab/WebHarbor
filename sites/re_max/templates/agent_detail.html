@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}{{ a.name }}, {{ a.city }} Real Estate {{ a.title }} - REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="breadcrumb">Home &gt; <a href="{{ url_for('agents_page') }}">Agent Search</a> &gt; REMAX &gt; {{ a.name }}</div>
+
+  <div class="agent-detail-head">
+    <div>
+      <div class="agent-photo-lg">
+        {% if a.photo %}<img src="{{ url_for('static', filename='images/' + a.photo) }}" alt="{{ a.name }}">
+        {% else %}<div class="person-photo fallback" style="width:100%; height:100%;">no photo</div>{% endif %}
+      </div>
+      <div style="margin-top:16px;">
+        <a class="btn btn-primary btn-block" href="#contact">CONTACT ME</a>
+        {% if a.website %}<p style="margin-top:10px; font-size:13px;">Website: <a href="{{ a.website }}" rel="noopener">{{ a.website }}</a></p>{% endif %}
+        {% if a.phone %}<p style="font-size:13px;">Mobile: {{ a.phone }}</p>{% endif %}
+        <p style="font-size:13px;">Social Media</p>
+      </div>
+    </div>
+    <div>
+      <div class="person-office" style="font-size:18px;">{{ a.office_name }}</div>
+      <h1 style="font-size:34px; font-weight:600; color:#000E35; margin:4px 0;">{{ a.name }}</h1>
+      <div class="person-title" style="font-size:16px;">{{ a.title }}</div>
+      {% if a.office_address %}<p style="margin-top:12px; font-size:14px;"><b>Office Address</b><br>{{ a.office_address }}</p>{% endif %}
+      <div class="agent-tabs">
+        <a class="active" href="#about">About Me</a>
+        <a href="#contact">Team</a>
+        <a href="#awards">Awards</a>
+      </div>
+      <div id="about">
+        {% if a.about %}<p style="white-space:pre-wrap; font-size:15px; line-height:1.7;">{{ a.about }}</p>{% else %}<p>Get in touch with {{ a.name }} to learn more about their services.</p>{% endif %}
+        {% if a.hobbies_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Hobbies</h3>
+        <p style="font-size:14px;">{{ a.hobbies_list()|join(', ') }}</p>
+        {% endif %}
+        {% if a.civic_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Civic Activities</h3>
+        <p style="font-size:14px;">{{ a.civic_list()|join(', ') }}</p>
+        {% endif %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Experience</h3>
+        <p style="font-size:14px;">{{ a.years }} Years Experience{% if a.license_list() %}<br>{% for lic in a.license_list() %}License #{{ lic }}<br>{% endfor %}{% endif %}</p>
+        {% if a.languages_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Languages</h3>
+        <p style="font-size:14px;">{{ a.languages_list()|join(', ') }}</p>
+        {% endif %}
+        {% if a.specialties_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Specialties</h3>
+        <div class="chips">{% for s in a.specialties_list() %}<span class="chip">{{ s }}</span>{% endfor %}</div>
+        {% endif %}
+        {% if a.designations_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Designations</h3>
+        <p style="font-size:14px;">{{ a.designations_list()|join(', ') }}</p>
+        {% endif %}
+      </div>
+      <div id="awards" style="margin-top:24px;">
+        <div class="trusted-band" style="padding:16px 0;">
+          <div class="star">★★★★★</div>
+          <h2 style="font-size:18px;">Voted the Most Trusted Agents in Real Estate*</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-card" id="contact" style="max-width:520px; margin: 0 auto 48px;">
+    <h3>Contact {{ a.name }}</h3>
+    <form method="post" action="{{ url_for('contact_agent') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="agent_id" value="{{ a.id }}">
+      <input type="hidden" name="next" value="{{ request.url }}">
+      <input type="text" name="name" placeholder="Name" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="tel" name="phone" placeholder="Phone (optional)">
+      <textarea name="message" placeholder="I'd like help buying or selling a home."></textarea>
+      <button class="btn btn-primary btn-block" type="submit">CONTACT ME</button>
+    </form>
+  </div>
+
+  {% if office %}
+  <div class="panel" style="max-width:720px; margin: 0 auto 48px;">
+    <h2><a href="{{ office.detail_url() }}" style="color:#000E35;">{{ office.name }}</a></h2>
+    <p style="font-size:14px;">{{ office.address }}</p>
+    {% if office.phone %}<p style="font-size:14px;">{{ office.phone }}</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

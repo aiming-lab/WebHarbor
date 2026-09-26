@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ r.street|title }}, {{ r.city }}, {{ r.state }} {{ r.zip }} For Rent | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="ldp-breadcrumb">Home &gt; Rentals &gt; {{ r.street }}</div>
+  {% set gallery = r.gallery_list() %}
+  {% if gallery %}
+  <div class="ldp-hero">
+    <div class="main-photo">
+      <img src="{{ url_for('static', filename='images/' + gallery[0]) }}" alt="{{ r.street }}">
+      <span class="gallery-count" data-gallery>GALLERY VIEW ({{ gallery|length }} PHOTOS)</span>
+    </div>
+    <div class="side">
+      {% for g in gallery[1:3] %}
+      <div class="cell"><img src="{{ url_for('static', filename='images/' + g) }}" alt="{{ r.street }} photo" loading="lazy"></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="ldp-main">
+    <div>
+      <div class="ldp-price">{{ r.price_str() }}<span style="font-size:15px; color:#555961;"> /month</span></div>
+      <div class="ldp-addr">{{ r.street|title }}, {{ r.city }}, {{ r.state }} {{ r.zip }}</div>
+      <div class="ldp-specs">
+        <span class="spec">{{ r.beds or '—' }} beds</span>
+        <span class="spec">{{ r.baths or '—' }} baths</span>
+        <span class="spec">{{ '{:,}'.format(r.sqft) if r.sqft else '—' }} sq ft</span>
+      </div>
+      <div class="ldp-listed">For Rent &nbsp;·&nbsp; Date added: {{ r.date_added }}</div>
+      <div class="ldp-description">
+        <h3>Property description</h3>
+        {% if r.description %}<p>{{ r.description }}</p>
+        {% else %}<p>Contact the listing office for rental terms, availability and application requirements for this property.</p>{% endif %}
+        {% set overview = r.overview_list() %}
+        {% if overview %}
+        <h3>QUICK OVERVIEW</h3>
+        <ul class="overview-grid">
+          {% for item in overview %}
+          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0043FF" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>{{ item }}</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+    <aside>
+      <div class="contact-card">
+        <h3>Contact a REMAX Agent</h3>
+        <form method="post" action="{{ url_for('contact_listing') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="rental_id" value="{{ r.id }}">
+          <input type="hidden" name="next" value="{{ request.url }}">
+          <input type="text" name="name" placeholder="Name" required>
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="tel" name="phone" placeholder="Phone (optional)">
+          <textarea name="message" placeholder="I'm interested in renting {{ r.street|title }}, {{ r.city }}."></textarea>
+          <button class="btn btn-primary btn-block" type="submit" name="kind" value="contact">CONTACT A REMAX AGENT</button>
+          <button class="btn btn-outline btn-block" type="submit" name="kind" value="tour">SCHEDULE A TOUR</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

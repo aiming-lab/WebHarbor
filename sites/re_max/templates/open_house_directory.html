@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}{{ heading }} | REMAX{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="container-wide">
+    <h1>{{ heading }}</h1>
+    <p class="sub">{{ sub }}</p>
+  </div>
+</div>
+<div class="container-wide">
+  <h2 style="padding-top:16px; font-size:20px; color:#000E35;">Search Open Houses By State</h2>
+  <div class="state-cols">
+    {% for st, count in states %}
+    <div class="col-item"><a href="{{ url_for('open_houses_state', state=st.lower()) }}">{{ STATES.get(st, st) }} Open Houses for Sale</a></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
