@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Flights to {{ airport.name }} ({{ airport.code }}) — Ryanair{% endblock %}
+{% block content %}
+<div class="content-hero" style="background-image:url('{{ url_for('static', filename='images/' ~ airport.image) }}')">
+  <div class="content-hero__caption">
+    <h1>Flights to {{ airport.name }}</h1>
+    <p style="margin:4px 0 0; font-size:.9rem;">{{ airport.city }}, {{ airport.country }} · {{ airport.code }}</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="card">
+    <h2 class="card__title">Book flights to {{ airport.name }} ({{ airport.code }})</h2>
+    {% if offers %}
+    {% set best = offers[0] %}
+    <p style="font-size:1rem;">from <strong>{{ money(best.price) }}</strong> one way — cheapest route: {{ best.origin.name }} ({{ best.route.origin_code }}) on {{ best.date.strftime('%a %d %b') }}</p>
+    <div class="table-scroll">
+    <table class="fare-table-mini" style="margin-top:12px;">
+      <tr><th>From</th><th>To</th><th>Flight type</th><th>Departure date</th><th>Price</th><th></th></tr>
+      {% for offer in offers %}
+      <tr>
+        <td>{{ offer.origin.name }} <small>({{ offer.route.origin_code }})</small></td>
+        <td>{{ airport.name }} <small>({{ airport.code }})</small></td>
+        <td>One way</td>
+        <td>{{ offer.date.strftime('%a %d %b %Y') }}</td>
+        <td>{{ money(offer.price) }}</td>
+        <td><a class="ry-button ry-button--small ry-button--gradient-yellow"
+               href="/gb/en/trip/flights/select?originIata={{ offer.route.origin_code }}&destinationIata={{ airport.code }}&dateOut={{ offer.date.isoformat() }}&isReturn=false&adults=1">Book flight</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    {% else %}
+    <p>No direct flights to {{ airport.name }} are bookable right now.</p>
+    {% endif %}
+  </div>
+
+  {% if guide %}
+  <div class="card">
+    <h2 class="card__title">{{ airport.city }} travel guides</h2>
+    <p style="font-size:.9rem;color:var(--standard-grey);">{{ guide.intro }}</p>
+    <h3 style="font-size:1rem;margin-top:12px;">Flying to {{ airport.city }} must reads</h3>
+    <div class="article-grid" style="margin-top:10px;">
+      {% for image in guide.guide_images()[:4] %}
+      {% set idx = loop.index0 %}
+      <div class="article-card">
+        <div class="article-card__img" style="background-image:url('{{ url_for('static', filename='images/' ~ image) }}')"></div>
+        <div class="article-card__body">{{ guide.must_reads_list[idx] if guide.must_reads_list|length > idx else 'Read more' }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2 class="card__title">Explore the Ryanair network</h2>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-box__value">40</div><div class="stat-box__label">Countries connected</div></div>
+      <div class="stat-box"><div class="stat-box__value">82</div><div class="stat-box__label">Bases in Europe and North Africa</div></div>
+      <div class="stat-box"><div class="stat-box__value">470</div><div class="stat-box__label">New aircraft</div></div>
+      <div class="stat-box"><div class="stat-box__value">2,400+</div><div class="stat-box__label">Daily flights</div></div>
+      <div class="stat-box"><div class="stat-box__value">19,000</div><div class="stat-box__label">Skilled professionals</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

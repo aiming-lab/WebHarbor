@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Ryanair — Payment{% endblock %}
+{% block content %}
+<div class="trip-header">
+  <div class="trip-header__row">
+    <div class="trip-header__route">
+      <span class="price-badge">{{ money(grand) }}</span>
+      <span>{{ out_sched.route.origin.name }} → {{ out_sched.route.destination.name }}</span>
+      {% if in_sched %}<span>· {{ in_sched.route.origin.name }} → {{ in_sched.route.destination.name }}</span>{% endif %}
+    </div>
+    <div class="trip-header__meta"><span>{{ data.dateOut }}</span>{% if in_sched %}<span>- {{ data.dateIn }}</span>{% endif %}</div>
+  </div>
+  <div class="stepper">
+    <span class="stepper__item"><span class="stepper__dot"></span>Flights</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Seats</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Bags</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Extras</span>
+    <span class="stepper__item stepper__item--active"><span class="stepper__dot"></span>Review &amp; Pay</span>
+  </div>
+</div>
+
+<div class="trip-body">
+  <div>
+    <form method="post" action="{{ url_for('payment') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="pay">
+      <div class="card">
+        <h2 class="card__title">Contact details</h2>
+        <p style="font-size:.82rem;color:var(--standard-grey);">We will use it for flight changes and booking confirmation. (Fields marked with * are mandatory)</p>
+        <div class="payment-grid">
+          <div><label class="form-label">Email address *</label>
+            <input name="contactEmail" type="email" value="{{ data.get('contactEmail','') }}" required></div>
+          <div><label class="form-label">Confirm email address *</label>
+            <input name="contactEmail2" type="email" value="{{ data.get('contactEmail2','') }}" required></div>
+          <div><label class="form-label">Mobile number *</label>
+            <input name="contactPhone" value="{{ data.get('contactPhone','') }}" placeholder="+44 7700 900000" required></div>
+          <div><label class="form-label">Country code</label>
+            <select name="countryCode"><option>United Kingdom (+44)</option><option>Ireland (+353)</option><option>Spain (+34)</option><option>Poland (+48)</option><option>Italy (+39)</option><option>France (+33)</option></select></div>
+        </div>
+        <label style="display:flex; gap:8px; align-items:center; font-size:.85rem; margin-top:10px;">
+          <input type="checkbox" name="smsUpdates" {% if data.smsUpdates %}checked{% endif %}> Send my flight details via SMS for £2.99
+        </label>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Payment methods</h2>
+        <p style="font-size:.82rem;color:var(--standard-grey);">Select your payment method to complete your booking.</p>
+        <div class="payment-methods">
+          <div class="payment-method payment-method--selected"><input type="radio" name="method" value="card" checked> Credit or debit card</div>
+          <div class="payment-method">Pay by Bank</div>
+          <div class="payment-method">PayPal</div>
+          <div class="payment-method">Request Invoice</div>
+        </div>
+
+        {% if saved_cards %}
+        <p style="font-size:.85rem;"><strong>Saved cards:</strong></p>
+        {% for card in saved_cards %}
+        <div class="extra-row">
+          <label style="display:flex;gap:8px;align-items:center;">
+            <input type="radio" name="savedCard" value="{{ card.id }}"> {{ card.card_type }} ending {{ card.last4 }} · {{ card.holder }} · exp {{ card.expiry }}
+          </label>
+        </div>
+        {% endfor %}
+        <p style="font-size:.78rem;color:var(--standard-grey);">Or use a different card below.</p>
+        {% endif %}
+
+        <div class="payment-grid" style="margin-top:10px;">
+          <div><label class="form-label">Card number</label>
+            <input name="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" required></div>
+          <div><label class="form-label">Name on card</label>
+            <input name="cardName" placeholder="As printed on the card" required></div>
+          <div><label class="form-label">Expiry date (MM/YY)</label>
+            <input name="cardExpiry" placeholder="09/29" maxlength="5" required></div>
+          <div><label class="form-label">CVV</label>
+            <input name="cardCvv" placeholder="123" maxlength="4" required></div>
+        </div>
+        <p style="font-size:.78rem;color:var(--standard-grey);">Accepted: Visa, Mastercard, American Express, Diners Club, Discover, UATP. A card payment processing fee of 2% applies.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Billing address</h2>
+        <div class="payment-grid">
+          <div><label class="form-label">Address line 1 *</label>
+            <input name="address1" value="{{ current_user.address_line1 if current_user.is_authenticated else '' }}" required></div>
+          <div><label class="form-label">Address line 2</label>
+            <input name="address2" value="{{ current_user.address_line2 if current_user.is_authenticated else '' }}"></div>
+          <div><label class="form-label">City *</label>
+            <input name="city" value="{{ current_user.city if current_user.is_authenticated else '' }}" required></div>
+          <div><label class="form-label">Postcode/ZIP code *</label>
+            <input name="postcode" value="{{ current_user.postcode if current_user.is_authenticated else '' }}" required></div>
+          <div><label class="form-label">Country *</label>
+            <input name="country" value="United Kingdom" required></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="legal-note">By clicking Pay Now, I confirm I have read and accepted: Ryanair's General Terms &amp; Conditions of Carriage, including the EU261 claims procedure, Website Terms and Privacy Statement. Free online check-in is available on the Ryanair website or App up to 2 hours before the scheduled departure of the flight. If I don't check-in online, I will have to pay £55, or the equivalent amount in local currency (excluding flights departing from Spain, where it is €30, and from Austria, where it is €40).</p>
+        <button type="submit" class="ry-button ry-button--gradient-yellow">Pay now</button>
+      </div>
+    </form>
+  </div>
+
+  <div>
+    <div class="card summary-panel">
+      <h3 class="card__title">Price Breakdown</h3>
+      <div class="breakdown-leg">
+        <strong>{{ out_sched.route.origin.name }} to {{ out_sched.route.destination.name }}</strong><br>
+        {{ out_day_label }} · {{ out_sched.departure }} - {{ out_sched.arrival }} · {{ out_sched.flight_number }}<br>
+        {{ data.adults + data.teens + data.children }} x Adult {{ data.fare|title }} Fare
+      </div>
+      {% if in_sched %}
+      <div class="breakdown-leg">
+        <strong>{{ in_sched.route.origin.name }} to {{ in_sched.route.destination.name }}</strong><br>
+        {{ in_day_label }} · {{ in_sched.departure }} - {{ in_sched.arrival }} · {{ in_sched.flight_number }}<br>
+        {{ data.adults + data.teens + data.children }} x Adult {{ data.fare|title }} Fare
+      </div>
+      {% endif %}
+      {% for label, value in lines %}
+      <div class="summary-line"><span>{{ label }}</span><span>{{ money(value) }}</span></div>
+      {% endfor %}
+      <div class="summary-line"><span>Card processing fee</span><span>{{ money(card_fee) }}</span></div>
+      <div class="summary-panel__total-row"><span>Total to pay</span><span>{{ money(grand) }}</span></div>
+      <p style="font-size:.78rem;color:var(--standard-grey);">Passengers: {{ data.adults + data.teens + data.children }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

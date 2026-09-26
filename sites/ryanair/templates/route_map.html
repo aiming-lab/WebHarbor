@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Route map — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1000px; margin-top:30px;">
+  <h1 style="font-size:1.6rem;">Ryanair route map</h1>
+  <p style="font-size:.9rem;color:var(--standard-grey);">{{ airports_count }} destinations across {{ countries|length }} countries. Pick a destination to see fares and book.</p>
+  {% for country, airports in by_country.items() %}
+  <div class="card">
+    <h2 class="card__title">{{ country }}</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+      {% for a in airports %}
+      <a class="ry-button ry-button--small ry-button--outline-light-blue" href="/flights/gb/en/flights-to-{{ a.slug }}">{{ a.name }} ({{ a.code }})</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="hero">
+  <div class="hero__slides">
+    {% for slide in hero_slides %}
+    <div class="hero__slide {% if loop.first %}hero__slide--active{% endif %}"
+         style="background-image:url('{{ url_for('static', filename='images/' ~ slide.image) }}')"></div>
+    {% endfor %}
+    <div class="hero__caption" id="hero-caption">
+      <h2>{{ hero_slides[0].title }}</h2>
+      <p>{{ hero_slides[0].sub }}</p>
+      <a class="ry-button ry-button--gradient-yellow" href="{{ hero_slides[0].href }}">{{ hero_slides[0].cta }}</a>
+    </div>
+    <div class="hero__dots">
+      {% for slide in hero_slides %}
+      <button class="hero__dot {% if loop.first %}hero__dot--active{% endif %}" data-slide="{{ loop.index0 }}"></button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="home-widget-wrap">
+  <form class="search-widget" id="search-widget" method="get" action="/gb/en/trip/flights/select">
+    <div class="search-widget__tabs">
+      <button type="button" class="search-widget__tab search-widget__tab--active" data-ref="search-widget-tabs__flights">flights</button>
+      <a class="search-widget__tab" href="/gb/en/lp/car-hire">Car Hire</a>
+      <a class="search-widget__tab" href="/gb/en/lp/hotels">hotels</a>
+      <a class="search-widget__tab" href="/gb/en/lp/gift-cards">Gift cards</a>
+    </div>
+    <div class="trip-types">
+      <label><input type="radio" name="tripType" value="return" checked> Return trip</label>
+      <label><input type="radio" name="tripType" value="one-way"> One way</label>
+      <label><input type="radio" name="tripType" value="multicity" disabled> Multicity <span class="tag tag--new">NEW</span></label>
+      <button type="button" class="ry-button--anchor ry-button--anchor-blue" id="promo-toggle">Apply promo code</button>
+    </div>
+    <div class="input-button" id="promo-row" style="display:none; flex:0 0 100%; margin-bottom:10px;">
+      <label class="form-label" for="promoCode">Promo code</label>
+      <input class="input-button__input" id="promoCode" name="promoCode" placeholder="Enter promo code">
+    </div>
+    <div class="widget-row" id="widget-row">
+      <div class="input-button" id="origin-wrap">
+        <span class="input-button__label">From</span>
+        <input class="input-button__input" id="origin-input" data-picker-trigger data-ref="input-button__display-value"
+               placeholder="Departure" autocomplete="off" value="{{ origin.name }}" readonly>
+        <input type="hidden" name="originIata" id="origin-iata" value="{{ origin.code }}">
+        <div class="airport-picker hidden" id="origin-picker">
+          <div class="airport-picker__countries" id="origin-countries"></div>
+          <div class="airport-picker__airports">
+            <div class="airport-picker__header">
+              <span class="airport-picker__title">Pick an airport</span>
+              <button type="button" class="airport-picker__clear">Clear selection</button>
+            </div>
+            <div class="airport-picker__search"><input id="origin-search" placeholder="Search airports"></div>
+            <div class="airport-picker__list" id="origin-list"></div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="ry-button ry-button--anchor" id="swap" title="Swap">⇄</button>
+      <div class="input-button" id="dest-wrap">
+        <span class="input-button__label">To</span>
+        <input class="input-button__input" id="dest-input" data-picker-trigger data-ref="input-button__display-value"
+               placeholder="Destination" autocomplete="off" readonly>
+        <input type="hidden" name="destinationIata" id="dest-iata" value="">
+        <div class="airport-picker hidden" id="dest-picker">
+          <div class="airport-picker__countries" id="dest-countries"></div>
+          <div class="airport-picker__airports">
+            <div class="airport-picker__header">
+              <span class="airport-picker__title">Pick an airport</span>
+              <button type="button" class="airport-picker__clear">Clear selection</button>
+            </div>
+            <div class="airport-picker__search"><input id="dest-search" placeholder="Search airports"></div>
+            <div class="airport-picker__list" id="dest-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="input-button" id="dates-wrap" data-picker-trigger>
+        <span class="input-button__label">Trip dates</span>
+        <span class="input-button__display" id="dates-display">Choose date</span>
+        <input type="hidden" name="dateOut" id="date-out" value="">
+        <input type="hidden" name="dateIn" id="date-in" value="">
+        <input type="hidden" name="isReturn" id="is-return" value="true">
+        <div class="datepicker hidden" id="datepicker"></div>
+      </div>
+      <div class="input-button" id="pax-wrap" data-picker-trigger>
+        <span class="input-button__label">Passengers</span>
+        <span class="input-button__display" id="pax-display">1 Adult</span>
+        <input type="hidden" name="adults" id="adults" value="1">
+        <input type="hidden" name="teens" value="0">
+        <input type="hidden" name="children" value="0">
+        <input type="hidden" name="infants" value="0">
+        <div class="passengers-selector hidden" id="pax-selector">
+          <div class="passengers-selector__row">
+            <span class="passengers-selector__label">Adults<span class="passengers-selector__hint">16+ years</span></span>
+            <span class="counter"><button type="button" class="counter__btn" data-target="adults" data-delta="-1">−</button><span class="counter__value" id="adults-count">1</span><button type="button" class="counter__btn" data-target="adults" data-delta="1">+</button></span>
+          </div>
+          <div class="passengers-selector__row">
+            <span class="passengers-selector__label">Teens<span class="passengers-selector__hint">12-15 years</span></span>
+            <span class="counter"><button type="button" class="counter__btn" data-target="teens" data-delta="-1">−</button><span class="counter__value" id="teens-count">0</span><button type="button" class="counter__btn" data-target="teens" data-delta="1">+</button></span>
+          </div>
+          <div class="passengers-selector__row">
+            <span class="passengers-selector__label">Children<span class="passengers-selector__hint">2-11 years</span></span>
+            <span class="counter"><button type="button" class="counter__btn" data-target="children" data-delta="-1">−</button><span class="counter__value" id="children-count">0</span><button type="button" class="counter__btn" data-target="children" data-delta="1">+</button></span>
+          </div>
+          <div class="passengers-selector__row">
+            <span class="passengers-selector__label">Infants<span class="passengers-selector__hint">Under 2, on lap</span></span>
+            <span class="counter"><button type="button" class="counter__btn" data-target="infants" data-delta="-1">−</button><span class="counter__value" id="infants-count">0</span><button type="button" class="counter__btn" data-target="infants" data-delta="1">+</button></span>
+          </div>
+        </div>
+      </div>
+      <div class="widget-search">
+        <button type="submit" class="ry-button ry-button--gradient-yellow" data-ref="flight-search-widget__cta">Search</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<section class="section">
+  <div class="partners-grid">
+    {% for card in partner_cards %}
+    <div class="partner-card">
+      <div class="partner-card__img" style="background-image:url('{{ url_for('static', filename='images/' ~ card.image) }}')"></div>
+      <div class="partner-card__body">
+        <div class="partner-card__title">{{ card.title }}</div>
+        <div class="partner-card__text">{{ card.text }}</div>
+        <a class="ry-button ry-button--small ry-button--outline-dark-blue" href="{{ card.href }}">{{ card.cta }}</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="card" style="display:flex; gap:18px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+    <div>
+      <h2 class="card__title" style="margin-bottom:4px;">Why are you not subscribed?</h2>
+      <p style="font-size:.88rem;color:var(--standard-grey);margin:0;">Subscribe for the latest deals from us and our travel partners straight to your inbox.
+        Newsletter welcome offer: use promo code <strong>RYANAIR10</strong> in the search widget for 10% off the flight fare.</p>
+    </div>
+    <form method="get" action="{{ url_for('site_search') }}" class="search-box" style="flex:1 1 320px; max-width:420px;">
+      <div style="display:flex; gap:8px;">
+        <input name="email" placeholder="Email address" type="email" style="flex:1; padding:11px 14px; border:1px solid var(--light-grey); border-radius:6px;">
+        <button type="button" class="ry-button ry-button--gradient-yellow">Sign me up!</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">Explore Ryanair</h2>
+  <div style="display:flex; gap:22px; flex-wrap:wrap; margin: 10px 0 18px;">
+    <a href="/gb/en/my-bookings">My Bookings</a>
+    <a href="/gb/en/lp/travel-updates">Travel Updates</a>
+    <a href="/gb/en/route-map">Route Map</a>
+    <a href="/gb/en/r/help/group-travel">Group Travel</a>
+  </div>
+  <div class="carousel" data-carousel>
+    <button class="carousel__controls carousel__controls--left" aria-label="Swipe carousel back">‹</button>
+    <button class="carousel__controls carousel__controls--right" aria-label="Swipe carousel forward">›</button>
+    <div class="carousel__track">
+      {% for item in explore_europe %}
+      <div class="dest-card">
+        <div class="dest-card__img" style="background-image:url('{{ url_for('static', filename='images/' ~ item.image) }}')"></div>
+        <div class="dest-card__body">
+          <div class="dest-card__title">{{ item.title }}</div>
+          <a class="ry-button ry-button--small ry-button--flat-blue" href="/gb/en/cheap-flight-destinations">{{ item.cta }}</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">Useful links</h2>
+  <div class="card">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+      <a href="/gb/en/r/help">Help centre</a>
+      <a href="/gb/en/lp/check-in">Flight info &amp; check-in</a>
+      <a href="/gb/en/route-map">Airports and tourism</a>
+      <a href="/gb/en/trip/flights/timetable">Timetable</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.RY_AIRPORTS = {{ airports_json|safe }};
+window.RY_TODAY = '{{ today }}';
+</script>
+<script src="{{ url_for('static', filename='js/search_widget.js') }}"></script>
+{% endblock %}

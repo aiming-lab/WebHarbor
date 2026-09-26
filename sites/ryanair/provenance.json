@@ -1,0 +1,51 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-24",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the www.ryanair.com (gb/en) mirror: home flight search widget over the real 172-destination network, flight results with date-price ribbon and outbound/return selection, fare table (Basic/Regular/Plus/Flexi Plus), passenger details, 33-row seat map with per-row pricing and occupied seats, cabin/check-in bags, extras (Security Fast Track, three insurance tiers, inflight credit, SMS updates), payment with the 2% card fee and price breakdown, confirmation, myRyanair account (register/login/profile/payment methods/bookings), guest booking lookup, online check-in with the 60-day/24-hour windows and digital boarding passes, fare finder with price/duration filters, flights-to destination pages, route map, flight timetable, 17-topic help centre, promo codes and site-wide scored search."
+  },
+  {
+   "path": "seed_data.py (main / seed_database / seed_benchmark_users)",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time seeder. All content rows come from the tracked source_data_airports.json / source_data_routes.json / source_data_content.json snapshots; benchmark users use a frozen bcrypt password hash at seed time, and the routes indexes are created with explicit name-sorted SQL inside the app (PYTHONHASHSEED=0 plus the explicit index pass keep the SQLite seed byte-reproducible on every build)."
+  },
+  {
+   "path": "source_data_airports.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 172 real Ryanair destinations (IATA code, name, city, country, coordinates, base flag) matching the upstream fare-finder destination cards captured on 2026-09-24; names taken verbatim from the rendered cards (e.g. 'Salerno Costa d'Amalfi' for QSR), public airport facts for city/country/coordinates."
+  },
+  {
+   "path": "source_data_routes.json",
+   "classification": "mirror-authored-from-upstream-topology",
+   "scope": "Route network between the main Ryanair bases and their destinations restricted to the captured airport universe, with great-circle distances and block times calibrated against the real STN-DUB pair (470km = 80min). The STN<->DUB schedules are the real flight numbers and times captured from the live results page on 2026-09-24 (FR 271/31/287/203/289/205/291/210 out, FR 30/272/202/288/204/290/211/292 back). All other schedules are generated deterministically from a fixed seed (FR-numbered, 1-3 daily rotations, 5-7 day operating patterns) following the upstream pattern; base fares are drawn per route by distance band."
+  },
+  {
+   "path": "source_data_content.json",
+   "classification": "captured-upstream-content",
+   "scope": "Fee table, fare bundle features, seat band prices, bag prices (10kg £11.49/£15.99, 20kg £25.49/£50.00, 23kg £34.49/£68.00, Priority & 2 Cabin Bags from £16.00), Security Fast Track prices (STN £8.49, DUB £12.03), insurance tiers (£1.46/£1.90 per day, £28.18 annual), airport check-in fee (£55), boarding pass re-issue (£20), date/name change fees, EU261 refund rules and check-in windows captured from the live booking flow and help pages on 2026-09-24; homepage hero slides, partner cards and the Explore Europe carousel items captured from the rendered homepage; 16 help-centre topics written from the captured policy values (plus the general terms & conditions of carriage topic that the upstream footer links to); destination guides for Dublin, Alicante, Malaga, Barcelona and Paris with the upstream travel-guide article titles."
+  },
+  {
+   "path": "source_data_content.json (promo_codes)",
+   "classification": "mirror-authored",
+   "scope": "Two promo codes follow the upstream promo-code flow: RYANAIR10 (10% off the flight fare) is disclosed on the homepage newsletter section, the fare finder page and the help centre so agents can discover it on-site; FLY20 (20% off) is a flash-sale code."
+  },
+  {
+   "path": "static/images/**",
+   "classification": "captured-upstream-media",
+   "scope": "221 media files downloaded from their real www.ryanair.com URLs on 2026-09-24: 19 homepage hero/partner/carousel banners (4 hero slides, 4 partner cards and 12 Explore Europe destination banners, with one shared image), 172 fare-finder destination card images (one per airport, including STN/LTN which upstream serves as a shared London image), 5 flights-to city images, 16 travel-guide article tiles, 7 payment-method brand marks and 2 app-store badges. The Ryanair harp logomark, wordmark and plane/take-off glyphs were extracted from the site's inline SVGs. Every file's source URL and hash is recorded in asset_inventory.json."
+  },
+  {
+   "path": "static/fonts/**",
+   "classification": "captured-upstream-media",
+   "scope": "Roboto 300/500/700 latin woff2 files served by assets.ryanair.com and used by the upstream site."
+  },
+  {
+   "path": "tests/test_mirror.py",
+   "classification": "mirror-code",
+   "scope": "Pytest suite covering the booking chain end-to-end (search through confirmation with the price math), auth, check-in windows, fare finder filters, timetable, help search and the seed idempotence gates."
+  }
+ ]
+}

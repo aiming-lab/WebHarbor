@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Flight timetable — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:900px; margin-top:40px;">
+  <div class="card">
+    <h1 style="font-size:1.4rem;">Flight timetable</h1>
+    <p style="font-size:.9rem;color:var(--standard-grey);">See which days of the week each flight on a route operates.</p>
+    <form method="get" action="{{ url_for('timetable') }}" class="payment-grid" style="grid-template-columns:1fr 1fr auto; align-items:end;">
+      <div><label class="form-label">From</label>
+        <select name="originIata" style="width:100%; padding:9px; border:1px solid var(--light-grey); border-radius:4px;">
+          {% for a in origins %}<option value="{{ a.code }}" {% if a.code == origin %}selected{% endif %}>{{ a.name }} ({{ a.code }})</option>{% endfor %}
+        </select></div>
+      <div><label class="form-label">To</label>
+        <select name="destinationIata" style="width:100%; padding:9px; border:1px solid var(--light-grey); border-radius:4px;">
+          <option value="">Select destination</option>
+          {% for code, name in dest_choices|sort %}<option value="{{ code }}" {% if code == destination %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select></div>
+      <div><button type="submit" class="ry-button ry-button--gradient-yellow">Search timetable</button></div>
+    </form>
+
+    {% if route %}
+    <h2 class="card__title" style="margin-top:18px;">
+      {{ route.origin.name }} ({{ route.origin_code }}) → {{ route.destination.name }} ({{ route.destination_code }}) · {{ route.duration_label }}
+    </h2>
+    <div class="table-scroll">
+    <table class="fare-table-mini">
+      <tr><th>Flight</th><th>Departs</th><th>Arrives</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>
+      {% for s in scheds %}
+      <tr>
+        <td><strong>{{ s.flight_number }}</strong></td>
+        <td>{{ s.departure }}</td>
+        <td>{{ s.arrival }}</td>
+        {% for day in [1,2,3,4,5,6,7] %}
+        <td>{{ '✓' if day|string in s.days else '' }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

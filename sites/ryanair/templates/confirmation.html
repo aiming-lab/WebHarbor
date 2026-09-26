@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Ryanair — Booking confirmed{% endblock %}
+{% block content %}
+<div class="container" style="max-width:900px;">
+  <div class="confirm-hero">
+    <h1>Your trip is booked!</h1>
+    <p>Confirmation sent to {{ booking.contact_email }}</p>
+    <div class="confirm-ref">{{ booking.booking_ref }}</div>
+    <p style="font-size:.85rem; opacity:.85;">Keep this reservation number to manage your booking and check in online.</p>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Your flights</h2>
+    {% set out_route = booking.outbound_schedule.route %}
+    <div class="breakdown-leg">
+      <strong>{{ out_route.origin.name }} ({{ out_route.origin_code }}) to {{ out_route.destination.name }} ({{ out_route.destination_code }})</strong><br>
+      {{ booking.outbound_date.strftime('%A %d %B %Y') }} · {{ booking.outbound_schedule.departure }} - {{ booking.outbound_schedule.arrival }} · {{ booking.outbound_schedule.flight_number }}
+    </div>
+    {% if booking.inbound_schedule %}
+    {% set in_route = booking.inbound_schedule.route %}
+    <div class="breakdown-leg">
+      <strong>{{ in_route.origin.name }} ({{ in_route.origin_code }}) to {{ in_route.destination.name }} ({{ in_route.destination_code }})</strong><br>
+      {{ booking.inbound_date.strftime('%A %d %B %Y') }} · {{ booking.inbound_schedule.departure }} - {{ booking.inbound_schedule.arrival }} · {{ booking.inbound_schedule.flight_number }}
+    </div>
+    {% endif %}
+
+    <h2 class="card__title" style="margin-top:18px;">Passengers</h2>
+    <div class="table-scroll">
+    <table class="fare-table-mini">
+      <tr><th>Name</th><th>Fare</th><th>Seat (outbound)</th>{% if booking.inbound_schedule %}<th>Seat (return)</th>{% endif %}<th>Bags</th></tr>
+      {% for p in booking.passengers %}
+      <tr>
+        <td>{{ p.title }} {{ p.first_name }} {{ p.last_name }}</td>
+        <td>{{ booking.fare_type|title }}</td>
+        <td>{{ p.seat_out or 'Random at check-in' }}</td>
+        {% if booking.inbound_schedule %}<td>{{ p.seat_in or 'Random at check-in' }}</td>{% endif %}
+        <td>
+          {% if p.cabin_out == 'priority' %}Priority &amp; 2 cabin bags{% else %}1 small bag{% endif %}
+          {% if p.bag_count(True) %}+ {{ p.bag_count(True) }} check-in bag(s) outbound{% endif %}
+          {% if booking.inbound_schedule and p.bag_count(False) %}+ {{ p.bag_count(False) }} return{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+
+    <h2 class="card__title" style="margin-top:18px;">Price breakdown</h2>
+    {% for label, value in booking.breakdown_lines() %}
+    <div class="summary-line"><span>{{ label }}</span><span>{{ money(value) }}</span></div>
+    {% endfor %}
+    <div class="summary-panel__total-row"><span>Total paid</span><span>{{ money(booking.total) }}</span></div>
+
+    <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="ry-button ry-button--gradient-blue" href="/gb/en/check-in/{{ booking.booking_ref }}">Check in online</a>
+      <a class="ry-button ry-button--outline-dark-blue" href="/gb/en/booking/{{ booking.booking_ref }}">Manage booking</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Search — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:900px; margin-top:30px;">
+  <h1 style="font-size:1.4rem;">Search</h1>
+  <form method="get" action="{{ url_for('site_search') }}" class="search-box" style="max-width:520px; margin:12px 0;">
+    <input name="q" value="{{ q }}" placeholder="Search destinations, routes, help...">
+  </form>
+  {% if q %}
+  <div class="card">
+    <h2 class="card__title">Airports &amp; destinations</h2>
+    {% for a in airports %}
+    <div class="booking-row">
+      <span><a href="/flights/gb/en/flights-to-{{ a.slug }}"><strong>{{ a.name }}</strong></a> — {{ a.city }}, {{ a.country }} ({{ a.code }})</span>
+      <a href="/gb/en/cheap-flight-destinations?originIata={{ a.code }}">Fares from here</a>
+    </div>
+    {% else %}<p style="font-size:.88rem;color:var(--standard-grey);">No airports matched.</p>{% endfor %}
+  </div>
+  <div class="card">
+    <h2 class="card__title">Routes</h2>
+    {% for r in routes %}
+    <div class="booking-row">
+      <span>{{ r.origin.name }} ({{ r.origin_code }}) → {{ r.destination.name }} ({{ r.destination_code }}) · {{ r.duration_label }}</span>
+      <a href="/gb/en/trip/flights/timetable?originIata={{ r.origin_code }}&destinationIata={{ r.destination_code }}">Timetable</a>
+    </div>
+    {% else %}<p style="font-size:.88rem;color:var(--standard-grey);">No routes matched.</p>{% endfor %}
+  </div>
+  <div class="card">
+    <h2 class="card__title">Help articles</h2>
+    {% for topic in topics %}
+    <div class="booking-row"><a href="/gb/en/r/help/{{ topic.slug }}"><strong>{{ topic.title }}</strong></a></div>
+    {% else %}<p style="font-size:.88rem;color:var(--standard-grey);">No help articles matched.</p>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

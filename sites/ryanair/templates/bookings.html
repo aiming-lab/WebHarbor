@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}My bookings — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:760px; margin-top:40px;">
+  <div class="card">
+    <h1 style="font-size:1.4rem;">My bookings</h1>
+    {% if bookings is none %}
+    <p style="font-size:.9rem;color:var(--standard-grey);">Manage your bookings and account: check in and get your boarding passes, view and manage your support cases.</p>
+    <form method="post" action="{{ url_for('my_bookings') }}" class="payment-grid" style="grid-template-columns:1fr 1fr auto; align-items:end;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div><label class="form-label">Reservation number</label>
+        <input name="ref" placeholder="e.g. Q8XYZ9" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div><label class="form-label">Email used at booking</label>
+        <input name="email" type="email" placeholder="you@example.com" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div><button type="submit" class="ry-button ry-button--gradient-yellow">Find my booking</button></div>
+    </form>
+    <p style="font-size:.8rem; margin-top:10px;">Or <a href="{{ url_for('login') }}">log in</a> to see all of your bookings.</p>
+    {% else %}
+    <p style="font-size:.9rem;color:var(--standard-grey);">Bookings for {{ current_user.email }}:</p>
+    {% for booking in bookings %}
+    <div class="booking-row">
+      <span>
+        <strong>{{ booking.booking_ref }}</strong> ·
+        {{ booking.outbound_schedule.route.origin_code }}-{{ booking.outbound_schedule.route.destination_code }}
+        · {{ booking.outbound_date.strftime('%d %b %Y') }}
+        {% if booking.inbound_schedule %} - {{ booking.inbound_date.strftime('%d %b %Y') }}{% endif %}
+        · {{ money(booking.total) }}
+      </span>
+      <span>
+        <span class="badge badge--{{ booking.status }}">{{ booking.status }}</span>
+        <a href="/gb/en/booking/{{ booking.booking_ref }}">Manage</a>
+      </span>
+    </div>
+    {% else %}
+    <p style="font-size:.85rem;color:var(--standard-grey);">No bookings yet.</p>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

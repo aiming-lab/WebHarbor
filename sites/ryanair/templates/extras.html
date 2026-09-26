@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Ryanair — Extras{% endblock %}
+{% block content %}
+<div class="trip-header">
+  <div class="trip-header__row">
+    <div class="trip-header__route">
+      <span class="price-badge">{{ money(grand) }}</span>
+      <span>{{ out_sched.route.origin.name }} → {{ out_sched.route.destination.name }}</span>
+      {% if in_sched %}<span>· {{ in_sched.route.origin.name }} → {{ in_sched.route.destination.name }}</span>{% endif %}
+    </div>
+    <div class="trip-header__meta"><span>{{ data.dateOut }}</span>{% if in_sched %}<span>- {{ data.dateIn }}</span>{% endif %}</div>
+  </div>
+  <div class="stepper">
+    <span class="stepper__item"><span class="stepper__dot"></span>Flights</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Seats</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Bags</span>
+    <span class="stepper__item stepper__item--active"><span class="stepper__dot"></span>Extras</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Review &amp; Pay</span>
+  </div>
+</div>
+
+<div class="trip-body">
+  <div>
+    <form method="post" action="{{ url_for('extras') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="save">
+      <div class="card">
+        <h2 class="card__title">The best deals for your trip</h2>
+        <div class="extra-card">
+          <div class="extra-card__title">Security Fast Track</div>
+          <div class="extra-card__sub">Access an exclusive Fast Track lane with short queues and breeze through security.</div>
+          {% for code in ft_airports %}
+          {% set ap = airport_lookup(code) %}
+          <div class="extra-row">
+            <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+              <input type="checkbox" name="fast_track_{{ code }}" {% if data.extras.fast_track.get(code) %}checked{% endif %}>
+              <span>{{ ap.name }} — per person</span>
+            </label>
+            <span class="extra-row__price">{{ money(fast_track_price(code)) }}</span>
+          </div>
+          {% endfor %}
+          <p style="font-size:.75rem;color:var(--standard-grey);">Adding Fast Track adds it for all {{ pax }} passenger(s) at this airport.</p>
+        </div>
+
+        <div class="extra-card">
+          <div class="extra-card__title">Travel insurance</div>
+          <div class="extra-card__sub">The UK Government advises that all citizens travelling to the EU purchase travel insurance in advance of travelling. You can't put a price on peace of mind.</div>
+          <div class="extra-row">
+            <label><input type="radio" name="insurance" value="" {% if not data.extras.insurance %}checked{% endif %}> No insurance</label>
+            <span></span>
+          </div>
+          <div class="extra-row">
+            <label><input type="radio" name="insurance" value="standard" {% if data.extras.insurance == 'standard' %}checked{% endif %}>
+              <strong>STANDARD INSURANCE</strong> — Medical expenses up to £2,500,000 · baggage up to £1,500 · cancellation up to £3,000</label>
+            <span class="extra-row__price">{{ money(1.46 * insurance_days * pax) }}<br><small>{{ insurance_days }} day(s), {{ pax }} pax</small></span>
+          </div>
+          <div class="extra-row">
+            <label><input type="radio" name="insurance" value="plus" {% if data.extras.insurance == 'plus' %}checked{% endif %}>
+              <strong>INSURANCE PLUS</strong> — Medical expenses up to £5,000,000 nil excess · baggage up to £2,000 nil excess · cancellation up to £5,000 nil excess</label>
+            <span class="extra-row__price">{{ money(1.90 * insurance_days * pax) }}<br><small>{{ insurance_days }} day(s), {{ pax }} pax</small></span>
+          </div>
+          <div class="extra-row">
+            <label><input type="radio" name="insurance" value="annual" {% if data.extras.insurance == 'annual' %}checked{% endif %}>
+              <strong>ANNUAL STANDARD</strong> — a full year of insurance (max. single trip duration 90 days)</label>
+            <span class="extra-row__price">{{ money(28.18 * pax) }}<br><small>per person</small></span>
+          </div>
+          <p style="font-size:.72rem;color:var(--standard-grey);">All prices include Insurance Premium Tax (IPT). Pre-existing medical conditions are excluded from the medical expenses cover.</p>
+        </div>
+
+        <div class="extra-card">
+          <div class="extra-card__title">Pre-paid Inflight Credit: Get More, Pay Less</div>
+          <div class="extra-card__sub">Choose any products from our Inflight Magazine, including gifts, food and drink, and purchase more for less with the Pre-paid Credit. Get 10% more credit for free.</div>
+          <div class="extra-row">
+            <label>Add inflight credit (£4.31 – £17.24)</label>
+            <span class="extra-row__price">
+              <input type="number" name="inflight_credit" min="0" max="17.24" step="0.01"
+                     value="{{ data.extras.inflight_credit or '' }}" placeholder="0.00" style="width:110px; padding:7px 8px; border:1px solid var(--light-grey); border-radius:4px;">
+            </span>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="ry-button ry-button--gradient-yellow">Continue</button>
+    </form>
+  </div>
+
+  <div>
+    <div class="card summary-panel">
+      <h3 class="card__title">Price Breakdown</h3>
+      {% for label, value in lines %}
+      <div class="summary-line"><span>{{ label }}</span><span>{{ money(value) }}</span></div>
+      {% endfor %}
+      <div class="summary-line"><span>Card processing fee</span><span>{{ money(card_fee) }}</span></div>
+      <div class="summary-panel__total-row"><span>Total to pay</span><span>{{ money(grand) }}</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
