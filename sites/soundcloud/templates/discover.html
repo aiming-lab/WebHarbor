@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card, playlist_card, track_row %}
+{% block title %}Home | SoundCloud{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section__head">
+    <h2>Top 50: All music genres</h2>
+    <a class="more" href="/music-charts-us/sets/all-music-genres">See the full chart →</a>
+  </div>
+  {% if top50 %}
+  <div class="track-list">
+    {% for e in top50.entries[:8] %}{{ track_row(e.track, rank=loop.index) }}{% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>New &amp; Hot</h2>
+    <a class="more" href="/music-charts-us/sets/new-hot">See the full chart →</a>
+  </div>
+  <div class="card-grid">
+    {% if newhot %}
+      {% for e in newhot.entries[:10] %}{{ track_card(e.track) }}{% endfor %}
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Trending by genre</h2>
+  </div>
+  <div class="card-grid">
+    {% for p in genre_charts %}{{ playlist_card(p) }}{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Curated by SoundCloud</h2>
+  </div>
+  <div class="card-grid">
+    {% for p in curated %}{{ playlist_card(p) }}{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Most played right now</h2>
+  </div>
+  <div class="card-grid">
+    {% for t in trending[:12] %}{{ track_card(t) }}{% endfor %}
+  </div>
+</section>
+{% endblock %}

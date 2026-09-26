@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Upload | SoundCloud{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:560px;">
+  <div class="auth-card">
+    <h1>Upload your track</h1>
+    <p style="color:var(--muted);font-size:13px;">It all starts with an upload. Share your sound with the world — your track goes live immediately.</p>
+    <form method="post" action="/upload">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" required placeholder="Name your track">
+      <label for="genre">Primary genre</label>
+      <select id="genre" name="genre">
+        <option value="">— Choose a genre —</option>
+        {% for g in ['Hip Hop/Rap', 'Pop', 'Electronic', 'House', 'Dance', 'R&B', 'Rock',
+                      'Alternative', 'Country', 'Latin', 'Metal', 'Jazz', 'Classical',
+                      'Hip-hop & Rap', 'Alternative Rock'] %}
+        <option value="{{ g }}">{{ g }}</option>
+        {% endfor %}
+      </select>
+      <label for="minutes">Length</label>
+      <div style="display:flex;gap:10px;">
+        <input type="number" id="minutes" name="minutes" min="0" max="20" value="3" style="width:50%;"> minutes
+        <input type="number" name="seconds" min="0" max="59" value="30" style="width:50%;"> seconds
+      </div>
+      <label for="tags">Tags (space separated)</label>
+      <input type="text" id="tags" name="tags" placeholder="demo rap atlanta">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" rows="4" placeholder="Tell listeners about this track"></textarea>
+      <button class="btn btn-primary" type="submit">Upload</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

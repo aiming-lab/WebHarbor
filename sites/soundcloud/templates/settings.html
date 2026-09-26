@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Settings | SoundCloud{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:560px;">
+  <div class="auth-card">
+    <h1>Profile settings</h1>
+    <form method="post" action="/settings">
+      <label for="display">Display name</label>
+      <input type="text" id="display" name="display" value="{{ user.display_name }}" required>
+      <label for="city">City</label>
+      <input type="text" id="city" name="city" value="{{ user.city }}" placeholder="Where are you based?">
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio" rows="4" placeholder="Tell listeners about yourself">{{ user.bio }}</textarea>
+      <button class="btn btn-primary" type="submit">Save changes</button>
+    </form>
+    <div class="auth-switch">Signed in as {{ user.email }} · <a href="/logout" style="color:var(--accent);">Sign out</a></div>
+  </div>
+</div>
+{% endblock %}

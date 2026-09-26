@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}You're subscribed | SoundCloud{% endblock %}
+{% block content %}
+<div class="receipt">
+  <h1>You're on {{ sub.plan_title }} 🎧</h1>
+  <p style="color:var(--muted);">Thanks for supporting the artists you love. Your subscription is active.</p>
+  <table>
+    <tr><td class="k">Plan</td><td class="v">{{ sub.plan_title }}</td></tr>
+    <tr><td class="k">Billing cycle</td><td class="v">{{ sub.cycle|capitalize }}</td></tr>
+    <tr><td class="k">Price</td><td class="v">{{ sub.amount|money }} / {{ sub.cycle }}</td></tr>
+    <tr><td class="k">Started</td><td class="v">{{ sub.started_at.strftime('%B %-d, %Y') if sub.started_at }}</td></tr>
+    <tr><td class="k">Renews</td><td class="v">{{ sub.renews_at.strftime('%B %-d, %Y') if sub.renews_at }}</td></tr>
+    <tr><td class="k">Card</td><td class="v">•••• {{ sub.card_last4 }}</td></tr>
+  </table>
+  <p style="margin-top:22px;"><a class="btn btn-primary" href="/discover">Back to Home</a>
+     <a class="btn btn-tertiary" href="/upgrade">Manage plan</a></p>
+</div>
+{% endblock %}

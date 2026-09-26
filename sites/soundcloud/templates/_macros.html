@@ -1,0 +1,56 @@
+{# One track card for grids (discover/charts landing/related). #}
+{% macro track_card(t) %}
+{% set payload = {
+  'id': t.id, 'title': t.title, 'artist': t.artist.username,
+  'artwork': t.artwork or url_for('static', filename='images/avatars/_default.png'),
+  'duration': t.duration, 'url': '/' ~ t.artist.permalink ~ '/' ~ t.permalink } %}
+<a class="track-card" href="/{{ t.artist.permalink }}/{{ t.permalink }}">
+  <div class="art">
+    {% if t.artwork %}<img src="{{ t.artwork }}" alt="{{ t.title }}">{% endif %}
+    <span class="play-badge" data-sc-play data-sc-track='{{ payload|tojson }}'>▶</span>
+  </div>
+  <div class="t">{{ t.title }}</div>
+  <div class="a">{{ t.artist.username }}</div>
+  <div class="meta">{{ t.plays|compact }} plays</div>
+</a>
+{% endmacro %}
+
+{% macro playlist_card(p) %}
+<a class="playlist-card" href="/{{ p.owner.permalink }}/sets/{{ p.permalink }}">
+  <div class="art">
+    {% if p.artwork %}<img src="{{ p.artwork }}" alt="{{ p.title }}">{% endif %}
+    <span class="count">{{ p.track_count }} tracks</span>
+  </div>
+  <div class="t">{{ p.title }}</div>
+  <div class="a">{{ p.owner.username }}</div>
+</a>
+{% endmacro %}
+
+{% macro track_row(t, rank=None, show_wave=True) %}
+{% set payload = {
+  'id': t.id, 'title': t.title, 'artist': t.artist.username,
+  'artwork': t.artwork or url_for('static', filename='images/avatars/_default.png'),
+  'duration': t.duration, 'url': '/' ~ t.artist.permalink ~ '/' ~ t.permalink } %}
+<div class="track-row" data-sc-track='{{ payload|tojson }}'>
+  {% if rank is not none %}<div class="rank">{{ rank }}</div>{% endif %}
+  <div class="art" data-sc-play>
+    {% if t.artwork %}<img src="{{ t.artwork }}" alt="{{ t.title }}">{% endif %}
+    <span class="play-badge">▶</span>
+  </div>
+  <div class="info">
+    <a class="t" href="/{{ t.artist.permalink }}/{{ t.permalink }}">{{ t.title }}</a>
+    <a class="a" href="/{{ t.artist.permalink }}">{{ t.artist.username }}</a>
+  </div>
+  {% if show_wave %}
+  <div class="wave-minis" aria-hidden="true">
+    {% for h in t.waveform_samples[:37] %}<i style="height:{{ 4 + (h * 22 / 100)|int }}px"></i>{% endfor %}
+  </div>
+  {% endif %}
+  <div class="stats">{{ t.plays|compact }}</div>
+  <div class="mini-actions">
+    <button class="act-like {{ 'liked' if liked_ids is defined and t.id in liked_ids }}" data-track="{{ t.id }}" title="Like">♥<span class="n">{{ t.likes|compact }}</span></button>
+    <button class="act-repost" data-track="{{ t.id }}" title="Repost">⟳<span class="n">{{ t.reposts|compact }}</span></button>
+    <button class="act-addtopl" data-track="{{ t.id }}" title="Add to playlist">＋</button>
+  </div>
+</div>
+{% endmacro %}

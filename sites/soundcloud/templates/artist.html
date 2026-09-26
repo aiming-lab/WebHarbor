@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card, playlist_card %}
+{% block title %}Stream {{ artist.username }} music | Listen to songs, albums, playlists for free on SoundCloud{% endblock %}
+{% block content %}
+<div class="artist-hero">
+  <div class="banner">
+    {% if artist.banner %}<img src="{{ artist.banner }}" alt="">{% endif %}
+  </div>
+  <div class="l-container">
+    <div class="head">
+      <div class="ava">{% if artist.avatar %}<img src="{{ artist.avatar }}" alt="{{ artist.username }}">{% endif %}</div>
+      <div>
+        <h1>{{ artist.username }}
+          {% if artist.verified %}<span class="verified-badge" title="Verified">✓ Verified</span>{% endif %}
+          {% if artist.pro_unlimited %}<span style="font-size:11px;border:1px solid var(--accent);color:var(--accent);padding:1px 7px;border-radius:3px;">NEXT PRO</span>{% endif %}
+        </h1>
+        <div class="loc">{% if artist.city %}{{ artist.city }}, {% endif %}{{ artist.country_code }}</div>
+        <div class="actions">
+          <button class="btn btn-tertiary act-follow {{ 'following' if following }}" data-artist="{{ artist.id }}">
+            <span>{{ 'Following' if following else 'Follow' }}</span>
+          </button>
+          <a class="btn btn-tertiary" href="/search?q={{ artist.username|urlencode }}">Share</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="l-container">
+  <nav class="artist-tabs">
+    <a class="{{ 'active' if tab == 'tracks' }}" href="/{{ artist.permalink }}?tab=tracks">Tracks</a>
+    <a class="{{ 'active' if tab == 'popular' }}" href="/{{ artist.permalink }}?tab=popular">Popular tracks</a>
+    <a class="{{ 'active' if tab == 'playlists' }}" href="/{{ artist.permalink }}?tab=playlists">Playlists</a>
+  </nav>
+
+  <div class="info-stats">
+    <div><h3>Followers</h3><div class="v followers-n">{{ '{:,}'.format(artist.followers) }}</div></div>
+    <div><h3>Following</h3><div class="v">{{ '{:,}'.format(artist.followings) }}</div></div>
+    <div><h3>Tracks</h3><div class="v">{{ '{:,}'.format(artist.track_count or 0) }}</div></div>
+  </div>
+
+  {% if artist.description %}
+  <div class="artist-bio" style="max-width:780px;">{{ artist.description }}</div>
+  {% endif %}
+
+  {% if tab == 'playlists' %}
+  <section class="section">
+    <div class="section__head"><h2>Playlists by {{ artist.username }}</h2></div>
+    {% if playlists %}
+    <div class="card-grid">
+      {% for p in playlists %}{{ playlist_card(p) }}{% endfor %}
+    </div>
+    {% else %}
+    <p class="inline-note">No playlists yet.</p>
+    {% endif %}
+  </section>
+  {% elif tab == 'popular' %}
+  <section class="section">
+    <div class="section__head"><h2>Popular tracks</h2></div>
+    <div class="track-list">
+      {% set liked_ids = [] %}
+      {% for t in popular %}
+      {% set payload = {'id': t.id, 'title': t.title, 'artist': artist.username,
+                        'artwork': t.artwork, 'duration': t.duration,
+                        'url': '/' ~ artist.permalink ~ '/' ~ t.permalink } %}
+      <div class="track-row" data-sc-track='{{ payload|tojson }}'>
+        <div class="art" data-sc-play>
+          {% if t.artwork %}<img src="{{ t.artwork }}" alt="{{ t.title }}">{% endif %}
+          <span class="play-badge">▶</span>
+        </div>
+        <div class="info">
+          <a class="t" href="/{{ artist.permalink }}/{{ t.permalink }}">{{ t.title }}</a>
+          <div class="a">Posted {{ t.display_date|time_ago }}{% if t.genre %} · {{ t.genre }}{% endif %}</div>
+        </div>
+        <div class="stats">{{ t.plays|compact }}</div>
+        <div class="mini-actions">
+          <button class="act-like" data-track="{{ t.id }}" title="Like">♥<span class="n">{{ t.likes|compact }}</span></button>
+          <button class="act-repost" data-track="{{ t.id }}" title="Repost">⟳<span class="n">{{ t.reposts|compact }}</span></button>
+          <button class="act-addtopl" data-track="{{ t.id }}" title="Add to playlist">＋</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="section">
+    <div class="section__head"><h2>Tracks</h2></div>
+    <div class="card-grid">
+      {% for t in tracks[:18] %}{{ track_card(t) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
