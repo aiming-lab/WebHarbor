@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} Download Statistics{% endblock %}
+{% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/activity.css') }}">{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row"><h1>{{ p.name }} Download Statistics</h1></div>
+</section>
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div class="sidebar">
+        <ul class="sidebarmenu">
+          <li class="active">
+            <h3>Downloads</h3>
+            <strong class="stat-summary" id="data-total">{{ fmt_int(total) }}</strong>
+            <small class="stat-summary" id="data-dates">{{ stats[0].date if stats }} to {{ stats[-1].date if stats }}</small>
+          </li>
+          <li>
+            <a href="/projects/{{ p.shortname }}/files/stats/map" rel="nofollow">
+              <h3>Countries</h3>
+              <span class="stat-summary">Top: <strong>{{ top_country.label.split()[0] if top_country }}</strong>, at {{ ((top_country.count / total * 100) | round(0)) | int }}%</span>
+            </a>
+          </li>
+          <li>
+            <a href="/projects/{{ p.shortname }}/files/stats/os" rel="nofollow">
+              <h3>Operating Systems</h3>
+              <span class="stat-summary">Top: <strong>{{ top_os.label if top_os }}</strong>, at {{ ((top_os.count / total * 100) | round(0)) | int }}%</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div id="stats-maincontent">
+      <h2 class="heading">Download Statistics</h2>
+      <div class="stats-selectors">
+        <div class="files-breadcrumb">
+          <a href="/projects/{{ p.shortname }}/files/stats/timeline">All Files</a>
+          <a data-type="folder" id="stat-file-picker-trigger" href="/projects/{{ p.shortname }}/files/"><span>(Change File)</span></a>
+        </div>
+        <div>
+          <form method="GET">
+            <label for="dates">Date Range: <input type="text" id="dates" name="dates" autocomplete="off" class="date-range-picker" value="{{ stats[0].date if stats }} to {{ stats[-1].date if stats }}" data-start-date="{{ p.creation_date }}"></label>
+          </form>
+        </div>
+      </div>
+      <div class="period-choices">
+        <a class="button selected" id="graph-daily">Daily</a>
+        <a class="button" id="graph-weekly">Weekly</a>
+        <a class="button" id="graph-monthly">Monthly</a>
+      </div>
+      <div id="timeline">
+        <table class="striped" id="stats-table">
+          <thead><tr><th class="usersortable">Day</th><th id="files_downloads_h" class="usersortable">Downloads</th></tr></thead>
+          <tbody>
+            {% for s in stats %}
+            <tr><td>{{ s.date }}</td><td headers="files_downloads_h">{{ fmt_int(s.count) }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <a id="view-data" class="stats-subheading" href="#timeline">View Data</a>
+      <div class="stats-status">
+        <div>Last Updated: <b>&lt; 1 hour ago</b>. <a href="/projects/{{ p.shortname }}/files/stats/timeline">Download Stats API</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

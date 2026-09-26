@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stars, project_card %}
+{% block title %}{{ title }} - SourceForge{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row">
+    <h1>{{ heading }}</h1>
+    <div class="row align-justify">
+      <form method="GET" action="{{ request.path }}" class="directory-search-box small-12 large-6">
+        <div class="typeahead__container">
+          <div class="typeahead__field">
+            <div class="typeahead__query">
+              <input name="q" placeholder="Search" autocomplete="off" value="{{ q }}">
+            </div>
+            <label><input type="submit" value="">
+            <svg data-name="search" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1216 832q0-185-131.5-316.5t-316.5-131.5-316.5 131.5-131.5 316.5 131.5 316.5 316.5 131.5 316.5-131.5 131.5-316.5zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225-55.5-273.5 55.5-273.5 150-225 225-150 273.5-55.5 273.5 55.5 225 150 150 225 55.5 273.5q0 220-124 399l343 343q37 37 37 90z"/></svg>
+            </label>
+          </div>
+        </div>
+      </form>
+      <div class="small-12 large-5 directory-toggle">
+        <div class="sort-by">
+          <span>Sort By:</span>
+          <ul class="sort-by dropdown menu">
+            <li class="is-dropdown-submenu-parent">
+              <a class="current-sort">{% if sort == 'score' %}Relevance{% elif sort == 'update' %}Last Updated{% elif sort == 'name' %}Name (A-Z){% elif sort == 'rating' %}Rating{% else %}Most Popular{% endif %}</a>
+              <ul class="menu is-dropdown-submenu">
+                <li><a href="#" data-action="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}sort=score" title="Relevance" class="{% if sort == 'score' %}active{% endif %}">Relevance</a></li>
+                <li><a href="#" data-action="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}sort=popular" title="Most Popular" class="{% if sort == 'popular' %}active{% endif %}">Most Popular</a></li>
+                <li><a href="#" data-action="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}sort=update" title="Last Updated" class="{% if sort == 'update' %}active{% endif %}">Last Updated</a></li>
+                <li><a href="#" data-action="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}sort=name" title="Name (A-Z)" class="{% if sort == 'name' %}active{% endif %}">Name (A-Z)</a></li>
+                <li><a href="#" data-action="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}sort=rating" title="Rating" class="{% if sort == 'rating' %}active{% endif %}">Rating</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div id="all-facets" class="all-facets sidebar show-for-large">
+        <div class="btn-clear-filters facet">
+          <a class="btn-clear-filters" href="/directory/?clear">Clear All Filters</a>
+        </div>
+        {% for kind, kind_label in [('os','OS'),('topic','Category'),('license','License'),('translation','Translations'),('language','Programming Language'),('devstatus','Status')] %}
+        <div class="facet">
+          <div class="as-h2">{{ kind_label }}</div>
+          <div id="facet-wrapper-{{ kind }}">
+            <ul id="facet-{{ kind }}" class="facet-items abbrev">
+              {% set shown = facets[kind][:5] %}
+              {% for slug, label, count in shown %}
+              <li class="show">
+                <label class="filter-choice">
+                  {% set base = '/directory/' + slug + '/' %}
+                  <a href="{{ base }}{% if q %}?q={{ q }}{% endif %}" class="txt"><span class="filter-text">{{ label }}</span> <span>{{ fmt_int(count) }}</span></a>
+                </label>
+              </li>
+              {% endfor %}
+              {% for slug, label, count in facets[kind][5:12] %}
+              <li>
+                <label class="filter-choice">
+                  {% set base = '/directory/' + slug + '/' %}
+                  <a href="{{ base }}{% if q %}?q={{ q }}{% endif %}" class="txt"><span class="filter-text">{{ label }}</span> <span>{{ fmt_int(count) }}</span></a>
+                </label>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <section class="m-project-search-results">
+      <div class="as-header">
+        <div class="m-cross-dir-search-summary">
+          <h2>{% if q %}Showing {{ fmt_int(total) }} open source projects for "{{ q }}"{% elif active %}Showing {{ fmt_int(total) }} open source projects{% if label %} for {{ label }}{% endif %}{% else %}Browse Open Source Software{% endif %}</h2>
+          <a href="/software/?q={{ q }}" rel="nofollow">View related business solutions</a>
+        </div>
+        {% if active %}
+        <div class="m-removable-filters">
+          {% for kind, slug in active.items() %}
+          <a class="btn-pill btn-pill-{{ kind }}" href="/directory/{% if q %}?q={{ q }}{% endif %}">
+            <span>{{ slug.replace('-', ' ').title() }}</span>
+            <span aria-hidden="true">×</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <ul class="projects" itemscope itemtype="http://schema.org/ItemList">
+        {% for p in projects %}
+        {{ project_card(p) }}
+        {% else %}
+        <li class="no-results">No projects found{% if q %} for "{{ q }}"{% endif %}. Try a different search.</li>
+        {% endfor %}
+      </ul>
+      {% if pages > 1 %}
+      <ul class="pagination text-center" aria-label="Pagination">
+        <li class="pagination-previous {% if page == 1 %}disabled{% endif %}">
+          {% if page > 1 %}<a href="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}page={{ page - 1 }}" aria-label="Previous page">Previous</a>{% else %}Previous{% endif %}
+        </li>
+        {% for p in range(1, pages + 1) %}
+        {% if p == page %}
+        <li class="current"><span class="show-for-sr">You're on page</span> {{ p }}</li>
+        {% elif p <= 3 or p > pages - 2 or (p >= page - 2 and p <= page + 2) %}
+        <li><a href="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}page={{ p }}" aria-label="Page {{ p }}">{{ p }}</a></li>
+        {% elif p == 4 and page > 5 %}
+        <li class="ellipsis"></li>
+        {% endif %}
+        {% endfor %}
+        <li class="pagination-next {% if page == pages %}disabled{% endif %}">
+          {% if page < pages %}<a href="{{ request.path }}?{% if q %}q={{ q }}&amp;{% endif %}page={{ page + 1 }}" aria-label="Next page">Next</a>{% else %}Next{% endif %}
+        </li>
+      </ul>
+      {% endif %}
+      {% if not q %}
+      <div class="related-blocks">
+        <section class="related_searches">
+          <h4>Related Searches</h4>
+          <div class="related-links">
+            {% for term in ['video player','password manager','file compression','ftp client','text editor','media player'] %}
+            <div class="keyword-link"><a href="/directory/?q={{ term|urlencode }}">{{ term }}</a></div>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

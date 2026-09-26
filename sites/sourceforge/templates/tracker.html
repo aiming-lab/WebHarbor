@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / {{ tracker_label }}{% endblock %}
+{% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tracker.css') }}">{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div id="sidebar">
+        <form id="search" method="GET" action="/p/{{ p.shortname }}/{{ tracker }}/search/">
+          <input name="q" type="text" title="Search {{ tracker_label }}" placeholder="Search {{ tracker_label }}" value="{{ q }}">
+          <label><input type="submit" style="display:none"><b class="fa fa-search" title="Submit"></b></label>
+        </form>
+        <ul class="sidebarmenu">
+          <li><a class="icon" href="/p/{{ p.shortname }}/{{ tracker }}/new/" title="To create a new ticket, you must be authorized by the project admin."><i class="fa fa-plus-circle"></i> <span>Create Ticket</span></a></li>
+          <li><a class="icon" href="/p/{{ p.shortname }}/{{ tracker }}/stats/" title="Stats"><i class="fa fa-line-chart"></i> <span>View Stats</span></a></li>
+        </ul>
+        <h3 class="">Searches</h3>
+        <ul class="sidebarmenu">
+          <li><a href="?q=" class="search_bin"><span>All Tickets</span> <small>{{ fmt_int(total) }}</small></a></li>
+          <li><a href="?status=open" class="search_bin"><span>Open Tickets</span> <small>{{ fmt_int(statuses.get('open', 0)) }}</small></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>{{ tracker_label }}</span></h2>
+      <div>
+        <div id="ticket_search_results_holder">
+          <form method="get">
+            <p><strong>Showing <select class="results_per_page" name="limit">
+              <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+              <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+              <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+            </select> results of {{ fmt_int(total) }} </strong></p>
+          </form>
+          <table class="ticket-list">
+            <thead>
+              <tr>
+                <th title="Ticket Number">#</th>
+                <th title="Summary">Summary</th>
+                <th title="Milestone">Milestone</th>
+                <th title="Status">Status</th>
+                <th title="Owner">Owner</th>
+                <th title="Created">Created</th>
+                <th title="Updated">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in tickets %}
+              <tr class="{{ 'even' if loop.index is even }}">
+                <td><a href="/p/{{ p.shortname }}/{{ tracker }}/{{ t.ticket_num }}/">{{ t.ticket_num }}</a></td>
+                <td><a href="/p/{{ p.shortname }}/{{ tracker }}/{{ t.ticket_num }}/">{{ t.summary }}</a></td>
+                <td>None</td>
+                <td class="{{ t.status }}">{{ t.status }}</td>
+                <td>{% if t.owner %}{{ t.owner }}{% endif %}</td>
+                <td><span title="{{ t.created }}">{{ t.created }}</span></td>
+                <td><span title="{{ t.updated }}">{{ t.updated }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if pages > 1 %}
+          <div class="page_list">
+            {% for pg in range(1, pages + 1) %}
+            {% if pg == page %}{{ pg }}{% else %}<a href="?page={{ pg }}{% if q %}&amp;q={{ q }}{% endif %}{% if status %}&amp;status={{ status }}{% endif %}">{{ pg }}</a>{% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

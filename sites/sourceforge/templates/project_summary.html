@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stars %}
+{% block title %}{{ p.name }} download | SourceForge.net{% endblock %}
+{% block body_class %}v-sf{% endblock %}
+{% block head_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/hilite_tooltipster.css') }}">
+{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="project-body" itemscope itemtype="http://schema.org/SoftwareApplication">
+      <section class="project-masthead">
+        <div class="backdrop"></div>
+        <div class="content">
+          <nav id="breadcrumbs" class="breadcrumbs rtl">
+            <ul itemscope itemtype="http://schema.org/BreadcrumbList">
+              <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                <a itemprop="item" href="/"><span itemprop="name">Home</span></a>
+                <meta itemprop="position" content="1"/>
+              </li>
+              <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                <a itemprop="item" href="/directory/"><span itemprop="name">Open Source Software</span></a>
+                <meta itemprop="position" content="2"/>
+              </li>
+              {% for t in p.facet.get('topic', [])[:1] %}
+              {% set tname = (p.facet_labels.get('topic') or {}).get(t, t) %}
+              <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                <a itemprop="item" href="/directory/{{ t }}/"><span itemprop="name">{{ tname }}</span></a>
+                <meta itemprop="position" content="3"/>
+              </li>
+              {% endfor %}
+              <li class="project" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><span itemprop="name">{{ p.name }}</span><meta itemprop="position" content="4"/></li>
+            </ul>
+          </nav>
+          <div class="overview">
+            <div class="project-icon">
+              {% if p.has_icon %}
+              <img itemprop="image" alt="{{ p.name }}" title="{{ p.name }}" src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}"/>
+              {% else %}
+              <svg data-name="default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect class="st0" width="300" height="300"/><g><path class="st1" fill="#fff" d="M162.5,154.8c0-28.9-10.2-42-15.6-46.9c-1.1-1-2.7-0.1-2.6,1.3c1.1,16.3-19.4,20.3-19.4,45.9h0c0,0.1,0,0.1,0,0.2c0,15.6,11.8,28.3,26.3,28.3c14.5,0,26.3-12.7,26.3-28.3c0-0.1,0-0.1,0-0.2h0c0-7.2-2.7-14.1-5.5-19.3c-0.5-1-2.1-0.6-1.9,0.3C174.9,158.1,162.5,171.8,162.5,154.8z"/><path class="st1" fill="#fff" d="M131.2,215.6c-0.7,0-1.3-0.3-1.8-0.7l-67.2-67.1c-1-1-1-2.6,0-3.6l70.9-70.9c0.5-0.5,1.1-0.7,1.8-0.7h20.4c1.2,0,2,0.8,2.3,1.6c0.3,0.7,0.3,1.9-0.5,2.7l-66.7,66.7c-1.3,1.3-1.3,3.5,0,4.9l52.7,52.7c1,1,1,2.6,0,3.6l-10.2,10.2C132.5,215.4,131.9,215.6,131.2,215.6z"/><path class="st1" fill="#fff" d="M144.7,227.4c-1.2,0-2-0.8-2.3-1.5c-0.3-0.7-0.3-1.9,0.5-2.7l66.7-66.7c0.7-0.6,1-1.5,1-2.4s-0.4-1.8-1-2.4l-52.7-52.7c-1-1-1-2.6,0-3.6l10.2-10.2c0.5-0.5,1.1-0.7,1.8-0.7s1.3,0.3,1.8,0.7l67,67.1c0.5,0.5,0.7,1.1,0.7,1.8s-0.3,1.3-0.7,1.8l-70.9,70.9c-0.5,0.5-1.1,0.7-1.8,0.7H144.7z"/></g></svg>
+              {% endif %}
+            </div>
+            <div class="title has-masthead-badges">
+              <h1 class="has-masthead-badges" itemprop="name">{{ p.name }}</h1>
+              <h2 class="as-h3 summary">{{ p.summary }}</h2>
+              {% if p.developers %}
+              <div class="as-h3 brought-by">Brought to you by:
+                {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/">{{ u }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="stats">
+            {% if p.review_count %}
+            <div class="rating">
+              {{ stars(p, 'large') }}
+              <a href="/projects/{{ p.shortname }}/reviews/" class="count" title="{{ p.name }} Reviews">{{ fmt_int(p.review_count) }} Reviews</a>
+            </div>
+            {% endif %}
+            <div class="as-h2">
+              <b class="label">Downloads:</b>
+              <a href="/projects/{{ p.shortname }}/files/stats/timeline" title="Downloads This Week">{{ fmt_int(p.downloads_week) }} This Week</a>
+            </div>
+            <div class="as-h2">
+              <b class="label">Last Update:</b>
+              <a href="/p/{{ p.shortname }}/activity/"><time class="dateUpdated" datetime="{{ p.updated }}">{{ p.updated }}</time></a>
+            </div>
+          </div>
+          <div class="buttons">
+            {% if latest %}
+            <div class="download-container">
+              <a href="/projects/{{ p.shortname }}/files/latest/download" title="Download {{ latest.name }} from SourceForge - {{ latest.size_display }}" class="button download big-text green">
+                <img src="{{ url_for('static', filename='images/ui/sf-icon-black.svg') }}" alt="" class="sf-download-icon"/>Download
+              </a>
+            </div>
+            <meta itemprop="fileSize" content="{{ latest.size_bytes }}"/>
+            {% endif %}
+            <a id="share-project-button" class="button default" href="#">Share This</a>
+            <form method="post" action="/account/bookmark/{{ p.shortname }}" class="inline-form">
+              <button type="submit" class="button default">{% if bookmarked %}★ Bookmarked{% else %}☆ Bookmark This Project{% endif %}</button>
+            </form>
+          </div>
+          {% if p.facet.get('os') %}
+          <div class="platforms">
+            {% for os in p.facet['os'] %}
+            <span><meta itemprop="operatingSystem" content="{{ os }}"/>{{ os.replace('-', ' ').title() }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if p.badge %}
+          <div class="badges">
+            <div class="achievement-badge badge-oss show-for-medium">
+              <a href="/about" title="Badges">
+                <img alt="Leader badge" loading="lazy" src="{{ url_for('static', filename='css/img/sandiego/svg/originals/sf-icon-orange-no_sf.svg') }}" data-tooltip aria-haspopup="true" data-position="bottom" title="The Open Source Excellence badge is awarded to open source projects that have reached the milestone of 100,000 total downloads, or 10,000 monthly downloads for the first time.">
+              </a>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      <div id="top_nav"><div id="top_nav_admin">
+        <ul class="dropdown">
+          {% for key, href, label in tabs %}
+          {% if key == 'tickets' %}
+          <li>
+            <a href="/p/{{ p.shortname }}/_list/tickets"><span>Tickets ▾</span></a>
+            <ul>
+              {% for tkey, thref, tlabel in ticket_tabs %}
+              <li><a href="{{ thref }}">{{ tlabel }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% else %}
+          <li class="{% if request.path == href or (key == 'summary' and request.path == '/projects/' + p.shortname + '/') %}selected{% endif %}">
+            <a href="{{ href }}"><span>{{ label }}</span></a>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div></div>
+      <article class="main-content">
+        <section class="row c-description" id="section-description">
+          <div id="about" class="small-12 columns">
+            <p itemprop="description" class="description">{{ p.short_description }}</p>
+          </div>
+        </section>
+        {% if p.screenshots %}
+        <section class="row screenshots-section">
+          <div class="small-12 columns">
+            <h3>Project Samples</h3>
+            <div class="owl-carousel m-screenshots clearfix">
+              {% for s in p.screenshots %}
+              <a rel="section" class="gallery" href="{{ url_for('static', filename='images/screenshots/' + s.filename) }}" title="{{ s.caption }}" data-alt="{{ s.caption }}">
+                <img itemprop="screenshot" src="{{ url_for('static', filename='images/screenshots/' + s.filename) }}" loading="lazy" width="245" height="183" alt="{{ s.caption }}"/>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+        {% endif %}
+        <div class="m-project-activity columns small-12 psp-section">
+          <div class="heading">
+            <h3>Project Activity</h3>
+            <div>
+              <a class="button blue icon-only show-for-medium" href="/p/{{ p.shortname }}/activity/feed" title="RSS" rel="nofollow">
+                <svg data-name="feed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1408 1818"><path d="m 384,1216 q 0,80 -56,136 -56,56 -136,56 -80,0 -136,-56 -56,-56 -56,-136 0,-80 56,-136 56,-56 136,-56 80,0 136,56 56,56 56,136 z M 1792,1408 V 1824 q 0,56 -56,56 H 928 q -56,0 -56,-56 V 1408 q 0,-56 56,-56 h 808 q 56,0 56,56 z M 1792,896 V 1136 q 0,24 -16,40 -16,16 -40,16 H 872 q -24,0 -40,-16 -16,-16 -16,-40 V 896 q 0,-24 16,-40 16,-16 40,-16 h 864 q 24,0 40,16 16,16 16,40 z M 1792,384 V 624 q 0,24 -16,40 -16,16 -40,16 H 872 q -24,0 -40,-16 -16,-16 -16,-40 V 384 q 0,-24 16,-40 16,-16 40,-16 h 864 q 24,0 40,16 16,16 16,40 z"/></svg>
+              </a>
+            </div>
+          </div>
+          <ul class="list-of-activities">
+            {% for ev in activity %}
+            <li class="item">
+              <time datetime="{{ ev.date }}" title="{{ ev.date }}">{{ relative_date(ev.date[:10]) }}</time>
+              <div>
+                {% if ev.actor_is_project %}
+                {{ ev.actor }} {{ ev.verb }} <a href="{{ ev.obj_url }}">{{ ev.obj }}</a>
+                {% else %}
+                <a href="/u/{{ ev.actor }}/profile/">{{ ev.actor }}</a> {{ ev.verb }} <a href="{{ ev.obj_url }}">{{ ev.obj }}</a>{% if ev.target %} on <a href="{{ ev.target_url }}">{{ ev.target }}</a>{% endif %}
+                {% endif %}
+              </div>
+              {% if ev.summary %}<div class="summary">{{ ev.summary[:160] }}</div>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          <p class="all-activities"><a href="/p/{{ p.shortname }}/activity/">See All Activity &gt;</a></p>
+        </div>
+        <section class="row psp-section collapsible-section">
+          <div class="small-12 medium-5 columns">
+            <h3>Categories</h3>
+            {% for slug, label in (p.facet_labels.get('topic') or {}).items() %}
+            <a href="/directory/{{ slug }}/"><span itemprop="applicationCategory">{{ label }}</span></a>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </div>
+          <div class="medium-5 small-12 columns">
+            <section class="project-info">
+              <h3>License</h3>
+              {% for label in (p.facet_labels.get('license') or {}).values() %}<span itemprop="license">{{ label }}</span>{% if not loop.last %}, {% endif %}{% endfor %}
+            </section>
+          </div>
+        </section>
+        {% if p.external_homepage %}
+        <section class="row psp-section collapsible-section">
+          <div class="small-12 columns">
+            <h3>Follow {{ p.name }}</h3>
+            <p><a id="homepage" class="pspbtn" href="{{ p.external_homepage }}" title="{{ p.name }} Web Site" rel="nofollow" target="_blank">{{ p.name }} Web Site</a></p>
+          </div>
+        </section>
+        {% endif %}
+        {% if reviews %}
+        <section class="row reviews-section psp-section collapsible-section">
+          <div class="small-12 columns">
+            <section id="reviews" class="m-reviews-list">
+              <section class="heading">
+                <h2 class="as-h3">User Reviews</h2>
+              </section>
+              <section class="content">
+                <ul id="project-reviews" class="reviews">
+                  {% for r in reviews %}
+                  <li>
+                    <div class="m-review">
+                      <div class="footer">
+                        <span class="author-name">{{ r.author_name }}</span><span class="created-date"> Posted {{ r.created }}</span>
+                      </div>
+                      <div class="m-stars" aria-hidden="true">
+                        {% for i in range(5) %}
+                        <div class="star {% if i < r.rating %}yellow{% else %}empty{% endif %}">
+                          <svg data-name="sf_star_yellow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 285.8"><polygon class="st0" fill="{% if i < r.rating %}#ffcc00{% else %}#CCCCCB{% endif %}" points="150,0 185.4,109.2 300,109.2 207.3,176.6 242.7,285.8 150,218.3 57.3,285.8 92.7,176.6 0,109.2 114.6,109.2 "/></svg>
+                        </div>
+                        {% endfor %}
+                      </div>
+                      <div class="review-txt-outer"><div class="review-txt">{{ r.text }}</div></div>
+                    </div>
+                  </li>
+                  {% endfor %}
+                </ul>
+                <a class="read-more-link" href="/projects/{{ p.shortname }}/reviews/#reviews">Read more reviews &gt;</a>
+              </section>
+            </section>
+          </div>
+        </section>
+        {% endif %}
+        <section class="row m-section-additional-details psp-section collapsible-section">
+          <div class="small-12 columns">
+            <h3>Additional Project Details</h3>
+            {% if p.facet.get('os') %}
+            <section class="project-info"><h4>Operating Systems</h4>
+              {% for os in p.facet['os'] %}<a href="/directory/{{ os }}/">{{ (p.facet_labels.get('os') or {}).get(os, os) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+            </section>
+            {% endif %}
+            {% if p.facet.get('translation') %}
+            <section class="project-info"><h4>Languages</h4>{{ (p.facet_labels.get('translation') or {}).values()|join(', ') }}</section>
+            {% endif %}
+            {% if p.facet.get('audience') %}
+            <section class="project-info"><h4>Intended Audience</h4>{{ (p.facet_labels.get('audience') or {}).values()|join(', ') }}</section>
+            {% endif %}
+            {% if p.facet.get('environment') %}
+            <section class="project-info"><h4>User Interface</h4>{{ (p.facet_labels.get('environment') or {}).values()|join(', ') }}</section>
+            {% endif %}
+            {% if p.facet.get('language') %}
+            <section class="project-info"><h4>Programming Language</h4>
+              {% for lang in p.facet['language'] %}<a href="/directory/{{ lang }}/">{{ (p.facet_labels.get('language') or {}).get(lang, lang) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+            </section>
+            {% endif %}
+            <section class="project-info">
+              <div class="as-header"><h4>Registered</h4></div>
+              <section class="content">{{ p.creation_date }}</section>
+            </section>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-side-column">
+    {% if recommended %}
+    <aside class="m-sidebar-widget m-project-list">
+      <div class="as-header">Recommended Projects</div>
+      <div class="body">
+        <ul>
+          {% for rp in recommended %}
+          <li class="item">
+            <a href="/projects/{{ rp.shortname }}/" title="{{ rp.name }}">
+              <div class="project-icon {% if not rp.has_icon %}default-project-icon{% endif %}">
+                {% if rp.has_icon %}<img alt="{{ rp.name }}" title="{{ rp.name }}" src="{{ url_for('static', filename='images/icons/' + rp.shortname + '.png') }}">{% endif %}
+              </div>
+            </a>
+            <div class="pinfo-content recommended">
+              <a class="project-name" href="/projects/{{ rp.shortname }}/" title="Learn more about {{ rp.name }}">{{ rp.name }}</a>
+              <div class="summary">{{ rp.summary }}</div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+    {% endif %}
+    {% if top_searches %}
+    <aside class="m-sidebar-widget m-project-related-keywords">
+      <div class="as-header">Top Searches</div>
+      <div class="body">
+        <ul>
+          {% for term in top_searches %}
+          <li class="item"><a href="/directory/?q={{ term|urlencode }}">{{ term }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+    {% endif %}
+    {% if related_business %}
+    <aside class="m-sidebar-widget">
+      <div class="as-header">Related Business Categories</div>
+      <div class="body">
+        <ul>
+          {% for name in related_business %}
+          <li class="item"><a href="/software/{{ name|lower|replace(' ', '-') }}/">{{ name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

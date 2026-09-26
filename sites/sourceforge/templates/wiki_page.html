@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / Wiki / {{ page.title }}{% endblock %}
+{% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div id="sidebar">
+        <form id="search" method="GET" action="/p/{{ p.shortname }}/wiki/search/">
+          <input name="q" type="text" title="Search Wiki" placeholder="Search Wiki">
+          <label><input type="submit" style="display:none"><b class="fa fa-search" title="Submit"></b></label>
+        </form>
+        <ul class="sidebarmenu">
+          <li><a href="/p/{{ p.shortname }}/wiki/" class="wiki_home"><span>Wiki Home</span></a></li>
+          <li><a href="/p/{{ p.shortname }}/wiki/browse_pages/"><span>Browse Pages</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>{{ page.title }}</span></h2>
+      <div class="editbox">
+        <div class="grid-9 gravatar sm">
+          <label class="simple">Authors: </label>
+          {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/" class="user-mention">{{ dn }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+        </div>
+      </div>
+      <div>
+        <div><div class="markdown_content">{{ page.body }}</div></div>
+      </div>
+      <hr>
+      <div id="discussion_holder"><h2>Discussion</h2></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

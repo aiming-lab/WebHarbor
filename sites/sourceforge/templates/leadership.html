@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}SourceForge Leadership Team{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row"><div class="column large-10"><h1 class="page-title">SourceForge Leadership Team</h1></div></div>
+</div>
+<div class="row main-content">
+  <div class="column small-12">
+    <h3>Meet the people behind the world's largest complete software platform.</h3>
+  </div>
+  {% for member in team %}
+  <div class="column small-12 medium-3 leadership-member text-center">
+    <img src="{{ url_for('static', filename='images/ui/' + member.image) }}" alt="{{ member.name }}" style="border-radius:50%;">
+    <h3>{{ member.name }}</h3>
+    <p>{{ member.title }}</p>
+  </div>
+  {% endfor %}
+  <div class="column small-12">
+    <h2>Join Our Team</h2>
+    <p>We're always looking for talented people to join the SourceForge team. Check out our <a href="/about">About page</a> to learn more about what we do.</p>
+  </div>
+</div>
+{% endblock %}

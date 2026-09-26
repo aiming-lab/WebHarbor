@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Create a Project{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row">
+    <div class="column large-10">
+      <h1 class="page-title">Create <span class="show-for-medium">A SourceForge</span> Project</h1>
+      <div class="show-for-medium stat-row">
+        <span class="stat-label">This Week:</span>
+        <div class="stat-unit"><span class="stat">{{ fmt_int(20351888) }}</span><span class="stat-label">Downloads</span></div>
+        <div class="stat-unit"><span class="stat">{{ fmt_int(12299) }}</span><span class="stat-label">Code Commits</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row registration-wrapper main-content-wrapper">
+  <div class="column show-for-large large-6">
+    <h2>Find, Create &amp; Publish Open Source software for free</h2>
+    <p>Founded in 1999, SourceForge is a complete software platform for open source and business software. SourceForge is an open source software community resource dedicated to helping open source projects be as successful as possible. We thrive on community collaboration to help us create a premiere resource for open source software development and distribution. SourceForge also offers a business software and services comparison directory with thousands of B2B software and services categories. Together, our open source and business software directory makes SourceForge the largest complete software platform in the world.</p>
+    <p>With the tools we provide, developers on SourceForge have created over 500,000 software projects, and we host millions of registered users. Our popular directory connects over 20 million monthly users with all of these open source projects and serves more than 2.6 million downloads a day. Our open source toolset includes code repositories, download binary hosting, bug tracking, version control, download statistics, mailing lists, discussion forums, and more.</p>
+  </div>
+  <div class="column small-12 large-6">
+    {% if logged_in %}
+    <h2>Start a new project</h2>
+    <p>You're logged in as <strong>{{ current_user.username }}</strong>. Project creation is limited to verified accounts. In the meantime, you can explore the directory, bookmark projects, and write reviews.</p>
+    <p><a class="button blue" href="/account/">Go to My Account</a></p>
+    {% else %}
+    <h2>Log in to create a project</h2>
+    <p>You need an account on SourceForge.net to create a project.</p>
+    <p><a class="button blue hollow btn-create" href="/user/registration/">Create Account</a> or <a href="/auth/">Log In</a></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

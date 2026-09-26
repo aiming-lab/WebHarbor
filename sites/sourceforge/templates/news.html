@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / News{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>{{ p.name }} / News: Recent posts</span></h2>
+      <div>
+        {% for n in posts %}
+        <div style="margin-bottom: 10px">
+          <h3>{{ n.title }}</h3>
+          <div class="markdown_content"><p>{{ n.body }}</p></div>
+          <em class="grid-19">Posted by <a href="/u/{{ n.author }}/profile/" class="user-mention">{{ n.author }}</a> <span title="{{ n.date }}">{{ n.date }}</span></em>
+          <div style="clear: both"></div>
+        </div>
+        <hr/>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

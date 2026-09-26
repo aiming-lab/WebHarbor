@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} Activity{% endblock %}
+{% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/activity.css') }}">{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>Activity for {{ p.name }}</span></h2>
+      <div>
+        <div class="activity">
+          <ul class="timeline">
+            {% for ev in events %}
+            <li>
+              <time datetime="{{ ev.date }}" title="{{ ev.date }}">{{ relative_date(ev.date[:10]) }}</time>
+              <h1>
+                <img src="{{ url_for('static', filename='images/ui/default-avatar.png') }}" alt="{{ ev.actor }}" title="{{ ev.actor }}" class="emboss x32 avatar">
+                <a href="/u/{{ ev.actor|lower|replace(' ','') }}/profile/">{{ ev.actor }}</a> {{ ev.verb }} <a href="{{ ev.obj_url }}">{{ ev.obj }}</a>{% if ev.target %} on <a href="{{ ev.target_url }}">{{ ev.target }}</a>{% endif %}
+              </h1>
+              {% if ev.summary %}<p>{{ ev.summary[:200] }}</p>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

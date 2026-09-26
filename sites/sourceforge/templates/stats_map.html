@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} Download Statistics{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row"><h1>{{ p.name }} Download Statistics</h1></div>
+</section>
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div class="sidebar">
+        <ul class="sidebarmenu">
+          <li><a href="/projects/{{ p.shortname }}/files/stats/timeline" rel="nofollow"><h3>Downloads</h3></a></li>
+          <li class="active"><h3>Countries</h3></li>
+          <li><a href="/projects/{{ p.shortname }}/files/stats/os" rel="nofollow"><h3>Operating Systems</h3></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div id="stats-maincontent">
+      <h2 class="heading">Download Statistics</h2>
+      <div class="stats-selectors">
+        <div class="files-breadcrumb">
+          <a href="/projects/{{ p.shortname }}/files/stats/timeline">All Files</a>
+        </div>
+      </div>
+      <div id="stats-table">
+        <table id="data_percent" class="download_percent" title="Listing of downloads broken down by geographical region">
+          <thead>
+            <tr>
+              <th>&nbsp;</th>
+              <th class="files_date_h usersortable">Country</th>
+              <th class="number usersortable">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in countries %}
+            <tr class="{{ 'even' if loop.index is even }}">
+              <td class="files_no">{{ c.rank }}.</td>
+              <td>{{ c.label }}</td>
+              <td class="number">{{ fmt_int(c.count) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

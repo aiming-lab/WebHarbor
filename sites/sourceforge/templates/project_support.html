@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} | Support for {{ p.name }} at SourceForge.net{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="project-body">
+      <section class="project-masthead">
+        <div class="backdrop"></div>
+        <div class="content">
+          <div class="overview">
+            <div class="project-icon">{% if p.has_icon %}<img alt="{{ p.name }}" src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}">{% endif %}</div>
+            <div class="title">
+              <h1>{{ p.name }} Support</h1>
+              <h2 class="as-h3 summary">{{ p.summary }}</h2>
+              {% if p.developers %}<div class="as-h3 brought-by">Brought to you by: {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/">{{ u }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+            </div>
+          </div>
+        </div>
+      </section>
+      <div id="top_nav"><div id="top_nav_admin">
+        <ul class="dropdown">
+          {% for key, href, label in tabs %}
+          {% if key == 'tickets' %}
+          <li><a href="/p/{{ p.shortname }}/_list/tickets"><span>Tickets ▾</span></a>
+            <ul>{% for tkey, thref, tlabel in ticket_tabs %}<li><a href="{{ thref }}">{{ tlabel }}</a></li>{% endfor %}</ul>
+          </li>
+          {% else %}
+          <li class="{% if key == 'support' %}selected{% endif %}"><a href="{{ href }}"><span>{{ label }}</span></a></li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div></div>
+      <article class="main-content">
+        <section class="row">
+          <div class="small-12 columns">
+            <section id="support-preferred">
+              <b class="ico ico-support x64" title="Support"></b>
+              <h2>Best Way to Get Help</h2>
+              {% if best %}
+              {{ p.name }} says the best way to get help with its software is by visiting <a rel="nofollow" href="#">{{ best }}</a>.
+              {% else %}
+              {{ p.name }} recommends using the project's discussion forums to get help with its software.
+              {% endif %}
+            </section>
+            <section id="support-other">
+              <h2>Other Ways Of Getting Help</h2>
+              <p>Here are some other places where you can look for information about this project.</p>
+              <h3>Project Trackers</h3>
+              <ul>
+                {% for tkey, thref, tlabel in ticket_tabs %}
+                <li><a href="{{ thref }}">{{ tlabel }}</a></li>
+                {% endfor %}
+              </ul>
+              <h3>Project Forums</h3>
+              <ul>
+                <li><a href="/p/{{ p.shortname }}/discussion/">Discussion</a></li>
+              </ul>
+              {% if p.external_homepage %}
+              <h3>Project Homepage</h3>
+              This project has a homepage which can be found at <a rel="nofollow" href="{{ p.external_homepage }}">{{ p.external_homepage }}</a>.
+              {% endif %}
+            </section>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+</div>
+{% endblock %}

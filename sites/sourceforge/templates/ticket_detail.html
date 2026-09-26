@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / {{ tracker_label }} / #{{ t.ticket_num }} {{ t.summary }}{% endblock %}
+{% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tracker.css') }}">{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>#{{ t.ticket_num }} {{ t.summary }}</span></h2>
+      <div class="editbox">
+        <div class="view_holder">
+          <div class="grid-4"><label class="simple">Status: </label><span class="{{ t.status }}">{{ t.status }}</span></div>
+          <div class="grid-5 ticket-assigned-to"><label class="simple">Owner: </label>{% if t.owner %}{{ t.owner }}{% else %}nobody{% endif %}</div>
+          <div class="grid-4"><label class="simple">Labels: </label>{% if t.labels %}<span class="ui-corner-all tag"><a href="?q=labels:{{ t.labels[0] }}">{{ t.labels[0] }} (1)</a></span>{% else %}None{% endif %}</div>
+          <div style="clear:both"></div>
+          <div class="grid-4"><label class="simple">Priority:</label> {{ t.priority or 5 }}</div>
+          <div style="clear:both"></div>
+          <div class="grid-4"><label class="simple">Updated:</label> <span id="updated_id"><span title="{{ t.updated }}">{{ t.updated }}</span></span></div>
+          <div class="grid-4"><label class="simple">Created:</label> <span title="{{ t.created }}">{{ t.created }}</span></div>
+          <div class="grid-5"><label class="simple">Creator:</label> {% if t.creator %}<a href="/u/{{ t.creator|lower|replace(' ','') }}/profile/" class="user-mention">{{ t.creator }}</a>{% else %}anonymous{% endif %}</div>
+          <div class="grid-4"><label class="simple">Private:</label> No</div>
+        </div>
+      </div>
+      {% if t.description %}
+      <div>
+        <div id="ticket_content">
+          <div><div class="markdown_content"><p>{{ t.description }}</p></div></div>
+        </div>
+      </div>
+      {% endif %}
+      {% if t.posts %}
+      <div id="discussion_holder">
+        <h2>Discussion</h2>
+        <div>
+          <div class="comment-row">
+            <div id="comment">
+              <ul>
+                {% for post in t.posts %}
+                <li>
+                  <div>
+                    <div id="{{ loop.index }}" class="discussion-post">
+                      <div class="comment-row">
+                        <div class="grid-2 tcenter gravatar">
+                          <p class="gravatar"><img src="{{ url_for('static', filename='images/ui/default-avatar.png') }}" alt="{{ post.author }}" title="{{ post.author }}" class="emboss x48"></p>
+                        </div>
+                        <div class="grid-16 post-content bubble">
+                          <div class="header">
+                            <a href="/u/{{ post.author|lower|replace(' ','') }}/profile/" class="user-mention">{{ post.author }}</a> - <i style="color: #777"><span title="{{ post.date }}">{{ post.date }}</span></i>
+                          </div>
+                          <div class="display_post">
+                            <div><div class="markdown_content"><p>{{ post.text }}</p></div></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <hr>
+      <p><a href="/auth/">Log in</a> to post a comment.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

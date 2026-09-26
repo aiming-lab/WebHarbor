@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ u.display_name }}{% endblock %}
+{% block content %}
+<section id="page-body" class="neighborhood-Users mountpoint-profile">
+  <div id="nav_menu_holder">
+    <div class="sandiego">
+      <section class="project-masthead">
+        <div class="backdrop"></div>
+        <div class="content">
+          <div class="overview">
+            <div class="project-icon">
+              <img src="{{ url_for('static', filename='images/ui/default-avatar.png') }}" alt="{{ u.display_name }}" title="{{ u.display_name }}" class="emboss x90 project_icon">
+            </div>
+            <div class="title">
+              <h1>{{ u.display_name }}</h1>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div id="top_nav"></div>
+  <div id="content_base">
+    <div class="profile-section personal-data">
+      <h3>Personal Data</h3>
+      <div class="section-body">
+        <dl class="personal-data">
+          <dt>Username:</dt><dd>{{ u.username }}</dd>
+          <dt>Joined:</dt><dd>{{ u.joined }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="profile-section projects">
+      <h3>Projects</h3>
+      <div class="section-body">
+        <h4 id="widget-message">This is a list of open source software projects that {{ u.display_name }} is associated with:</h4>
+        <ul>
+          {% for p in projects %}
+          <li>
+            {% if p.has_icon %}<img src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}" alt="Project Logo" width="48" height="48"/>{% endif %}
+            <span class="project-info">
+              <a href="/projects/{{ p.shortname }}/">{{ p.name }}</a>
+              {{ p.summary }}
+            </span>
+            <span class="project-last-updated">Last Updated: <time datetime="{{ p.updated }}">{{ p.updated }}</time></span>
+          </li>
+          {% else %}
+          <li><span class="project-info">No public projects.</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

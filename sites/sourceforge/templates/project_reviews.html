@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stars %}
+{% block title %}{{ p.name }} Reviews - 2026{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="project-body">
+      <section class="project-masthead">
+        <div class="backdrop"></div>
+        <div class="content">
+          <div class="overview">
+            <div class="project-icon">{% if p.has_icon %}<img alt="{{ p.name }}" src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}">{% endif %}</div>
+            <div class="title">
+              <h1>{{ p.name }} Reviews</h1>
+              <h2 class="as-h3 summary">{{ p.summary }}</h2>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div id="top_nav"><div id="top_nav_admin">
+        <ul class="dropdown">
+          {% for key, href, label in tabs %}
+          {% if key == 'tickets' %}
+          <li><a href="/p/{{ p.shortname }}/_list/tickets"><span>Tickets ▾</span></a>
+            <ul>{% for tkey, thref, tlabel in ticket_tabs %}<li><a href="{{ thref }}">{{ tlabel }}</a></li>{% endfor %}</ul>
+          </li>
+          {% else %}
+          <li class="{% if key == 'reviews' %}selected{% endif %}"><a href="{{ href }}"><span>{{ label }}</span></a></li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div></div>
+      <article class="main-content">
+        <section class="row">
+          <div class="small-12 columns">
+            <h3>User Ratings</h3>
+            <section id="ratings" class="m-ratings-summary">
+              <section class="recommended-percentage item">
+                <span class="rating">
+                  <span class="average">{{ p.rating_avg }}</span>
+                  <span class="recommended">out of 5 stars</span>
+                </span>
+              </section>
+              <section class="graphs">
+                <section class="m-ratings-histogram">
+                  <section>
+                    <div class="star-text stars-5">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                    <div class="star-text stars-4">&#9733;&#9733;&#9733;&#9733;</div>
+                    <div class="star-text stars-3">&#9733;&#9733;&#9733;</div>
+                    <div class="star-text stars-2">&#9733;&#9733;</div>
+                    <div class="star-text stars-1">&#9733;</div>
+                  </section>
+                  <section class="bargraph">
+                    <div class="stars-5"><div class="rating-bar" style="width: calc({{ (p.stars_5 / p.review_count * 100) if p.review_count else 0 }}% - 1em)"></div><div class="rating-label">{{ p.stars_5 }}</div></div>
+                    <div class="stars-4"><div class="rating-bar" style="width: calc({{ (p.stars_4 / p.review_count * 100) if p.review_count else 0 }}% - 1em)"></div><div class="rating-label">{{ p.stars_4 }}</div></div>
+                    <div class="stars-3"><div class="rating-bar" style="width: calc({{ (p.stars_3 / p.review_count * 100) if p.review_count else 0 }}% - 1em)"></div><div class="rating-label">{{ p.stars_3 }}</div></div>
+                    <div class="stars-2"><div class="rating-bar" style="width: calc({{ (p.stars_2 / p.review_count * 100) if p.review_count else 0 }}% - 1em)"></div><div class="rating-label">{{ p.stars_2 }}</div></div>
+                    <div class="stars-1"><div class="rating-bar" style="width: calc({{ (p.stars_1 / p.review_count * 100) if p.review_count else 0 }}% - 1em)"></div><div class="rating-label">{{ p.stars_1 }}</div></div>
+                  </section>
+                </section>
+                <div class="dimensional-ratings">
+                  {% for label, val in [('ease', p.rating_ease), ('features', p.rating_features), ('design', p.rating_design), ('support', p.rating_support)] %}
+                  {% if val %}
+                  <div class="dimensional-rating">
+                    <span class="label">{{ label }}</span>
+                    {% for i in range(1, 6) %}
+                    <span title="{{ i }} of 5" class="rating {% if i > (val|round(0,'floor')) %}box{% endif %}">{{ i }} of 5</span>
+                    {% endfor %}
+                    <span class="rating-score"><span class="dim-rate">{{ val|round(0,'floor') }}</span> / 5</span>
+                  </div>
+                  {% endif %}
+                  {% endfor %}
+                </div>
+              </section>
+            </section>
+          </div>
+        </section>
+        <hr>
+        <section class="row m-rate-project">
+          <div class="small-12 columns">
+            <div class="as-h3">Rate This Project</div>
+            <a class="rate-this-project" href="/projects/{{ p.shortname }}/reviews/new" rel="nofollow">{% if current_user.is_authenticated %}Write a Review{% else %}Login To Rate This Project{% endif %}</a>
+          </div>
+        </section>
+        {% if highest and lowest %}
+        <section class="row" id="featured-reviews">
+          <div class="small-12 columns">
+            <hr/>
+            <h3>Featured Reviews</h3>
+            <section class="m-helpful-reviews">
+              <div class="highest-rated m-helpful-review">
+                <h4>Highest Rated</h4>
+                <div class="m-stars" aria-hidden="true">
+                  {% for i in range(5) %}
+                  <div class="star {% if i < highest.rating %}yellow{% else %}empty{% endif %}"><svg data-name="sf_star_yellow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 285.8"><polygon class="st0" fill="{% if i < highest.rating %}#ffcc00{% else %}#CCCCCB{% endif %}" points="150,0 185.4,109.2 300,109.2 207.3,176.6 242.7,285.8 150,218.3 57.3,285.8 92.7,176.6 0,109.2 114.6,109.2 "/></svg></div>
+                  {% endfor %}
+                </div>
+                <article class="review-txt-outer"><div class="review-txt">{{ highest.text }}</div></article>
+                <div class="footer"><span class="author-name">{{ highest.author_name }}</span></div>
+              </div>
+              <i class="vs">vs</i>
+              <div class="lowest-rated m-helpful-review">
+                <h4>Lowest Rated</h4>
+                <div class="m-stars" aria-hidden="true">
+                  {% for i in range(5) %}
+                  <div class="star {% if i < lowest.rating %}yellow{% else %}empty{% endif %}"><svg data-name="sf_star_yellow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 285.8"><polygon class="st0" fill="{% if i < lowest.rating %}#ffcc00{% else %}#CCCCCB{% endif %}" points="150,0 185.4,109.2 300,109.2 207.3,176.6 242.7,285.8 150,218.3 57.3,285.8 92.7,176.6 0,109.2 114.6,109.2 "/></svg></div>
+                  {% endfor %}
+                </div>
+                <article class="review-txt-outer"><div class="review-txt">{{ lowest.text }}</div></article>
+                <div class="footer"><span class="author-name">{{ lowest.author_name }}</span></div>
+              </div>
+            </section>
+          </div>
+        </section>
+        {% endif %}
+        <section class="row">
+          <div class="small-12 columns">
+            <section id="reviews" class="m-reviews-list">
+              <section class="heading">
+                <h2 class="as-h3">User Reviews</h2>
+                <div class="sort-options">
+                  <div data-toggle="filter-rating">
+                    <span>Filter Reviews:</span>
+                    <div class="sort-drop-down"><a>{% if filter_stars == 'all' %}All{% else %}{{ filter_stars }} Stars{% endif %}</a></div>
+                  </div>
+                  <ul id="filter-rating" class="filter-options dropdown-pane bottom">
+                    <li><a href="?filter-stars=all" title="Show All" class="{% if filter_stars == 'all' %}active{% endif %}">All</a></li>
+                    <li><a href="?filter-stars=5" title="Show 5 Stars" class="star-text">&#9733;&#9733;&#9733;&#9733;&#9733;</a></li>
+                    <li><a href="?filter-stars=4" title="Show 4 Stars" class="star-text">&#9733;&#9733;&#9733;&#9733;</a></li>
+                    <li><a href="?filter-stars=3" title="Show 3 Stars" class="star-text">&#9733;&#9733;&#9733;</a></li>
+                    <li><a href="?filter-stars=2" title="Show 2 Stars" class="star-text">&#9733;&#9733;</a></li>
+                    <li><a href="?filter-stars=1" title="Show 1 Star" class="star-text">&#9733;</a></li>
+                  </ul>
+                </div>
+              </section>
+              <section class="content">
+                <ul id="project-reviews" class="reviews">
+                  {% for r in reviews %}
+                  <li>
+                    <div class="m-review">
+                      <div class="footer">
+                        <span class="author-name">{{ r.author_name }}</span><span class="created-date"> Posted {{ r.created }}</span>
+                      </div>
+                      <div class="m-stars" aria-hidden="true">
+                        {% for i in range(5) %}
+                        <div class="star {% if i < r.rating %}yellow{% else %}empty{% endif %}"><svg data-name="sf_star_yellow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 285.8"><polygon class="st0" fill="{% if i < r.rating %}#ffcc00{% else %}#CCCCCB{% endif %}" points="150,0 185.4,109.2 300,109.2 207.3,176.6 242.7,285.8 150,218.3 57.3,285.8 92.7,176.6 0,109.2 114.6,109.2 "/></svg></div>
+                        {% endfor %}
+                      </div>
+                      <div class="review-txt-outer"><div class="review-txt">{{ r.text }}</div></div>
+                    </div>
+                  </li>
+                  {% else %}
+                  <li><div class="m-review">No reviews match this filter.</div></li>
+                  {% endfor %}
+                </ul>
+              </section>
+            </section>
+          </div>
+        </section>
+        {% if pages > 1 %}
+        <section id="pagination">
+          <ul class="pagination text-center" aria-label="Pagination">
+            <li class="pagination-previous {% if page == 1 %}disabled{% endif %}">{% if page > 1 %}<a href="?filter-stars={{ filter_stars }}&amp;page={{ page - 1 }}" aria-label="Previous page">Previous</a>{% else %}Previous{% endif %}</li>
+            {% for pg in range(1, pages + 1) %}
+            {% if pg == page %}
+            <li class="current"><span class="show-for-sr">You're on page</span> {{ pg }}</li>
+            {% elif pg <= 3 or pg > pages - 2 or (pg >= page - 2 and pg <= page + 2) %}
+            <li><a href="?filter-stars={{ filter_stars }}&amp;page={{ pg }}" aria-label="Page {{ pg }}">{{ pg }}</a></li>
+            {% elif pg == 4 and page > 5 %}<li class="ellipsis"></li>{% endif %}
+            {% endfor %}
+            <li class="pagination-next {% if page == pages %}disabled{% endif %}">{% if page < pages %}<a href="?filter-stars={{ filter_stars }}&amp;page={{ page + 1 }}" aria-label="Next page">Next</a>{% else %}Next{% endif %}</li>
+          </ul>
+        </section>
+        {% endif %}
+      </article>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-side-column"></div>
+</div>
+{% endblock %}

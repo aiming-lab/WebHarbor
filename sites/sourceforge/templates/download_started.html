@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} Download{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="project-body">
+      <section class="project-masthead">
+        <div class="backdrop"></div>
+        <div class="content">
+          <div class="overview">
+            <div class="project-icon">{% if p.has_icon %}<img alt="{{ p.name }}" src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}">{% endif %}</div>
+            <div class="title">
+              <h1>{{ p.name }}</h1>
+              <h2 class="as-h3 summary">{{ p.summary }}</h2>
+            </div>
+          </div>
+        </div>
+      </section>
+      <article class="main-content">
+        <section class="row" id="download-started">
+          <div class="small-12 columns">
+            <h2>Your download has started&hellip;</h2>
+            <p>Download of <b>{{ f.name }}</b> ({{ f.size_display }}) from {{ p.name }} has started. Check your browser's download manager if the file does not begin downloading automatically.</p>
+            <p><a class="button green" href="/projects/{{ p.shortname }}/files/">&larr; Back to {{ p.name }} Files</a></p>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+</div>
+{% endblock %}

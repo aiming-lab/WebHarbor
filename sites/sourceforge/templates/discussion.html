@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / Discussion{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>Discussion</span></h2>
+      <div>
+        <table id="discussion-forums">
+          <thead>
+            <tr><th>FORUM</th><th>LATEST POST</th><th># TOPICS</th></tr>
+          </thead>
+          <tbody>
+            {% for f in forums %}
+            <tr>
+              <td><strong><a href="/p/{{ p.shortname }}/discussion/{{ f.shortname }}/">{{ f.name }}</a></strong><br></td>
+              <td>
+                {% if f.threads %}
+                <a href="/p/{{ p.shortname }}/discussion/{{ f.shortname }}/thread/{{ f.threads[0].thread_id }}/">{{ f.threads[0].subject }}</a><br>
+                by <a href="/u/{{ f.threads[0].last_author }}/profile/" class="user-mention">{{ f.threads[0].last_author }}</a>
+                {% endif %}
+              </td>
+              <td class="count"><span class="forum-topic-count">{{ fmt_int(f.num_topics) }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-26",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the sourceforge.net mirror: home with Project of the Month picks and popular projects, open source directory with token-scored search, facet filters (os/topic/license/language/audience/environment/translation/devstatus) and sort orders, per-facet browse pages, project summary with rating stars and Additional Project Details, file browser with per-folder/per-file pages and download interstitial, reviews with histogram and star filters plus review submission, support hub, wiki, four ticket trackers with search/status/priority filters and ticket discussion, forums with thread pages, news feed, activity feed, download statistics (timeline/OS/country map), top-downloaded tables, business software directory (categories, product pages), about/leadership, user profiles, auth (username-or-email login, registration, profile edit), account area (bookmarks, my reviews), site-wide 404, and /_health."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time seeder. All content rows come from the tracked source_data/ snapshots (Allura REST project metadata, wayback directory cards, 7-Zip deep-scrape JSON, top-download tables, real review pages); benchmark users use a frozen bcrypt hash so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0)."
+  },
+  {
+   "path": "source_data/sourceforge_catalog.json",
+   "classification": "captured-upstream-content",
+   "scope": "411 project records: 262 from the Allura REST API (rest/p/<name>: summary, creation date, taxonomy, tools, developers) captured 2026-09-25/26, and 149 from Wayback Machine directory-page snippets (title/subtitle/description/downloads/reviews) for projects whose REST endpoint was rate-limited; shortnames normalized (the internal .mirror harvest suffix was stripped)."
+  },
+  {
+   "path": "source_data/catalog_cards.json",
+   "classification": "captured-upstream-content",
+   "scope": "395 directory result-card rows (downloads this week, review counts, last-updated labels) parsed from the captured sourceforge.net directory pages."
+  },
+  {
+   "path": "source_data/top_downloads.json",
+   "classification": "captured-upstream-content",
+   "scope": "The real all-time top-20 and weekly top-20 download tables (project shortname -> download count) parsed from the captured /top page; these exact numbers back the mirror's Top Downloaded Projects tables and the seeded download totals for those 40 projects."
+  },
+  {
+   "path": "source_data/sevenzip_bugs.json + sevenzip_bug2701_posts.json + sevenzip_bug2692_posts.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 35 tickets in 7-Zip's Bugs tracker (numbers, summaries, statuses, creators, owners, priorities, dates) and the full discussion posts for tickets 2701 and 2692, captured from the upstream tracker pages."
+  },
+  {
+   "path": "source_data/sevenzip_forum_threads.json + sevenzip_forum_help_threads.json + sevenzip_thread_darkmode_posts.json",
+   "classification": "captured-upstream-content",
+   "scope": "50 forum threads across 7-Zip's Open Discussion and Help forums (subjects, creators, dates, post/view counts) plus the Dark Mode thread's posts, captured from the upstream forum pages."
+  },
+  {
+   "path": "source_data/sevenzip_reviews.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 75 most recent 7-Zip reviews (authors, dates, star ratings, full texts) captured from the upstream reviews page."
+  },
+  {
+   "path": "source_data/extra_reviews.json",
+   "classification": "captured-upstream-content",
+   "scope": "Real review pages for seven more projects (keepass, portableapps, crystaldiskinfo, audacity, qbittorrent, ventoy, mpv-player-windows): ~19-25 latest reviews each plus their real rating summaries and histograms."
+  },
+  {
+   "path": "source_data/pages/",
+   "classification": "captured-upstream-content",
+   "scope": "50 Wayback Machine captures of sourceforge.net pages (home, directory, project summary/files/reviews/stats, trackers, forums, top, software directory, about, leadership, auth, register) used as the structural reference for templates and the source of the top-download tables and UI asset URLs."
+  },
+  {
+   "path": "source_data/projects/",
+   "classification": "captured-upstream-content",
+   "scope": "Raw Allura REST JSON responses per project (rest/p/<name>) captured 2026-09-25/26."
+  },
+  {
+   "path": "scraped_data/",
+   "classification": "captured-upstream-content",
+   "scope": "Harvest working records: icon_urls.txt / shot_urls.txt (upstream a.fsdn.com media URL -> local file mapping backing asset_inventory.json source_url fields), image_manifest.json (path -> source URL), and retry logs."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "asset-manifest",
+   "scope": "Tracked manifest of all 1069 managed media files under static/images/ and static/external_cache/ with byte length, SHA-256 and the real upstream source URL for each; verified by scripts/check_asset_inventory.py at build time."
+  },
+  {
+   "path": "static/images/icons/ (343 files)",
+   "classification": "captured-upstream-media",
+   "scope": "Real Allura project icons fetched from a.fsdn.com/allura/p/<shortname>/icon."
+  },
+  {
+   "path": "static/images/screenshots/ (701 files)",
+   "classification": "captured-upstream-media",
+   "scope": "Real Allura project screenshots fetched from a.fsdn.com/allura/p/<shortname>/screenshot/<file>, resized to <=800px JPEG."
+  },
+  {
+   "path": "static/images/ui/ (25 files)",
+   "classification": "captured-upstream-media",
+   "scope": "Real SourceForge sandiego-theme chrome assets (logos, favicons, leadership photos, business product logos, headquarters photo, avatars, social icons) fetched from a.fsdn.com/con/... as referenced by the captured pages."
+  },
+  {
+   "path": "static/css/ + static/js/",
+   "classification": "captured-upstream-media",
+   "scope": "The real upstream CSS suite (sandiego.css, lato.css, forge.css, font-awesome.min.css, tracker/ticket-list/wiki/activity/cmp/top styles, Lato + FontAwesome fonts, CSS-referenced svg images) fetched from a.fsdn.com/con/ with URLs rewritten to the local tree, plus a small vanilla site.js for nav dropdowns."
+  },
+  {
+   "path": "templates/ (37 files)",
+   "classification": "mirror-code",
+   "scope": "Jinja templates reproducing the captured upstream page structures and class names (sandiego chrome, directory cards, project pages, trackers, forums, reviews, stats, software directory, account pages, 404)."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "21 goal-style evaluation tasks (web_name/id/ques/web/upstream_url keys only) covering directory search, facets, project facts, files/versions, reviews, trackers, forums, stats, top lists, business software, accounts/bookmarks/reviews, registration, profiles, wiki/news."
+  },
+  {
+   "path": "tests/test_mirror.py",
+   "classification": "mirror-code",
+   "scope": "23-test pytest self-check suite running against a temporary copy of the seeded database: core pages, search/facets, project facts, files/latest download, reviews histogram, trackers and ticket detail, CVE search, forums, top tables, stats, wiki/news, business software, about/leadership, profiles, auth flows (login with email, register validation, profile edit), data integrity, 404, and icon file presence."
+  }
+ ]
+}

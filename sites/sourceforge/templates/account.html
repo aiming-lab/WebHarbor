@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}My Account - SourceForge{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row"><div class="column large-10"><h1 class="page-title">My Account</h1></div></div>
+</div>
+<div class="row main-content">
+  <div class="column small-12 medium-6">
+    <section class="project-info">
+      <h2>Profile</h2>
+      <p>Username: <span class="username">{{ current_user.username }}</span></p>
+      <p>Country: {{ country_name }}</p>
+    </section>
+    <h2>Bookmarked Projects</h2>
+    <ul>
+      {% for b in bookmarks %}
+      <li>
+        <div class="project-info">
+          <a href="/projects/{{ b.project.shortname }}/">{{ b.project.name }}</a>
+          <form method="post" action="/account/bookmark/{{ b.project.shortname }}" class="inline-form">
+            <button type="submit" class="button hollow small">Remove bookmark</button>
+          </form>
+        </div>
+      </li>
+      {% else %}
+      <li>No bookmarks yet. Browse the <a href="/directory/">directory</a> and bookmark projects you want to follow.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="column small-12 medium-6">
+    <h2>My Reviews</h2>
+    <ul>
+      {% for r in reviews %}
+      <li>
+        <a href="/projects/{{ r.project.shortname }}/reviews/">{{ r.project.name }}</a> — {{ r.rating }} stars ({{ r.created }})
+        <div class="review-txt-outer"><div class="review-txt">{{ r.text }}</div></div>
+      </li>
+      {% else %}
+      <li>You haven't written any reviews yet.</li>
+      {% endfor %}
+    </ul>
+    <p><a class="button blue hollow" href="/account/edit">Edit Profile</a></p>
+  </div>
+</div>
+{% endblock %}

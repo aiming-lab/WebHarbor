@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / Discussion / {{ forum.name }}{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>{{ forum.name }}</span></h2>
+      <div>
+        <div class="pagination_size">
+          <div class="page_list">
+            {% for pg in range(1, pages + 1) %}
+            {% if pg == page %}{{ pg }}{% else %}<a href="?page={{ pg }}">{{ pg }}</a>{% endif %}
+            {% endfor %}
+            (Page {{ page }} of {{ pages }})
+          </div>
+          <div class="clear"></div>
+        </div>
+        <div id="forum_threads">
+          <table class="forum-list clear">
+            <thead>
+              <tr><th class="topic">Topic</th><th>Posts</th><th>Views</th><th>Last Post</th></tr>
+            </thead>
+            <tbody class="forum-list">
+              {% for th in threads %}
+              <tr>
+                <td class="topic">
+                  <h3><a href="/p/{{ p.shortname }}/discussion/{{ forum.shortname }}/thread/{{ th.thread_id }}/">{{ th.subject }}</a></h3>
+                  <span>By <a href="/u/{{ th.creator|lower|replace(' ','') }}/profile/" class="user-mention">{{ th.creator }}</a> </span> on {{ th.created }}
+                </td>
+                <td>{{ th.posts }}</td>
+                <td>{{ fmt_int(th.views) }}</td>
+                <td>By <a href="/u/{{ th.last_author|lower|replace(' ','') }}/profile/" class="user-mention">{{ th.last_author }}</a> <br/>on {{ th.last_date }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<!-- Server: sfs-forge-5 -->
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html lang="en" class="no-js">
+<head><script type="text/javascript" src="https://web-static.archive.org/_static/js/bundle-playback.js?v=lGQTDXxZ" charset="utf-8"></script>
+<script type="text/javascript" src="https://web-static.archive.org/_static/js/wombat.js?v=o9P2E1FK" charset="utf-8"></script>
+<script>window.RufflePlayer=window.RufflePlayer||{};window.RufflePlayer.config={"autoplay":"on","unmuteOverlay":"hidden","showSwfDownload":true};</script>
+<script type="text/javascript" src="https://web-static.archive.org/_static/js/ruffle/ruffle.js"></script>
+<script type="text/javascript">
+    __wm.init("http://web.archive.org/web");
+  __wm.wombat("https://sourceforge.net/p/sevenzip/bugs/2692/","20260904091959","http://web.archive.org/","web","https://web-static.archive.org/_static/",
+	      "1788513599");
+</script>
+<link rel="stylesheet" type="text/css" href="https://web-static.archive.org/_static/css/banner-styles.css?v=1utQkbB3" />
+<link rel="stylesheet" type="text/css" href="https://web-static.archive.org/_static/css/iconochive.css?v=3PDvdIFv" />
+<!-- End Wayback Rewrite JS Include -->
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type"/>
+    <title>7-Zip / Bugs / #2692 7-Zip Vulnerabilities</title>
+    
+
+<meta name="viewport" content="width=1100">
+
+
+<link rel="icon" sizes="180x180" href="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/img/sandiego/logo-180x180.png" type="image/png">
+<link rel="icon" sizes="any" href="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/img/sandiego/svg/originals/sf-icon-orange-no_sf.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/img/sandiego/logo-180x180.png">
+<link rel="mask-icon" href="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/img/sandiego/svg/originals/sf-icon-orange-no_sf.svg" color="#FF6600">
+
+
+<script src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/allura/nf/1788380326/_ew_/theme/sftheme/js/sftheme/cmp2.js"></script>
+
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/con/css/lato.css?1788380326">
+
+
+<script>
+if (!window.SF) { window.SF = {}; }
+SF.sandiego = false;
+SF.sandiego_chrome = true;
+SF.cdn = "http://web.archive.org/web/20260904091959/https://a.fsdn.com/con";
+SF.fpid = 'bef478e2-ccfe-41a2-85cf-d08fcfe70c7c';
+SF.comm_billboard_route = '/software/product/$slug/';
+SF.floatingSitewideOrigin = 'http://web.archive.org/web/20260904091959/https://sourceforge.net';
+</script>
+    
+        <!-- ew:head_css -->
+
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/css?href=allura%2Fcss%2Fforge%2Fhilite.css%3Btool%2Ftickets%2Fcss%2Ftracker.css%3Ballura%2Fcss%2Fforge%2Ftooltipster.css">
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/allura/css/font-awesome.min.css">
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/theme/sftheme/css/forge.css">
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/css?href=css%2Fpage_list.css%3Bcss%2Fjquery.tagsinput.css">
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/css/easymde.min.css">
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/css?href=css%2Fmarkitup_sf.css%3Bcss%2Fshow-hint.css">
+    
+        <style>
+        div.moderate {
+            color:grey;
+        }
+        </style>
+    
+        <link rel="stylesheet" type="text/css" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/css?href=css%2Fautocomplete.css%3Bcss%2Fcombobox.css">
+    
+        
+<!-- /ew:head_css -->
+
+    
+    
+        <!-- ew:head_js -->
+
+    
+        <script type="text/javascript" src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/js?href=allura%2Fjs%2Fjquery-3.6.0.min.js%3Ballura%2Fjs%2Fjquery.cookie-1.4.1.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fshared_head.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Ftypescript%2Fcompliance.js"></script>
+    
+        
+<!-- /ew:head_js -->
+
+    
+
+    
+        <style type="text/css">
+            /* make URL &amp; Project custom fields in support tickets not get hidden as much */
+.project-forge.mountpoint-site-support .view_holder .grid-4:nth-child(5),
+.project-forge.mountpoint-site-support .view_holder .grid-4:nth-child(6) {
+  overflow: visible;
+  font-size: 22px;
+  width: 340px;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.project-forge.mountpoint-site-support .view_holder .grid-4:nth-child(5) label, .project-forge.mountpoint-site-support .view_holder .grid-4:nth-child(6) label {
+  font-size: 14px;
+}
+        </style>
+    
+    
+<style type="text/css">
+  input[name='ticket_form.summary']{
+    top: 5px;
+    left: 10px;
+    position: absolute;
+    z-index: 21;
+  }
+  div.form_holder .reply textarea{
+    height: 60px;
+  }
+  div.actions{
+    width: 150px;
+  }
+  .markdown_edit textarea {
+    height: 100px;
+  }
+</style>
+
+    <style>.XwqbDjQfDtQxVwrMPHUwvDhWhKcOwrIjJw {
+        display: none
+    }</style>
+
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="feed.rss"/>
+    <link rel="alternate" type="application/atom+xml" title="Atom" href="feed.atom"/>
+    
+    
+        <link rel="canonical" href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/"/>
+    
+
+    
+
+<script>
+    bizx.uids.gatherAndClean({hem: null });
+</script>
+
+
+
+
+<script>
+    function initPiwik(){
+      var _paq = window._paq = window._paq || [];
+      _paq.push(['trackPageView', document.title, {
+            dimension1: 'sevenzip',
+            dimension2: 'tickets'
+      }]);
+      _paq.push(['enableLinkTracking']);
+      
+          _paq.push(['enableHeartBeatTimer']);
+      
+      (function() {
+        var u="//web.archive.org/web/20260904091959/https://analytics.slashdotmedia.com/";
+        _paq.push(['setTrackerUrl', u+'sf.php']);
+        _paq.push(['setSiteId', 39]);
+        
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'sf.js'; s.parentNode.insertBefore(g,s);
+      })();
+    }
+    bizx.cmp.ifConsent({ purposes: ['storage', 'measurement'], vendors: 'sdm'}, initPiwik);
+</script>
+
+
+
+
+
+
+<!-- Hubspot tracking -->
+
+
+
+
+
+
+ <script>
+    $(function() {
+        bizx.cmp.ifConsent({ purposes: 'all' , vendors: 'narrative'}, function() {
+            var current_time = (new Date()).getTime();
+            let imageUrl = "http://web.archive.org/web/20260904091959/https://io.narrative.io/?companyId=2440&id=first_party%3Abef478e2-ccfe-41a2-85cf-d08fcfe70c7c&id=site_name%3Asourceforge.net&id=url%3A%2Fp%2Fsevenzip%2Fbugs%2F2692%2F&id=pagetitle%3A%24PAGE_TITLE&id=vertical%3AOpen+Source+Software&id=product%3A7-Zip";
+            imageUrl = imageUrl.replace(encodeURIComponent("$PAGE_TITLE"), document.title);  
+
+            imageUrl = URL.parse(imageUrl);
+            let hem = bizx.uids.getHem();
+            if (hem) {
+                imageUrl.searchParams.append('id', 'hem:' + hem);
+            }
+            imageUrl.searchParams.append('rand', current_time);
+
+            var image = new Image();
+            image.src = imageUrl.toString();
+            image.style.display = "none";
+            image.style.height = 0;
+            image.style.width = 0;
+            document.body.appendChild(image);
+        });
+    });
+</script>
+
+
+
+</head>
+
+<body class="
+body_class sandiego_chrome  legacy_chrome 
+" id="forge">
+
+    
+        <!-- ew:body_top_js -->
+
+    
+        <script type="text/javascript" src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/js?href=allura%2Fjs%2Fjquery-ui.min.js"></script>
+    
+        
+<!-- /ew:body_top_js -->
+
+    
+
+
+
+
+
+<div class="off-canvas position-right" id="offCanvas" data-off-canvas>
+    <!-- Menu -->
+    <ul class="header-nav-menulist">
+        <li class="highlight search">
+            
+                
+            
+            
+    <form method="get" action="/web/20260904091959/https://sourceforge.net/directory/" class="m-search-form">
+    
+        <input type="text" placeholder="Search for software or solutions" autocomplete="off" name="q">
+        
+        <label>
+            <input type="submit" class="bt" value="">
+            
+
+
+<svg data-name="search" viewbox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1216 832q0-185-131.5-316.5t-316.5-131.5-316.5 131.5-131.5 316.5 131.5 316.5 316.5 131.5 316.5-131.5 131.5-316.5zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225-55.5-273.5 55.5-273.5 150-225 225-150 273.5-55.5 273.5 55.5 225 150 150 225 55.5 273.5q0 220-124 399l343 343q37 37 37 90z"/></svg>
+        </label>
+    </form>
+    
+        </li>
+        
+        <li class="highlight"><a href="/web/20260904091959/https://sourceforge.net/auth/">Join/Login</a></li>
+        
+        <li><a href="/web/20260904091959/https://sourceforge.net/software/">Business Software</a></li>
+        <li><a href="/web/20260904091959/https://sourceforge.net/directory/">Open Source Software</a></li>
+        <li><a href="/web/20260904091959/https://sourceforge.net/software/vendors/" title="For Vendors">For Vendors</a></li>
+        <li><a href="/web/20260904091959/https://sourceforge.net/blog/" title="Blog">Blog</a></li>
+        <li><a href="/web/20260904091959/https://sourceforge.net/about">About</a></li>
+        <li><a id="header-nav-more" data-toggle="header-nav-more header-nav-more-content" data-toggler=".toggled">More</a></li>
+        <li>
+            <ul id="header-nav-more-content" class="toggled" data-toggler=".toggled">
+                
+    
+
+    
+    
+        <li><a href="/web/20260904091959/https://sourceforge.net/articles/">Articles</a></li>
+    
+    
+
+    
+ 
+                
+                <li><a href="/web/20260904091959/https://sourceforge.net/create">Create</a></li>
+                
+                <li><a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/articles/category/sourceforge-podcast/">SourceForge Podcast</a></li>
+                
+                    <li><a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/forge/documentation/Docs%20Home/">Site Documentation</a></li>
+                
+                <li><a href="/web/20260904091959/https://sourceforge.net/user/newsletters">Subscribe to our Newsletter</a></li>
+                <li><a href="/web/20260904091959/https://sourceforge.net/support">Support Request</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div class="off-canvas-content" data-off-canvas-content>
+
+    
+
+  
+<script>SF.adblock = true; SF.ubo = true;</script>  
+<script src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/con/js/admanager.js?1788380326"></script>
+
+<script src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/con/js/asg_embed.js?1788380326"></script>
+
+
+
+
+
+
+<script>
+    SF.linkout_icon = '<svg  data-name="sf-linkout-icon" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 300 300" style="enable-background:new 0 0 300 300;" xml:space="preserve"><polygon class="st0" points="243.2,243.2 56.8,243.2 56.8,56.8 123,56.8 123,9 9,9 9,291 291,291 291,179.4 243.2,179 "/><polygon class="st0" points="128.5,213 155,186.5 176,165.5 206.7,196.3 235.5,132.5 248.9,102.6 290.6,9.8 291,9 290.6,9.2 197.4,51.1 169.1,63.8 103.7,93.3 137,126.5 115.9,147.5 89.5,174 "/></svg>';
+</script>
+
+
+<div class="l-header-nav sticky sandiego">
+
+    <section class="sandiego l-header-nav-top show-for-large">
+        <div class="row">
+            <a href="/web/20260904091959/https://sourceforge.net/" title="Home" class="sf-logo">
+                
+    
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/sf-logo-full.svg" alt="SourceForge logo" class="sf-logo-full"/>
+            </a>
+            <nav class="links">
+                
+                    <a href="/web/20260904091959/https://sourceforge.net/user/newsletters" title="Subscribe to our newsletter"><span class="newsletter-icon">
+
+
+<svg data-name="mmSF_11mail" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewbox="0 0 42 42" enable-background="new 0 0 42 42" xml:space="preserve"><path fill="#FFFFFF" d="M0,6v30h42V6H0z M24.2,21.2c-0.8,0.8-2.3,2-3.2,2c-0.9,0-2.4-1.2-3.2-2L5.8,9.7h30.3L24.2,21.2z M13.7,21l-9.9,9.4V11.6L13.7,21z M15.7,23L15.7,23c0.5,0.5,2.9,2.9,5.3,2.9c2.4,0,4.8-2.4,5.2-2.8l0.1-0.1l9.8,9.4H5.8L15.7,23z M28.3,21l9.9-9.5v18.9L28.3,21z"/></svg></span></a>
+                
+                <a href="/web/20260904091959/https://sourceforge.net/software/vendors/" title="For Vendors">For Vendors</a>
+                
+                
+                    <a href="/web/20260904091959/https://sourceforge.net/support" title="Help">Help</a>
+                    <a href="/web/20260904091959/https://sourceforge.net/create/" title="Create">Create</a>
+                
+
+                
+                <a href="/web/20260904091959/https://sourceforge.net/user/registration" title="Join">Join</a>
+                <a href="/web/20260904091959/https://sourceforge.net/auth/" title="Login">Login</a>
+                
+            </nav>
+        </div>
+    </section>
+
+    <section class="sandiego l-header-nav-top hide-for-large">
+        <div class="row">
+            <a href="/web/20260904091959/https://sourceforge.net/" title="Home" class="sf-logo">
+                
+    
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/sf-logo-full.svg" alt="SourceForge logo" class="sf-logo-full"/>
+            </a>
+            <div class="title-bar-right">
+                <button type="button" aria-label="Toggle Main Menu" class="menu-icon" data-toggle="offCanvas"></button>
+            </div>
+        </div>
+    </section>
+    <section class="sandiego l-header-nav-bottom">
+        <nav class="row">
+            <a href="/web/20260904091959/https://sourceforge.net/" title="Home" class="sf-logo">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewbox="0 0 653 102.6" style="enable-background:new 0 0 653 102.6;" xml:space="preserve"><path class="st0" d="M66.9,54.5c0-19.1-6.8-27.8-10.4-31.1c-0.7-0.6-1.8-0.1-1.7,0.9c0.7,10.8-12.9,13.5-12.9,30.4h0    c0,0,0,0.1,0,0.1c0,10.3,7.8,18.7,17.4,18.7c9.6,0,17.4-8.4,17.4-18.7c0,0,0-0.1,0-0.1h0c0-4.8-1.8-9.4-3.6-12.8    c-0.4-0.7-1.4-0.4-1.3,0.2C75.1,56.7,66.9,65.7,66.9,54.5z"></path><g>    <path class="st0" d="M46.2,94.8c-0.4,0-0.9-0.2-1.2-0.5L0.5,49.8c-0.6-0.6-0.6-1.7,0-2.4l47-47C47.8,0.2,48.2,0,48.6,0h13.5        c0.8,0,1.3,0.5,1.5,1c0.2,0.5,0.2,1.2-0.4,1.8L19.1,47c-0.9,0.9-0.9,2.3,0,3.2L54,85.2c0.6,0.6,0.6,1.7,0,2.4l-6.7,6.8        C47,94.6,46.6,94.8,46.2,94.8z"></path></g><g>    <path class="st0" d="M55.1,102.6c-0.8,0-1.3-0.5-1.5-1c-0.2-0.5-0.2-1.2,0.4-1.8l44.2-44.2c0.4-0.4,0.7-1,0.7-1.6        c0-0.6-0.2-1.2-0.7-1.6L63.2,17.4c-0.6-0.6-0.6-1.7,0-2.4l6.8-6.8c0.3-0.3,0.7-0.5,1.2-0.5S72,8,72.3,8.3l44.4,44.5        c0.3,0.3,0.5,0.7,0.5,1.2s-0.2,0.9-0.5,1.2l-47,47c-0.3,0.3-0.7,0.5-1.2,0.5H55.1z"></path></g><g>    <g>        <path class="st1" d="M167.2,32c-0.2,0.4-0.5,0.6-1,0.6c-0.3,0-0.7-0.2-1.2-0.7c-0.5-0.5-1.2-1-2-1.5c-0.9-0.6-1.9-1.1-3.2-1.5            c-1.3-0.5-2.9-0.7-4.8-0.7c-1.9,0-3.5,0.3-5,0.8c-1.4,0.5-2.6,1.3-3.6,2.2s-1.7,2-2.2,3.2c-0.5,1.2-0.8,2.5-0.8,3.8            c0,1.8,0.4,3.2,1.1,4.4c0.7,1.1,1.7,2.1,3,2.9c1.2,0.8,2.6,1.5,4.2,2c1.6,0.6,3.2,1.1,4.8,1.6c1.6,0.5,3.2,1.1,4.8,1.8            c1.6,0.6,2.9,1.5,4.2,2.4s2.2,2.2,3,3.6c0.7,1.4,1.1,3.2,1.1,5.3c0,2.2-0.4,4.2-1.1,6.1c-0.7,1.9-1.8,3.6-3.2,5            c-1.4,1.4-3.2,2.5-5.2,3.4c-2.1,0.8-4.4,1.2-7,1.2c-3.4,0-6.4-0.6-8.8-1.8c-2.5-1.2-4.6-2.9-6.5-5l1-1.6c0.3-0.4,0.6-0.5,1-0.5            c0.2,0,0.5,0.1,0.8,0.4c0.3,0.3,0.8,0.7,1.2,1.1c0.5,0.4,1.1,0.9,1.8,1.4c0.7,0.5,1.5,1,2.4,1.4c0.9,0.4,1.9,0.8,3.1,1.1            c1.2,0.3,2.5,0.4,4,0.4c2.1,0,3.9-0.3,5.5-0.9c1.6-0.6,3-1.5,4.1-2.5s2-2.4,2.6-3.8c0.6-1.5,0.9-3.1,0.9-4.7            c0-1.8-0.4-3.3-1.1-4.5c-0.7-1.2-1.7-2.2-3-3c-1.2-0.8-2.6-1.5-4.2-2c-1.6-0.5-3.2-1.1-4.8-1.6c-1.6-0.5-3.2-1.1-4.8-1.7            c-1.6-0.6-2.9-1.4-4.2-2.4c-1.2-1-2.2-2.2-3-3.7c-0.7-1.5-1.1-3.3-1.1-5.6c0-1.7,0.3-3.4,1-5c0.7-1.6,1.6-3,2.9-4.3            c1.3-1.2,2.8-2.2,4.7-3c1.9-0.7,4-1.1,6.4-1.1c2.7,0,5.1,0.4,7.3,1.3c2.1,0.9,4.1,2.2,5.9,3.9L167.2,32z"></path>        <path class="st2" d="M152.9,78.8c-3.5,0-6.6-0.6-9.1-1.9c-2.5-1.2-4.8-3-6.7-5.1l-0.3-0.3l1.3-2c0.6-0.7,1.1-0.8,1.5-0.8            c0.4,0,0.8,0.2,1.2,0.6c0.3,0.3,0.8,0.7,1.3,1.1c0.5,0.4,1.1,0.9,1.7,1.4c0.7,0.5,1.4,0.9,2.3,1.3c0.9,0.4,1.9,0.8,3,1            c1.1,0.3,2.4,0.4,3.9,0.4c2,0,3.8-0.3,5.3-0.9c1.5-0.6,2.8-1.4,3.9-2.4c1-1,1.9-2.2,2.4-3.6c0.6-1.4,0.8-2.9,0.8-4.5            c0-1.7-0.3-3.1-1-4.2c-0.7-1.1-1.6-2-2.8-2.8c-1.2-0.8-2.5-1.4-4-1.9c-1.5-0.5-3.1-1.1-4.8-1.6c-1.7-0.5-3.3-1.1-4.8-1.7            c-1.6-0.7-3.1-1.5-4.3-2.5c-1.3-1-2.3-2.4-3.1-3.9c-0.8-1.6-1.2-3.5-1.2-5.8c0-1.8,0.3-3.6,1-5.3c0.7-1.7,1.7-3.2,3-4.5            c1.3-1.3,3-2.3,4.9-3.1c1.9-0.8,4.2-1.2,6.6-1.2c2.8,0,5.3,0.4,7.5,1.3c2.2,0.9,4.2,2.3,6.1,4.1l0.3,0.3l-1.1,2.1            c-0.6,1.1-1.7,1.4-3.1,0.1c-0.5-0.4-1.1-0.9-2-1.4c-0.8-0.5-1.9-1-3.1-1.5c-1.2-0.4-2.7-0.7-4.6-0.7c-1.8,0-3.4,0.3-4.8,0.8            c-1.3,0.5-2.5,1.2-3.4,2.1c-0.9,0.9-1.6,1.9-2.1,3c-0.5,1.1-0.7,2.4-0.7,3.6c0,1.6,0.3,3,1,4c0.7,1.1,1.6,2,2.8,2.8            c1.2,0.8,2.5,1.4,4,2c1.5,0.5,3.1,1.1,4.8,1.6c1.6,0.5,3.3,1.1,4.8,1.8c1.6,0.7,3.1,1.5,4.3,2.5c1.3,1,2.3,2.3,3.1,3.8            c0.8,1.5,1.2,3.4,1.2,5.6c0,2.2-0.4,4.4-1.2,6.4c-0.8,2-1.9,3.7-3.4,5.2c-1.5,1.5-3.3,2.6-5.4,3.5            C158.1,78.3,155.6,78.8,152.9,78.8z M138.4,71.3c1.7,1.9,3.7,3.4,6,4.5c2.4,1.2,5.3,1.8,8.6,1.8c2.5,0,4.8-0.4,6.8-1.2            c2-0.8,3.6-1.9,5-3.2c1.3-1.3,2.4-3,3.1-4.8c0.7-1.8,1.1-3.8,1.1-5.9c0-2-0.4-3.7-1-5.1c-0.7-1.3-1.6-2.5-2.8-3.4            c-1.2-0.9-2.5-1.7-4-2.4c-1.5-0.6-3.1-1.2-4.7-1.8c-1.6-0.5-3.2-1.1-4.8-1.6c-1.6-0.6-3-1.3-4.3-2.1c-1.3-0.8-2.3-1.9-3.1-3.1            c-0.8-1.2-1.2-2.8-1.2-4.7c0-1.4,0.3-2.8,0.8-4.1c0.5-1.3,1.3-2.5,2.3-3.4c1-1,2.3-1.8,3.8-2.3c1.5-0.6,3.3-0.8,5.2-0.8            c1.9,0,3.6,0.2,5,0.7c1.3,0.5,2.5,1,3.3,1.6c0.9,0.6,1.6,1.1,2.1,1.6c0.6,0.5,0.8,0.5,0.8,0.5c0.1,0,0.3,0,0.4-0.3l0.7-1.3            c-1.6-1.5-3.4-2.7-5.3-3.5c-2.1-0.8-4.4-1.2-7-1.2c-2.3,0-4.4,0.4-6.2,1.1c-1.8,0.7-3.3,1.7-4.5,2.8c-1.2,1.2-2.1,2.5-2.8,4.1            c-0.6,1.5-0.9,3.1-0.9,4.8c0,2.1,0.4,3.9,1.1,5.3c0.7,1.4,1.6,2.6,2.8,3.5c1.2,0.9,2.5,1.7,4,2.3c1.5,0.6,3.1,1.2,4.7,1.7            c1.6,0.5,3.2,1,4.8,1.6c1.6,0.6,3,1.2,4.3,2.1c1.3,0.8,2.4,1.9,3.1,3.2c0.8,1.3,1.2,2.9,1.2,4.9c0,1.8-0.3,3.4-0.9,5            c-0.6,1.6-1.5,2.9-2.7,4c-1.2,1.1-2.6,2-4.3,2.7c-1.7,0.6-3.6,1-5.7,1c-1.5,0-2.9-0.2-4.2-0.5c-1.2-0.3-2.3-0.7-3.2-1.1            c-0.9-0.4-1.8-0.9-2.5-1.5c-0.7-0.5-1.3-1-1.8-1.4c-0.5-0.4-0.9-0.8-1.2-1.1c-0.3-0.3-0.5-0.3-0.5-0.3c-0.1,0-0.3,0-0.5,0.3            L138.4,71.3z"></path>    </g>    <g>        <path class="st1" d="M226.7,51.6c0,4-0.6,7.6-1.8,10.9c-1.2,3.3-2.9,6.1-5.1,8.4c-2.2,2.3-4.8,4.1-7.8,5.4            c-3,1.3-6.4,1.9-10.1,1.9c-3.6,0-7-0.6-10-1.9c-3-1.3-5.6-3-7.8-5.4c-2.2-2.3-3.9-5.1-5.1-8.4c-1.2-3.3-1.8-6.9-1.8-10.9            c0-4,0.6-7.6,1.8-10.9c1.2-3.3,2.9-6.1,5.1-8.4c2.2-2.3,4.8-4.1,7.8-5.4c3-1.3,6.4-1.9,10-1.9c3.7,0,7.1,0.6,10.1,1.9            c3,1.3,5.6,3,7.8,5.4c2.2,2.3,3.9,5.1,5.1,8.4C226.1,44,226.7,47.6,226.7,51.6z M222.8,51.6c0-3.6-0.5-6.9-1.5-9.8            c-1-2.9-2.4-5.3-4.2-7.3c-1.8-2-4-3.5-6.6-4.6c-2.6-1.1-5.4-1.6-8.5-1.6c-3.1,0-5.9,0.5-8.5,1.6c-2.6,1.1-4.8,2.6-6.6,4.6            c-1.8,2-3.3,4.4-4.3,7.3c-1,2.9-1.5,6.1-1.5,9.8c0,3.6,0.5,6.9,1.5,9.8c1,2.9,2.4,5.3,4.3,7.3c1.8,2,4,3.5,6.6,4.6            c2.6,1.1,5.4,1.6,8.5,1.6c3.1,0,6-0.5,8.5-1.6c2.6-1,4.8-2.6,6.6-4.6c1.8-2,3.2-4.4,4.2-7.3C222.3,58.5,222.8,55.3,222.8,51.6z"></path>        <path class="st2" d="M202,78.7c-3.7,0-7.2-0.7-10.2-1.9c-3.1-1.3-5.8-3.1-8-5.5c-2.2-2.4-4-5.2-5.2-8.6c-1.2-3.3-1.9-7.1-1.9-11.1            c0-4,0.6-7.8,1.9-11.1c1.2-3.3,3-6.2,5.2-8.6c2.2-2.4,4.9-4.2,8-5.5c3.1-1.3,6.5-2,10.2-2c3.8,0,7.2,0.7,10.3,1.9            c3.1,1.3,5.8,3.1,8,5.5c2.2,2.4,4,5.3,5.2,8.6c1.2,3.3,1.8,7,1.8,11.1c0,4.1-0.6,7.8-1.8,11.1c-1.2,3.3-3,6.2-5.2,8.6            c-2.2,2.4-4.9,4.2-8,5.5C209.2,78.1,205.7,78.7,202,78.7z M202,25.7c-3.5,0-6.8,0.6-9.8,1.9c-2.9,1.2-5.5,3-7.6,5.2            c-2.1,2.2-3.8,5-4.9,8.2c-1.2,3.2-1.8,6.8-1.8,10.7c0,3.9,0.6,7.5,1.8,10.7c1.2,3.2,2.8,5.9,4.9,8.2c2.1,2.2,4.7,4,7.6,5.2            c2.9,1.2,6.2,1.8,9.8,1.8c3.6,0,6.9-0.6,9.8-1.8c2.9-1.2,5.5-3,7.6-5.2c2.1-2.2,3.8-5,4.9-8.1c1.2-3.2,1.8-6.8,1.8-10.7            c0-3.9-0.6-7.5-1.8-10.7c-1.2-3.2-2.8-5.9-4.9-8.2c-2.1-2.2-4.7-4-7.6-5.2C208.9,26.3,205.6,25.7,202,25.7z"></path>    </g>    <g>        <path class="st1" d="M256.4,74.9c2.5,0,4.7-0.4,6.7-1.3c2-0.9,3.6-2.1,5-3.6c1.4-1.5,2.4-3.4,3.1-5.4c0.7-2.1,1.1-4.3,1.1-6.8            V25.7h3.7v32.1c0,2.9-0.5,5.5-1.4,8c-0.9,2.5-2.2,4.6-3.9,6.5c-1.7,1.8-3.8,3.3-6.2,4.3c-2.4,1-5.2,1.6-8.2,1.6            c-3,0-5.8-0.5-8.2-1.6c-2.4-1.1-4.5-2.5-6.2-4.3c-1.7-1.8-3-4-3.9-6.5c-0.9-2.5-1.4-5.2-1.4-8V25.7h3.8v32c0,2.4,0.4,4.7,1.1,6.8            c0.7,2.1,1.8,3.9,3.1,5.4c1.4,1.5,3,2.7,5,3.6C251.6,74.5,253.9,74.9,256.4,74.9z"></path>        <path class="st2" d="M256.4,78.8c-3.1,0-5.9-0.5-8.4-1.6c-2.5-1.1-4.7-2.6-6.4-4.5c-1.7-1.9-3.1-4.2-4-6.7            c-0.9-2.5-1.4-5.3-1.4-8.2V25.1h5v32.7c0,2.3,0.4,4.5,1,6.6c0.7,2,1.7,3.8,3,5.2c1.3,1.5,2.9,2.6,4.8,3.5c1.9,0.8,4,1.3,6.4,1.3            c2.4,0,4.6-0.4,6.4-1.2c1.9-0.8,3.5-2,4.8-3.5c1.3-1.5,2.3-3.2,3-5.2c0.7-2,1-4.2,1-6.6V25.1h5v32.7c0,2.9-0.5,5.7-1.4,8.2            c-0.9,2.5-2.3,4.8-4,6.7c-1.7,1.9-3.9,3.4-6.4,4.5C262.3,78.3,259.5,78.8,256.4,78.8z M237.3,26.3v31.5c0,2.8,0.4,5.4,1.3,7.8            c0.9,2.4,2.1,4.5,3.8,6.3c1.6,1.8,3.6,3.2,6,4.2c2.3,1,5,1.5,8,1.5c2.9,0,5.6-0.5,8-1.5c2.3-1,4.4-2.4,6-4.2            c1.6-1.8,2.9-3.9,3.8-6.3c0.9-2.4,1.3-5,1.3-7.8V26.3h-2.5v31.5c0,2.5-0.4,4.8-1.1,7c-0.7,2.2-1.8,4.1-3.3,5.7            c-1.4,1.6-3.2,2.9-5.2,3.8c-2,0.9-4.4,1.4-6.9,1.4c-2.6,0-4.9-0.5-6.9-1.4c-2-0.9-3.8-2.2-5.2-3.8c-1.4-1.6-2.5-3.5-3.2-5.7            c-0.7-2.1-1.1-4.5-1.1-7V26.3H237.3z"></path>    </g>    <g>        <path class="st1" d="M297.5,51.3c1,0,0.9,0,0.9,0l2.2,0c2.3,0,4.4-0.3,6.2-0.8c1.8-0.6,3.4-1.3,4.6-2.4c1.3-1,2.2-2.3,2.9-3.7            c0.7-1.4,1-3.1,1-4.9c0-3.7-1.2-6.4-3.6-8.2c-2.4-1.8-5.9-2.7-10.6-2.7h-9.5v22.7v2.8v23.5h-3.7V25.7h13.2c6,0,10.5,1.2,13.4,3.5            c3,2.3,4.4,5.7,4.4,10.2c0,2-0.3,3.8-1,5.4c-0.7,1.6-1.7,3.1-3,4.3c-1.3,1.2-2.8,2.3-4.6,3c-1.8,0.8-3.9,1.3-6.1,1.6            c0.6,0.4,1.1,0.9,1.6,1.5l17.9,22.4h-3.3c-0.4,0-0.7-0.1-1-0.2c-0.3-0.1-0.6-0.4-0.8-0.7l-16.6-21c-0.4-0.5-0.9-0.9-1.3-1.1            c-0.5-0.2-3.4-0.3-4.4-0.3C296.3,51.6,296.7,51.3,297.5,51.3z"></path>        <path class="st2" d="M325,78.2h-4.5c-0.5,0-0.9-0.1-1.3-0.3c-0.4-0.2-0.7-0.5-1-0.9l-16.6-21c-0.4-0.5-0.7-0.8-1.1-1            c-0.4-0.1-2.8-0.3-4.1-0.3h-0.6v-2.6c0-0.9,0.2-1.4,1.8-1.4c0.9,0,1,0,1,0l2.2,0c2.2,0,4.2-0.3,6-0.8c1.7-0.5,3.2-1.3,4.4-2.3            c1.2-1,2.1-2.1,2.7-3.5c0.6-1.4,0.9-2.9,0.9-4.6c0-3.5-1.1-6-3.4-7.7c-2.3-1.7-5.7-2.6-10.2-2.6h-8.9v48.9h-5V25.1h13.9            c6.1,0,10.7,1.2,13.8,3.6c3.1,2.4,4.7,6,4.7,10.7c0,2.1-0.4,4-1.1,5.7c-0.7,1.7-1.8,3.2-3.1,4.5c-1.3,1.3-3,2.3-4.8,3.2            c-1.5,0.6-3.1,1.1-4.9,1.4c0.2,0.2,0.4,0.4,0.6,0.7L325,78.2z M296.9,53.5c1.1,0,3.4,0.1,4,0.4c0.6,0.3,1.1,0.7,1.6,1.3l16.6,21            c0.2,0.3,0.4,0.5,0.6,0.6c0.2,0.1,0.4,0.2,0.7,0.2h2l-17.1-21.4c-0.4-0.6-0.9-1-1.4-1.3l-1.5-0.9l1.8-0.2c2.2-0.2,4.2-0.7,5.9-1.5            c1.7-0.8,3.2-1.7,4.5-2.9c1.2-1.2,2.2-2.5,2.8-4.1c0.6-1.6,1-3.3,1-5.2c0-4.3-1.4-7.5-4.2-9.7c-2.8-2.2-7.2-3.3-13-3.3h-12.6V77            h2.5V28h10.1c4.7,0,8.4,0.9,10.9,2.8c2.6,1.9,3.9,4.8,3.9,8.7c0,1.9-0.4,3.6-1,5.1c-0.7,1.5-1.7,2.8-3.1,3.9            c-1.3,1.1-2.9,1.9-4.8,2.5c-1.9,0.6-4,0.9-6.4,0.9l-2.2,0c-0.1,0-0.2,0-0.9,0C297.3,51.9,297,51.9,296.9,53.5z"></path>    </g>    <g>        <path class="st1" d="M367.6,68.8c0.2,0,0.5,0.1,0.6,0.3l1.5,1.6c-1.1,1.1-2.2,2.2-3.5,3.1c-1.3,0.9-2.7,1.7-4.2,2.3            c-1.5,0.6-3.2,1.1-4.9,1.5c-1.8,0.4-3.8,0.5-5.9,0.5c-3.6,0-6.9-0.6-9.9-1.9c-3-1.3-5.6-3-7.7-5.4c-2.1-2.3-3.8-5.1-5-8.4            c-1.2-3.3-1.8-6.9-1.8-10.9c0-3.9,0.6-7.5,1.9-10.8c1.2-3.3,3-6,5.2-8.4c2.2-2.3,4.9-4.1,8-5.4c3.1-1.3,6.6-1.9,10.3-1.9            c1.9,0,3.6,0.1,5.2,0.4c1.6,0.3,3,0.7,4.4,1.2c1.4,0.5,2.6,1.2,3.8,2c1.2,0.8,2.4,1.7,3.5,2.7l-1.1,1.6c-0.2,0.3-0.5,0.4-0.9,0.4            c-0.2,0-0.5-0.1-0.8-0.4c-0.3-0.3-0.8-0.6-1.3-1c-0.5-0.4-1.2-0.8-1.9-1.2c-0.7-0.5-1.6-0.9-2.7-1.2c-1-0.4-2.2-0.7-3.6-1            c-1.3-0.3-2.9-0.4-4.6-0.4c-3.2,0-6.1,0.5-8.7,1.6c-2.6,1.1-4.9,2.6-6.8,4.7c-1.9,2-3.4,4.5-4.5,7.3s-1.6,6.1-1.6,9.7            c0,3.7,0.5,6.9,1.6,9.8c1.1,2.9,2.5,5.3,4.4,7.3c1.9,2,4.1,3.5,6.6,4.6c2.5,1.1,5.3,1.6,8.2,1.6c1.9,0,3.5-0.1,5-0.4            c1.5-0.2,2.8-0.6,4-1.1c1.2-0.5,2.4-1.1,3.4-1.8c1.1-0.7,2.1-1.5,3.1-2.5c0.1-0.1,0.2-0.2,0.3-0.2            C367.3,68.9,367.5,68.8,367.6,68.8z"></path>        <path class="st2" d="M351.1,78.8c-3.7,0-7.1-0.7-10.1-1.9c-3.1-1.3-5.7-3.1-7.9-5.5c-2.2-2.4-3.9-5.2-5.1-8.6            c-1.2-3.3-1.8-7.1-1.8-11.1c0-4,0.6-7.7,1.9-11c1.3-3.3,3.1-6.2,5.3-8.6c2.3-2.4,5.1-4.3,8.2-5.6c3.2-1.3,6.7-2,10.6-2            c1.9,0,3.7,0.1,5.3,0.4c1.6,0.3,3.1,0.7,4.5,1.2c1.4,0.5,2.7,1.2,3.9,2c1.2,0.8,2.4,1.7,3.6,2.8l0.4,0.4l-1.4,2.1            c-0.2,0.3-0.6,0.7-1.4,0.7c-0.4,0-0.7-0.2-1.2-0.5c-0.3-0.3-0.8-0.6-1.3-0.9c-0.5-0.4-1.1-0.8-1.9-1.2c-0.7-0.4-1.6-0.8-2.6-1.2            c-1-0.4-2.2-0.7-3.5-0.9c-1.3-0.2-2.8-0.4-4.5-0.4c-3.1,0-5.9,0.5-8.5,1.6c-2.5,1.1-4.8,2.6-6.6,4.5c-1.8,1.9-3.3,4.3-4.3,7.1            c-1,2.8-1.6,6-1.6,9.4c0,3.6,0.5,6.8,1.5,9.6c1,2.8,2.4,5.2,4.2,7.1c1.8,1.9,3.9,3.4,6.4,4.4c2.4,1,5.1,1.5,8,1.5            c1.8,0,3.5-0.1,4.9-0.4c1.4-0.2,2.7-0.6,3.9-1.1c1.2-0.5,2.3-1.1,3.3-1.7c1-0.7,2-1.5,3-2.4c0.2-0.2,0.3-0.2,0.5-0.3            c0.5-0.3,1.3-0.2,1.7,0.3l1.9,2l-0.4,0.4c-1.1,1.2-2.3,2.2-3.6,3.2c-1.3,0.9-2.7,1.8-4.3,2.4c-1.5,0.7-3.2,1.2-5.1,1.5            C355.3,78.6,353.3,78.8,351.1,78.8z M352.2,25.7c-3.7,0-7.1,0.6-10.1,1.9c-3,1.2-5.7,3-7.8,5.3c-2.2,2.3-3.9,5-5.1,8.2            c-1.2,3.2-1.8,6.7-1.8,10.6c0,3.9,0.6,7.5,1.8,10.7c1.2,3.2,2.8,5.9,4.9,8.2c2.1,2.2,4.6,4,7.5,5.2c2.9,1.2,6.1,1.8,9.6,1.8            c2.1,0,4-0.2,5.8-0.5c1.7-0.3,3.4-0.8,4.8-1.5c1.5-0.6,2.8-1.4,4-2.3c1.1-0.8,2.1-1.7,3-2.6l-1.1-1.2c-0.1-0.1-0.2-0.1-0.3,0            c-0.1,0-0.2,0.1-0.3,0.2c-1,0.9-2.1,1.8-3.2,2.5c-1.1,0.7-2.3,1.4-3.5,1.9c-1.3,0.5-2.7,0.9-4.1,1.1c-1.5,0.2-3.2,0.4-5.1,0.4            c-3,0-5.9-0.6-8.5-1.6c-2.6-1.1-4.9-2.7-6.8-4.7c-1.9-2-3.4-4.6-4.5-7.5c-1.1-2.9-1.6-6.3-1.6-10c0-3.6,0.5-6.9,1.6-9.9            c1.1-2.9,2.6-5.5,4.6-7.5c2-2.1,4.3-3.7,7-4.8c2.7-1.1,5.7-1.7,8.9-1.7c1.7,0,3.3,0.1,4.7,0.4c1.4,0.3,2.6,0.6,3.7,1            c1.1,0.4,2,0.8,2.8,1.3c0.8,0.5,1.4,0.9,1.9,1.3c0.5,0.4,1,0.7,1.3,1c0.3,0.3,0.5,0.3,0.5,0.3c0.3,0,0.4-0.1,0.4-0.2l0.8-1.2            c-1-0.9-2-1.6-3-2.3c-1.2-0.8-2.4-1.4-3.7-1.9c-1.3-0.5-2.8-0.9-4.3-1.2C355.7,25.9,354,25.7,352.2,25.7z"></path>    </g>    <g>        <path class="st1" d="M410.3,25.7v3.1H383v21h22.7v3H383v21.6h27.3v3.1h-31.1V25.7H410.3z"></path>        <path class="st2" d="M410.9,78.2h-32.3V25.1h32.3v4.3h-27.3v19.7h22.7v4.3h-22.7v20.4h27.3V78.2z M379.8,77h29.9v-1.9h-27.3V52.2            h22.7v-1.8h-22.7V28.2h27.3v-1.9h-29.9V77z"></path>    </g>    <g>        <path class="st1" d="M456.8,25.1V33h-23.5v15.7h19.8v7.9h-19.8v21.6h-9.9v-53H456.8z"></path>    </g>    <g>        <path class="st1" d="M514.3,51.6c0,3.9-0.6,7.5-1.9,10.8c-1.3,3.3-3.1,6.2-5.5,8.6c-2.3,2.4-5.2,4.3-8.5,5.7c-3.3,1.4-7,2-11,2            c-4,0-7.7-0.7-11-2c-3.3-1.4-6.1-3.2-8.5-5.7c-2.4-2.4-4.2-5.3-5.5-8.6s-1.9-6.9-1.9-10.8s0.6-7.5,1.9-10.8            c1.3-3.3,3.1-6.2,5.5-8.6c2.4-2.4,5.2-4.3,8.5-5.7c3.3-1.4,7-2,11-2c4,0,7.7,0.7,11,2.1c3.3,1.4,6.1,3.3,8.5,5.7            c2.3,2.4,4.2,5.3,5.5,8.6C513.6,44.1,514.3,47.7,514.3,51.6z M504.2,51.6c0-2.9-0.4-5.5-1.2-7.8c-0.8-2.3-1.9-4.3-3.3-5.9            c-1.4-1.6-3.2-2.8-5.3-3.7c-2.1-0.9-4.4-1.3-7-1.3c-2.6,0-4.9,0.4-7,1.3c-2.1,0.9-3.8,2.1-5.3,3.7c-1.5,1.6-2.6,3.6-3.4,5.9            c-0.8,2.3-1.2,4.9-1.2,7.8s0.4,5.5,1.2,7.8c0.8,2.3,1.9,4.3,3.4,5.9c1.5,1.6,3.2,2.8,5.3,3.7c2.1,0.9,4.4,1.3,7,1.3            c2.6,0,4.9-0.4,7-1.3c2.1-0.9,3.8-2.1,5.3-3.7c1.4-1.6,2.5-3.6,3.3-5.9C503.8,57.1,504.2,54.5,504.2,51.6z"></path>    </g>    <g>        <path class="st1" d="M534.9,50.4l2.3,0c1.9,0,3.5-0.2,4.9-0.7c1.4-0.5,2.5-1.1,3.4-1.9c0.9-0.8,1.6-1.8,2-2.9            c0.4-1.1,0.7-2.4,0.7-3.7c0-2.7-0.9-4.8-2.7-6.2c-1.8-1.4-4.5-2.2-8.1-2.2H531v17.6v7.1v20.7h-9.9v-53h16.2c3.6,0,6.7,0.4,9.3,1.1            c2.6,0.7,4.7,1.8,6.3,3.1c1.6,1.3,2.9,3,3.6,4.8c0.8,1.9,1.2,3.9,1.2,6.2c0,1.8-0.3,3.5-0.8,5.1c-0.5,1.6-1.3,3-2.3,4.3            c-1,1.3-2.2,2.4-3.7,3.4c-1.5,1-3.1,1.8-5,2.3c1.2,0.7,2.3,1.7,3.2,3l13.3,19.6h-8.9c-0.9,0-1.6-0.2-2.2-0.5            c-0.6-0.3-1.1-0.8-1.5-1.5c0,0-11.1-17-11.1-17c-0.3-0.4-0.9-1.3-1.5-1.4c-1.2,0-2.4,0-3.5,0c0,0,0-6,0-6.4            C533.8,50.4,534.9,50.4,534.9,50.4z"></path>    </g>    <g>        <path class="st1" d="M591.4,70.9c2.2,0,4.2-0.2,5.8-0.6c1.6-0.4,3.2-1,4.7-1.7v-12h-6.6c-0.6,0-1.1-0.2-1.5-0.5            c-0.4-0.4-0.6-0.8-0.6-1.3v-5.6h17.6V73c-1.3,1-2.7,1.8-4.2,2.5c-1.5,0.7-3,1.3-4.7,1.8c-1.7,0.5-3.4,0.8-5.3,1            c-1.9,0.2-3.9,0.3-6.1,0.3c-3.9,0-7.4-0.7-10.7-2c-3.3-1.3-6.1-3.2-8.4-5.6c-2.4-2.4-4.2-5.3-5.6-8.6c-1.3-3.3-2-7-2-10.9            c0-4,0.6-7.6,1.9-11c1.3-3.3,3.1-6.2,5.5-8.6c2.4-2.4,5.3-4.3,8.7-5.6c3.4-1.3,7.2-2,11.4-2c4.3,0,8.1,0.6,11.2,1.9            c3.2,1.3,5.8,3,8,5l-2.9,4.5c-0.6,0.9-1.3,1.4-2.2,1.4c-0.6,0-1.2-0.2-1.8-0.6c-0.8-0.5-1.6-0.9-2.4-1.4c-0.8-0.5-1.7-0.9-2.7-1.2            c-1-0.3-2.1-0.6-3.3-0.8c-1.2-0.2-2.7-0.3-4.3-0.3c-2.6,0-5,0.4-7.1,1.3c-2.1,0.9-3.9,2.1-5.4,3.8c-1.5,1.6-2.6,3.6-3.4,5.9            c-0.8,2.3-1.2,4.9-1.2,7.7c0,3.1,0.4,5.8,1.3,8.2c0.9,2.4,2.1,4.4,3.6,6s3.4,2.9,5.5,3.8S588.9,70.9,591.4,70.9z"></path>    </g>    <g>        <path class="st1" d="M645.7,56.8h-16.1v13.4H653v7.9h-33.4v-53H653V33h-23.5v16.3H648v5.8C648,55.1,647.9,56.8,645.7,56.8z"></path>    </g></g></svg>
+            </a>
+            <div class="links">
+                
+    
+        <div class="nav-dropdown">
+            <a href="/web/20260904091959/https://sourceforge.net/software/">Business Software</a>
+            
+        </div>
+        <div class="nav-dropdown">
+            <a href="/web/20260904091959/https://sourceforge.net/directory/" title="Browse">Open Source Software</a>
+            
+        </div>
+        <div class="nav-dropdown">
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/articles/category/sourceforge-podcast/">SourceForge Podcast</a>
+        </div>
+        <div class="nav-dropdown">
+            <a>Resources</a>
+            <ul class="nav-dropdown-menu">
+                  <li><a href="/web/20260904091959/https://sourceforge.net/articles/">Articles</a></li>
+                  
+                  <li><a href="/web/20260904091959/https://sourceforge.net/software/case-studies/">Case Studies</a></li>
+                  
+                  <li><a href="/web/20260904091959/https://sourceforge.net/blog/">Blog</a></li>
+            </ul>
+        </div>
+    
+
+                <div class="dev-menu-when-stuck">
+                    Menu
+                    <ul class="dev-menu-dropdown header-nav-menulist">
+                        <li><a href="/web/20260904091959/https://sourceforge.net/support">Help</a></li>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/create">Create</a></li>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/user/registration/" title="Join">Join</a></li>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/auth/" title="Login">Login</a></li>
+                    </ul>
+                </div>
+                <div class="search-toggle-when-stuck">
+                    <a class="search-toggle">
+                        
+
+
+<svg data-name="search" viewbox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1216 832q0-185-131.5-316.5t-316.5-131.5-316.5 131.5-131.5 316.5 131.5 316.5 316.5 131.5 316.5-131.5 131.5-316.5zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225-55.5-273.5 55.5-273.5 150-225 225-150 273.5-55.5 273.5 55.5 225 150 150 225 55.5 273.5q0 220-124 399l343 343q37 37 37 90z"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="search">
+                
+                    
+
+                
+                
+                    
+                
+                
+                
+                
+    <form method="get" action="/web/20260904091959/https://sourceforge.net/directory/" class="m-search-form">
+    
+    <div class="typeahead__container">
+      <div class="typeahead__field">
+        <div class="typeahead__query">
+        
+        <input type="text" placeholder="Search for software or solutions" autocomplete="off" name="q">
+        
+        </div>
+        
+        <label>
+            <input type="submit" class="bt" value="">
+            
+
+
+<svg data-name="search" viewbox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1216 832q0-185-131.5-316.5t-316.5-131.5-316.5 131.5-131.5 316.5 131.5 316.5 316.5 131.5 316.5-131.5 131.5-316.5zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225-55.5-273.5 55.5-273.5 150-225 225-150 273.5-55.5 273.5 55.5 225 150 150 225 55.5 273.5q0 220-124 399l343 343q37 37 37 90z"/></svg>
+        </label>
+      </div>
+    </div>
+    
+    </form>
+    
+                
+            </div>
+        </nav>
+        
+    </section>
+
+    
+</div>
+
+
+
+
+    
+    
+    <div class="notification-on-project-page">
+    
+        
+    
+    
+    
+    </div>
+    
+    
+
+
+    <section id="page-body" class=" neighborhood-Projects project-sevenzip mountpoint-bugs 
+
+">
+        <div id="nav_menu_holder">
+            
+                
+                    
+    <div class="sandiego"> 
+            
+            
+            
+            
+<section class="project-masthead"> 
+    
+    
+
+    
+<div class="backdrop" style="box-sizing: content-box; padding-bottom: 24px"></div>
+
+    <div class="content">
+    
+        
+    <nav id="breadcrumbs" class="breadcrumbs rtl">
+        <ul itemscope itemtype="http://schema.org/BreadcrumbList">
+            <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                <a itemprop="item" href="/web/20260904091959/https://sourceforge.net/"><span itemprop="name">Home</span></a>
+                <meta itemprop="position" content="1"/>
+            </li>
+            <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                <a itemprop="item" href="/web/20260904091959/https://sourceforge.net/directory/"><span itemprop="name">Browse</span></a>
+                <meta itemprop="position" content="2"/>
+            </li>
+            
+            
+                
+                
+            
+            
+                
+            
+            
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="/web/20260904091959/https://sourceforge.net/p/sevenzip/"><span itemprop="name">7-Zip</span></a>
+                <meta itemprop="position" content="3"/>
+                </li>
+            
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <span itemprop="name">Bugs</span>
+                <meta itemprop="position" content="4"/>
+                </li>
+            
+        </ul>
+    </nav>
+    
+    
+    
+        
+                
+                
+<div class="overview">
+    
+
+
+<div class="project-icon   ">
+    
+    
+    <img itemprop="image" alt="7-Zip" title="7-Zip" src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/allura/p/sevenzip/icon?1513717481&amp;w=90" srcset="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/allura/p/sevenzip/icon?w=135&amp;1513717481 1.5x, http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/allura/p/sevenzip/icon?w=180&amp;1513717481 2x"/></div>
+
+
+    
+    <div class="title "> 
+
+        <meta itemprop="name" content="7-Zip"/>
+        <h1>7-Zip Vulnerabilities
+            
+        </h1>
+        
+        <h2 class="as-h3 summary">
+            A free file archiver for extremely high compression
+        </h2>
+        
+            
+            
+          
+        
+            
+            
+            <div class="as-h3 brought-by">
+                
+                Brought to you by:
+                
+                    <a href="/web/20260904091959/https://sourceforge.net/u/ipavlov/profile/">ipavlov</a>
+                    
+                
+            </div>
+            
+        
+
+        
+
+        
+    </div>
+
+
+    
+
+</div>
+
+                
+                
+    
+  
+            
+            
+        
+    </div>
+</section>
+
+        </div>
+    
+
+                
+            
+        </div>
+        <div id="top_nav" class="">
+            
+                
+<div id="top_nav_admin">
+<ul class="dropdown">
+  
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/projects/sevenzip/" class="tool-summary-32">
+            Summary
+        </a>
+        
+        
+    </li>
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/projects/sevenzip/files/" class="tool-files-sf-32">
+            Files
+        </a>
+        
+        
+    </li>
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/projects/sevenzip/reviews/" class="tool-reviews-32">
+            Reviews
+        </a>
+        
+        
+    </li>
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/projects/sevenzip/support" class="tool-support-32">
+            Support
+        </a>
+        
+        
+    </li>
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/wiki/" class="tool-wiki-32">
+            Wiki
+        </a>
+        
+        
+    </li>
+  
+    <li class="selected">
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/_list/tickets" class="tool-tickets-32">
+            Tickets ▾
+        </a>
+        
+        
+            <ul>
+                
+                    <li class=""><a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/support-requests/">Support Requests</a></li>
+                
+                    <li class=""><a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/patches/">Patches</a></li>
+                
+                    <li class="selected"><a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/">Bugs</a></li>
+                
+                    <li class=""><a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/feature-requests/">Feature Requests</a></li>
+                
+            </ul>
+        
+    </li>
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/news/" class="tool-blog-32">
+            News
+        </a>
+        
+        
+    </li>
+  
+    <li class="">
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/discussion/" class="tool-discussion-32">
+            Discussion
+        </a>
+        
+        
+    </li>
+  
+  
+</ul>
+</div>
+
+
+            
+        </div>
+        <div id="content_base">
+            
+
+    
+                
+                    
+<a id="sidebar-activate" href="#">
+    <span class="btn-label">Menu</span>
+    <span class="btn-arrow-down">▾</span>
+    <span class="btn-arrow-up">▴</span>
+</a>
+
+                        
+
+
+<div id="sidebar">
+  
+    <form id="search" method="GET" action="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/search/">
+      <input name="q" type="text" title="Search Bugs" placeholder="Search Bugs">
+      <label>
+        <input type="submit" style="display:none">
+        <b class="fa fa-search" title="Submit"></b>
+      </label>
+    </form>
+  
+    
+    
+      
+      
+        
+    
+      <ul class="sidebarmenu">
+      
+    
+  <li>
+      
+        <a class="icon sidebar-disabled" href="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/new/" title="To create a new ticket, you must be authorized by the project admin."><i class="fa fa-plus-circle"></i>
+      
+      <span>Create Ticket</span>
+      </a>
+  </li>
+  
+      
+        
+    
+  <li>
+      
+        <a class="icon" href="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/stats/" title="Stats"><i class="fa fa-line-chart"></i>
+      
+      <span>View Stats</span>
+      </a>
+  </li>
+  
+      
+        
+    
+      </ul>
+      
+    
+    
+      <h3 class="">Group</h3>
+    
+  
+      
+        
+    
+    
+      <h3 class="">Searches</h3>
+    
+  
+      
+        
+    
+      <ul class="sidebarmenu">
+      
+    
+  <li>
+      
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/search/?q=%21status%3Aclosed-wont-fix+%26%26+%21status%3Aclosed-later+%26%26+%21status%3Aclosed-rejected+%26%26+%21status%3Aclosed-out-of-date+%26%26+%21status%3Aclosed-accepted+%26%26+%21status%3Aclosed-works-for-me+%26%26+%21status%3Aclosed+%26%26+%21status%3Aclosed-duplicate+%26%26+%21status%3Aclosed-invalid+%26%26+%21status%3Aclosed-fixed&amp;sort=mod_date_dt+desc" class="search_bin">
+      
+      <span>Changes</span>
+      </a>
+  </li>
+  
+      
+        
+    
+  <li>
+      
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/search/?q=status%3Aclosed-wont-fix+or+status%3Aclosed-later+or+status%3Aclosed-rejected+or+status%3Aclosed-out-of-date+or+status%3Aclosed-accepted+or+status%3Aclosed-works-for-me+or+status%3Aclosed+or+status%3Aclosed-duplicate+or+status%3Aclosed-invalid+or+status%3Aclosed-fixed" class="search_bin">
+      
+      <span>Closed Tickets</span>
+      </a>
+  </li>
+  
+      
+        
+    
+  <li>
+      
+        <a href="/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/search/?q=%21status%3Aclosed-wont-fix+%26%26+%21status%3Aclosed-later+%26%26+%21status%3Aclosed-rejected+%26%26+%21status%3Aclosed-out-of-date+%26%26+%21status%3Aclosed-accepted+%26%26+%21status%3Aclosed-works-for-me+%26%26+%21status%3Aclosed+%26%26+%21status%3Aclosed-duplicate+%26%26+%21status%3Aclosed-invalid+%26%26+%21status%3Aclosed-fixed" class="search_bin">
+      
+      <span>Open Tickets</span>
+      </a>
+  </li>
+  
+      
+        
+    
+      </ul>
+      
+    
+    
+      <h3 class="">Help</h3>
+    
+  
+      
+        
+    
+      <ul class="sidebarmenu">
+      
+    
+  <li>
+      
+        <a href="/web/20260904091959/https://sourceforge.net/nf/markdown_syntax" target="_blank">
+      
+      <span>Formatting Help</span>
+      </a>
+  </li>
+  
+      
+    
+    
+      </ul>
+      
+    
+    
+      <script>
+                $(function() {
+            $.ajax({
+                url:'/p/sevenzip/bugs/bin_counts',
+                success: function(data) {
+                    var $spans = $('.search_bin > span');
+                    $.each(data.bin_counts, function(i, item) {
+                        $spans.each(function() {
+                            if ($(this).text() === item.label) {
+                                $(this).after('<small>' + item.count + '</small>').fadeIn('fast');
+                            }
+                        });
+                    });
+                }
+            });
+            if ($('.milestones').length > 0) {
+                $.ajax({
+                    url: '/p/sevenzip/bugs/milestone_counts',
+                    success: function(data) {
+                        var $spans = $('.milestones > span');
+                        $.each(data.milestone_counts, function(i, item) {
+                            $spans.each(function() {
+                                if ($(this).text() === item.name) {
+                                    $(this).after('<small>' + item.count + '</small>').fadeIn('fast');
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+        });
+      </script>
+    
+</div>
+
+
+
+<script>
+$('#sidebar-admin-header').on('click', function(e){
+    $("#sidebar-admin-menu").toggleClass("hidden");
+    $(this).toggleClass("expanded");
+    e.preventDefault();
+});
+</script>
+
+                    
+
+                    
+                
+                
+                    
+                
+                <div class="grid-20 pad">
+                    <h2 class="dark title">
+                        <span>#2692 7-Zip Vulnerabilities</span>
+                        <!-- actions -->
+                        <small>
+                            
+  <a class="icon" href="feed.atom" rel="nofollow" title="Follow this Ticket"><i class="fa fa-rss"></i></a>
+
+
+
+
+                        </small>
+                        <!-- /actions -->
+                    </h2>
+                    
+
+<div class="editbox">
+  
+  <div class="view_holder">
+      
+      <div class="grid-4">
+        <label class="simple">Status: </label>
+        <span class="open">open</span>
+      </div>
+      <div class="grid-5 ticket-assigned-to">
+        <label class="simple">Owner: </label>
+        
+          
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/ipavlov/profile/" class="user-mention">
+                
+                    Igor Pavlov
+                
+            </a>
+        
+    
+        
+      </div>
+      <div class="grid-4">
+        <label class="simple">Labels: </label>
+        
+          None
+        
+      </div>
+    <div style="clear:both"></div>
+    
+    
+      
+      
+        
+      
+        
+          
+            <div class="grid-4">
+              <label class="simple">Priority:</label>
+              
+                7
+              
+            </div>
+          
+        
+      
+    
+    <div style="clear:both"></div>
+    <div class="grid-4">
+      <label class="simple">Updated:</label>
+      <span id="updated_id">
+    <span title="Fri Jul 31, 2026 03:16 AM UTC">
+      2026-07-31
+    </span>
+</span>
+    </div>
+    <div class="grid-4">
+      <label class="simple">Created:</label>
+      
+    <span title="Thu Jul 30, 2026 02:50 AM UTC">
+      2026-07-30
+    </span>
+
+    </div>
+    <div class="grid-5">
+      <label class="simple">Creator:</label>
+      
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/farahinfauze/profile/" class="user-mention">
+                
+                    Farahin Fauze
+                
+            </a>
+        
+    
+    </div>
+    <div class="grid-4">
+      <label class="simple">Private:</label>
+      No
+        
+    </div>
+  </div>
+</div>
+
+
+
+
+
+                    <div>
+                        
+                        
+
+<div id="ticket_content">
+  <div><div class="markdown_content"><p>Hi, we do find some 7-zip vulnerabilities in our server after Nessus scanning. May I know how to remediate these issues? <br/>
+7-Zip &lt; 26.01 NTFS Heap Buffer Overflow (GHSL-2026-140)<br/>
+7-Zip &gt;= 9.21 &lt; 26.01 UEFI Multiple Vulnerabilities (GHSL-2026-115_GHSL-2026-122)<br/>
+7-Zip &gt;= 9.34 &lt; 26.01 WIM / Ar SYMDEF OOB Read (GHSL-2026-115_GHSL-2026-122)</p></div></div>
+  
+</div>
+
+                    </div>
+                    
+                    
+  
+  
+  <div id="discussion_holder">
+    <h2>Discussion</h2>
+    
+    
+
+<div>
+  <div class="comment-row">
+      
+        
+
+      
+      <div id="comment">
+        
+          
+          <ul>
+            <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="17f5" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/allura/u/tansy/user_icon?1711455439" srcset="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/allura/u/tansy/user_icon?w=72&amp;1711455439 1.5x, http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/allura/u/tansy/user_icon?w=96&amp;1711455439 2x" alt="Sam Tansy" title="Sam Tansy" class="emboss x48">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 652px;  ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/tansy/profile/" class="user-mention">
+                
+                    Sam Tansy
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Thu Jul 30, 2026 08:04 AM UTC">
+      2026-07-30
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#17f5" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>I think <a href="http://web.archive.org/web/20260904091959/https://github.com/ip7z/7zip/blob/f9d78aff31a5f2521ae7ddbdc97c4a8855808959/CPP/7zip/Archive/NtfsHandler.cpp#L133" rel="nofollow">it's</a> been <a href="http://web.archive.org/web/20260904091959/https://github.com/ip7z/7zip/commit/8c63d71ff886bda90c86db28466287f977374237" rel="nofollow">fixed</a>.<br/>
+At least the first one. I guess, the rest too.</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#17f5">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+      <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="17f5/924e" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png" alt="Arav" title="Arav" class="emboss x32">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 632px;   margin-right:0px ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/arav4592/profile/" class="user-mention">
+                
+                    Arav
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Fri Jul 31, 2026 02:28 AM UTC">
+      2026-07-31
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#17f5/924e" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>not fixed.. 7-Zip 26.02, is already the newest version vulnerability scanners separately flags CVE-2026-58052 in 7-Zip 26.02</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#17f5/924e">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+          </ul>
+          
+          <ul>
+            <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="3a32" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png" alt="Farahin Fauze" title="Farahin Fauze" class="emboss x48">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 652px;  ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/farahinfauze/profile/" class="user-mention">
+                
+                    Farahin Fauze
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Thu Jul 30, 2026 08:38 AM UTC">
+      2026-07-30
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#3a32" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>means, by upgrading to version 26.02 can fix this error?</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#3a32">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+      <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="3a32/c1df" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png" alt="estomagado" title="estomagado" class="emboss x32">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 632px;   margin-right:0px ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/estomagado/profile/" class="user-mention">
+                
+                    estomagado
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Thu Jul 30, 2026 09:06 PM UTC">
+      2026-07-30
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#3a32/c1df" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>No, it won't.</p>
+<p>I can confirm that both Qualys and Tenable flag 26.02 as vulnerable. This is a <em>different</em> vulnerability, not the one that was fixed with 26.02.</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#3a32/c1df">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+      <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="3a32/c1df/18b5" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png" alt="Farahin Fauze" title="Farahin Fauze" class="emboss x32">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 622px;   margin-right:0px ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/farahinfauze/profile/" class="user-mention">
+                
+                    Farahin Fauze
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Fri Jul 31, 2026 01:02 AM UTC">
+      2026-07-31
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#3a32/c1df/18b5" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>can you tell me how to remediate this issues?</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#3a32/c1df/18b5">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+          </ul>
+          
+          <ul>
+            <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="b3a9" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png" alt="Arav" title="Arav" class="emboss x48">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 652px;  ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/arav4592/profile/" class="user-mention">
+                
+                    Arav
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Fri Jul 31, 2026 02:23 AM UTC">
+      2026-07-31
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#b3a9" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>CVE-2026-58052 exists on 7-Zip  (ver. 26.02.00.0) -"Action1’s vulnerability scanner separately flags CVE-2026-58052 because that vulnerability affects 7-Zip through version 26.02. There is currently no newer 7-Zip release in Action1’s catalogue to deploy."</p>
+<p>CVE-2026-58052 is a medium-severity security flaw in 7-Zip for Windows through version 26.02 that fails to preserve the Mark-of-the-Web (MotW). It lets attackers bypass Windows SmartScreen warnings and spoof file contents using crafted RAR5 archives.</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+                <br><small>Last edit: Arav 2026-07-31</small>
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#b3a9">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+      <!-- post_thread -->
+<li>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <div id="b3a9/eb70" class="discussion-post">
+      
+     
+    
+    <div class="comment-row">
+      <div class="grid-2 tcenter gravatar">
+       <p class="gravatar">
+        
+        
+  
+  
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png" alt="Farahin Fauze" title="Farahin Fauze" class="emboss x32">
+  
+       </p>
+      </div>
+      
+      
+      <div class="grid-16 post-content bubble" style="width: 632px;   margin-right:0px ">
+          <div class="header">
+            
+        
+            
+            <a href="/web/20260904091959/https://sourceforge.net/u/farahinfauze/profile/" class="user-mention">
+                
+                    Farahin Fauze
+                
+            </a>
+        
+     - <i style="color: #777">
+    <span title="Fri Jul 31, 2026 03:16 AM UTC">
+      2026-07-31
+    </span>
+</i>
+
+            <div class="tools">
+            
+            
+            <a href="http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/#b3a9/eb70" title="Link" class="little_link shortlink icon btn ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+              <span><i class="fa fa-link" aria-hidden="true"></i></span></a>
+
+            
+
+                
+            </div>
+          </div>
+          <div class="display_post">
+          
+            
+
+            <div><div class="markdown_content"><p>thank you for your explaination</p></div></div>&nbsp;
+            <div class="reactions" style="user-select: none; cursor: default">
+              
+            </div>
+            
+  
+            
+          
+        </div>
+        
+        
+        </div>
+
+      <div class="shortlink_popup modal" style="display: none">
+        <a class="icon close" href="#" title="Close"><i class="fa fa-close"></i></a>
+        <div>If you would like to refer to this comment somewhere else in this project, copy and paste the following link:</div>
+        <input type="text" style="width:100%;" value="https://sourceforge.net/p/sevenzip/bugs/2692/#b3a9/eb70">
+      </div>
+    </div>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<script>
+$('.attachment_toolbar #remove-attachment').on('click', function(e){
+    $(this).closest('form').submit();
+})
+</script>
+
+    <!-- post_thread replies -->
+    <ul>
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+    </ul>
+    <!-- post_thread /replies -->
+</li>
+<!-- /post_thread -->
+          </ul>
+          
+        
+        
+      </div>
+      <div style="clear:both"></div>
+      
+      <div style="clear:both"></div>
+  </div>
+</div>
+
+  <hr>
+  <p>
+    <a href="/web/20260904091959/https://sourceforge.net/auth/">Log in</a> to post a comment.
+  </p>
+
+  </div>
+
+                </div>
+            
+
+
+
+        </div>
+    </section>
+      
+
+    <footer class="sandiego">
+    <div class="as-row">
+        <div class="footer-wrapper">
+            <nav aria-label="Site Links" role="navigation">
+                <section>
+                    <div class="as-h2">SourceForge</div>
+                    <ul>
+                    
+                        <li><a href="/web/20260904091959/https://sourceforge.net/create/" title="Create a Project">Create a Project</a></li>
+                    
+                        <li><a href="/web/20260904091959/https://sourceforge.net/directory/" title="Open Source Software Directory">Open Source Software</a></li>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/software/" title="Business Software Directory">Business Software</a></li>
+                        
+                            
+                            <li><a href="/web/20260904091959/https://sourceforge.net/top" title="Top Open Source Projects">Top Downloaded Projects</a></li>
+                        
+
+                    </ul>
+                </section>
+            </nav>
+            <nav aria-label="Company Links" role="navigation">
+                <section>
+                    <div class="as-h2">Company</div>
+                    <ul>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/about">About</a></li>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/about/leadership" title="Open Source Software Directory">Team</a></li>
+                        <li class="h-card">
+                            <address>
+                                <span class="p-name p-org">SourceForge Headquarters</span><br>
+                                <span class="p-street-address">1320 Columbia Street Suite 310</span><br>
+                                <span class="p-locality">San Diego, CA <span class="p-postal-code">92101</span></span><br>
+                                <span class="p-tel">+1 (858) 422-6466</span><br>
+                            </address>
+                        </li>
+                        <li id="social">
+                            
+<span></span>
+<a href="http://web.archive.org/web/20260904091959/https://x.com/sourceforge" class="twitter" rel="nofollow" target="_blank" title="SourceForge on X">
+
+
+<svg class="vertical-icon-fix" data-name="x-logo" viewbox="0 0 1200 1227" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z" fill="white"/></svg></a>
+<a href="http://web.archive.org/web/20260904091959/https://fosstodon.org/@sourceforge" rel="me nofollow" target="_blank" title="SourceForge on Mastodon">
+
+
+<svg class="vertical-icon-fix" data-name="mastodon" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512"><path d="M433 179.11c0-97.2-63.71-125.7-63.71-125.7-62.52-28.7-228.56-28.4-290.48 0 0 0-63.72 28.5-63.72 125.7 0 115.7-6.6 259.4 105.63 289.1 40.51 10.7 75.32 13 103.33 11.4 50.81-2.8 79.32-18.1 79.32-18.1l-1.7-36.9s-36.31 11.4-77.12 10.1c-40.41-1.4-83-4.4-89.63-54a102.54 102.54 0 0 1-.9-13.9c85.63 20.9 158.65 9.1 178.75 6.7 56.12-6.7 105-41.3 111.23-72.9 9.8-49.8 9-121.5 9-121.5zm-75.12 125.2h-46.63v-114.2c0-49.7-64-51.6-64 6.9v62.5h-46.33V197c0-58.5-64-56.6-64-6.9v114.2H90.19c0-122.1-5.2-147.9 18.41-175 25.9-28.9 79.82-30.8 103.83 6.1l11.6 19.5 11.6-19.5c24.11-37.1 78.12-34.8 103.83-6.1 23.71 27.3 18.4 53 18.4 175z"/></svg></a>
+<a href="http://web.archive.org/web/20260904091959/https://www.facebook.com/sourceforgenet/" class="facebook" rel="nofollow" target="_blank" title="SourceForge on Facebook">
+
+
+<svg data-name="facebook" viewbox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1343 12v264h-157q-86 0-116 36t-30 108v189h293l-39 296h-254v759h-306v-759h-255v-296h255v-218q0-186 104-288.5t277-102.5q147 0 228 12z"/></svg></a>
+<a href="http://web.archive.org/web/20260904091959/https://www.linkedin.com/company/sourceforge.net" class="linkedin" rel="nofollow" target="_blank" title="SourceForge on LinkedIn">
+
+
+<svg data-name="linkedin" viewbox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M477 625v991h-330v-991h330zm21-306q1 73-50.5 122t-135.5 49h-2q-82 0-132-49t-50-122q0-74 51.5-122.5t134.5-48.5 133 48.5 51 122.5zm1166 729v568h-329v-530q0-105-40.5-164.5t-126.5-59.5q-63 0-105.5 34.5t-63.5 85.5q-11 30-11 81v553h-329q2-399 2-647t-1-296l-1-48h329v144h-2q20-32 41-56t56.5-52 87-43.5 114.5-15.5q171 0 275 113.5t104 332.5z"/></svg></a>
+
+<a href="/web/20260904091959/https://sourceforge.net/user/newsletters" rel="nofollow" class="newsletter" title="Subscribe to our newsletter">
+
+
+<svg class="vertical-icon-fix" data-name="mmSF_11mail" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewbox="0 0 42 42" enable-background="new 0 0 42 42" xml:space="preserve"><path fill="#FFFFFF" d="M0,6v30h42V6H0z M24.2,21.2c-0.8,0.8-2.3,2-3.2,2c-0.9,0-2.4-1.2-3.2-2L5.8,9.7h30.3L24.2,21.2z M13.7,21l-9.9,9.4V11.6L13.7,21z M15.7,23L15.7,23c0.5,0.5,2.9,2.9,5.3,2.9c2.4,0,4.8-2.4,5.2-2.8l0.1-0.1l9.8,9.4H5.8L15.7,23z M28.3,21l9.9-9.5v18.9L28.3,21z"/></svg></a>
+
+<span></span>
+                        </li>
+                    </ul>
+                </section>
+            </nav>
+             <nav aria-label="Resources Links" role="navigation">
+                <section>
+                    <div class="as-h2">Resources</div>
+                    <ul>
+                        
+                            <li><a href="/web/20260904091959/https://sourceforge.net/support" title="Support Section">Support</a></li>
+                            <li><a href="/web/20260904091959/https://sourceforge.net/p/forge/documentation/Docs%20Home/" title="Site Documentation">Site Documentation</a></li>
+                        
+                        <li><a href="http://web.archive.org/web/20260904091959/https://fosstodon.org/@sourceforgestatus" title="Site Status" rel="me nofollow">Site Status</a></li>
+                        <li><a href="/web/20260904091959/https://sourceforge.net/reviews" title="Reviews" rel="me nofollow">SourceForge Reviews</a></li>
+
+                    </ul>
+                </section>
+            </nav>
+            <section class="footer-logo">
+                <a href="/web/20260904091959/https://sourceforge.net/" title="Home" class="sf-logo">
+                    
+    
+    <img src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/images/sandiego/sf-logo-full.svg" alt="SourceForge logo" class="sf-logo-full"/>
+                </a>
+            </section>
+        </div>
+    </div>
+    <section class="l-nav-bottom">
+        <nav class="row">
+            
+                
+            
+        
+    <div class="columns small-12 large-6 copyright-notice">
+        &copy; 2026 Slashdot Media. All Rights Reserved.
+    </div>
+    <div class="columns large-6 links links-right">
+        
+
+    
+
+    <a href="http://web.archive.org/web/20260904091959/https://slashdotmedia.com/terms-of-use" target="_blank" title="Terms" rel="nofollow">Terms</a>
+    <a href="http://web.archive.org/web/20260904091959/https://slashdotmedia.com/privacy-statement/" target="_blank" title="Privacy" rel="nofollow">Privacy</a>
+
+    
+    
+    
+
+    
+        <a href="http://web.archive.org/web/20260904091959/https://slashdotmedia.com/opt-out-choices/" target="_blank" title="Opt Out" rel="nofollow">Opt Out</a>
+    
+
+    
+        <a href="http://web.archive.org/web/20260904091959/https://slashdotmedia.com/contact/" target="_blank" title="Advertise" rel="nofollow">Advertise</a>
+    
+    </div>
+        </nav>
+    </section>
+
+    </footer>
+    
+
+
+    
+    
+    
+        
+        
+
+
+
+    
+
+
+
+    
+    
+        
+            
+    
+    
+    
+    
+    
+    
+    
+        
+        
+        
+        
+    
+    
+    <link rel="stylesheet" href="http://web.archive.org/web/20260904091959cs_/https://a.fsdn.com/con/css/high_impact.css?1788380326"/>
+    <section id="auth0-el" data-footer-name="mdb" data-nosnippet>
+      <div class="sticky-gradient"></div>
+      <button id="mdb-dismiss-btn" class="sticky-dismiss" aria-label="Close">✕</button>
+      <div class="footer-content" style="display: flex; align-items: center;">
+        <div class="sticky-left">
+          <div class="sticky-brand">
+              
+    
+    <img alt="MongoDB Logo" style="width: 50px; height: 50px; object-fit: contain;" src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/img/hi-logo.png"/>
+    <img alt="MongoDB" style="height: 28px; width: auto; object-fit: contain; vertical-align: middle; align-self: center; display: block; flex-shrink: 0;" src="http://web.archive.org/web/20260904091959im_/https://a.fsdn.com/con/img/hi-text.png"/>
+    
+
+          </div>
+        </div>
+        <div class="sticky-content">
+          <div class="sticky-headline"></div>
+          <div class="sticky-desc "></div>
+        </div>
+        <div class="sticky-right">
+          <span class="sticky-cta" data-label="mdb-footer" data-url="/hi2"></span>
+        </div>
+      </div>
+    </section>
+    <script>
+    if (SF.ubo || navigator?.brave?.isBrave()) {
+        document.getElementById('mdb-dismiss-btn').parentNode.remove();
+    }
+    </script>
+    
+    
+
+        
+    
+
+
+
+
+
+
+</div>
+
+
+<div id="messages">
+    
+
+    
+</div>
+
+
+    <!-- ew:body_js -->
+
+
+    <script type="text/javascript" src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/js?href=allura%2Fjs%2Fjquery.notify.js%3Ballura%2Fjs%2Fjquery.tooltipster.js%3Ballura%2Fjs%2Fallura-base.js%3Ballura%2Fjs%2Fchecklist.js%3Ballura%2Fjs%2Fadmin_modal.js%3Bjs%2Fjquery.lightbox_me.js%3Ballura%2Fjs%2Fmemorable.js%3Bjs%2Fjquery.tagsinput.js%3Bjs%2Feasymde.min.js%3Bjs%2Fsf_markitup.js%3Bjs%2Fshow-hint.js%3Bjs%2Fusermentions-helper.js%3Bjs%2Fpost.js%3Bjs%2Freactions.js%3Bjs%2Fcombobox.js%3Bjs%2Fvote.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fsandiego%2Ffloating-unit.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fshared.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fsticky.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fsandiego%2Fchrome.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fsandiego%2Futilities.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.core.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.util.mediaQuery.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.util.keyboard.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.util.box.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.util.nest.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.dropdownMenu.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.offcanvas.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.toggler.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fsandiego%2Fproject.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Fjquery.typeahead.min.js"></script>
+
+    
+<!-- /ew:body_js -->
+
+
+
+    <!-- ew:body_js_tail -->
+
+
+    <script type="text/javascript">$(function () {
+            $('select.results_per_page').change(function () {
+                this.form.submit();});});
+$(function () {
+          $('input.label_edit').tagsInput({
+              'height':'100%',
+              'width':'100%',
+              'autocomplete_url':'/p/sevenzip/bugs/tags'
+          });
+          $('form').on('blur', '.ui-autocomplete-input', function() {
+              setTimeout(function(){
+                  var clicked = $(document.activeElement); // This is the element that has focus
+                  if (clicked.is('#ui-active-menuitem')) {
+                      return false;
+                  } else {
+                      var value = $('div.tagsinput div input').val();
+                      var exists = $('input.label_edit').tagExist(value);
+                      var default_value = $('div.tagsinput div input').attr('data-default');
+                      if ((value !== default_value) && (!exists) && value !== '') {
+                          $('input.label_edit').addTag(value);
+                      }
+                      $('input[type=submit]', this).prop('disabled', true);
+                  }
+                }, 1);
+            });
+        });
+$(function () {getProjectUsers('/p/sevenzip//users')});
+$(document).ready(function () {
+            $("a.attachment_form_add_button").click(function(evt){
+                $(this).hide();
+                $(".attachment_form_fields", this.parentNode).show();
+                evt.preventDefault();
+            });
+            $("a.cancel_edit_post").click(function(evt){
+                evt.preventDefault();
+                var form = this.parentNode;
+                var orig_val = $("input.original_value", form).val();
+                $("textarea", form).val(orig_val);
+                get_cm(form).setValue(orig_val);
+                $("input.attachment_form_fields", form).val('');
+                $(this).closest('.reply_post_form').hide();
+            });
+         });
+
+        $(document).ready(function () {
+            var thread_tag = $('a.thread_tag');
+            var thread_spam = $('a.sidebar_thread_spam');
+            var tag_thread_holder = $('#tag_thread_holder');
+            var allow_moderate = $('#allow_moderate');
+            var mod_thread_link = $('#mod_thread_link');
+            var mod_thread_form = $('#mod_thread_form');
+            if (mod_thread_link.length) {
+                if (mod_thread_form.length) {
+                    mod_thread_link.click(function (e) {
+                        mod_thread_form.toggle();
+                        return false;
+                    });
+                }
+            }
+            if (thread_tag.length) {
+                if (tag_thread_holder.length) {
+                    var submit_button = $('input[type="submit"]', tag_thread_holder);
+                    var cancel_button = $('<a href="#" class="btn link">Cancel</a>').click(function(evt){
+                        evt.preventDefault();
+                        tag_thread_holder.hide();
+                        thread_tag.removeClass('active');
+                    });
+                    submit_button.after(cancel_button);
+                    thread_tag.click(function (e) {
+                        tag_thread_holder.show();
+                        thread_tag.addClass('active');
+                        // focus the submit to scroll to the form, then focus the subject for them to start typing
+                        submit_button.focus();
+                        $('input[type="text"]', tag_thread_holder).focus();
+                        return false;
+                    });
+                }
+            }
+            if (thread_spam.length) {
+                if (allow_moderate.length) {
+                    thread_spam[0].style.display='block';
+                    thread_spam.click(function (e) {
+                        e.preventDefault();
+                        var form = $('<form method="post" action="' + this.href + '"></form>');
+                        form.append('<input type="hidden" name="_csrf_token" value="' + $.cookie('_csrf_token') + '">');
+                        $('body').append(form);
+                        form.submit();
+                    });
+                }
+            }
+        });
+        
+
+            var global_reactions = {":+1:": "\ud83d\udc4d", ":-1:": "\ud83d\udc4e", ":smile:": "\ud83d\ude04", ":tada:": "\ud83c\udf89", ":confused:": "\ud83d\ude15", ":heart:": "\u2764\ufe0f"};
+        
+$(function () {
+          $('select.project-user-combobox').combobox({
+            source_url: "/p/sevenzip/users"
+          });});
+
+        // Sometimes IE11 is not firing jQuery's ready callbacks like
+        // "$(function(){...})" or "$(document).ready(function(){...});"
+        $(window).on('load', function(){
+            $('form').submit(function() {
+                $('input[type=submit]', this).prop('disabled', true);
+            });
+            $('div.reply.discussion-post a.markdown_preview').click(function(){
+                var arrow = $(this).closest('.discussion-post').find('span.arw');
+                arrow.hide();
+            });
+            $('div.reply.discussion-post a.markdown_edit').click(function(){
+                var arrow = $(this).closest('.discussion-post').find('span.arw');
+                arrow.show();
+            });
+        });</script>
+
+    <script type="text/javascript" src="http://web.archive.org/web/20260904091959js_/https://a.fsdn.com/allura/nf/1788380326/_ew_/_slim/js?href=theme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.util.triggers.min.js%3Btheme%2Fsftheme%2Fjs%2Fsftheme%2Fvendor%2Ffoundation6%2Fplugins%2Ffoundation.reveal.min.js"></script>
+
+    
+<!-- /ew:body_js_tail -->
+
+
+
+  
+
+
+    
+
+
+    
+    <noscript><p><img src="http://web.archive.org/web/20260904091959im_/https://analytics.slashdotmedia.com/index.php?idsite=39" style="border:0;position:absolute;top:0;" alt=""/></p></noscript>
+    
+    <script>
+        $(document).foundation();
+    </script>
+    
+
+
+
+
+
+
+
+
+    
+
+<script>
+    (function () {
+        function load_bombora() {
+            /*global _ml:true, window */
+            _ml = window._ml || {};
+            
+            _ml.eid = '771';
+            _ml.fp = 'bef478e2-ccfe-41a2-85cf-d08fcfe70c7c';  
+            var s = document.getElementsByTagName('script')[0], cd = new Date(), mltag = document.createElement('script');
+            mltag.type = 'text/javascript';
+            mltag.async = true;
+            mltag.defer = true;
+            mltag.src = '//web.archive.org/web/20260904091959/https://ml314.com/tag.aspx?' + cd.getDate() + cd.getMonth() + cd.getFullYear();
+            s.parentNode.insertBefore(mltag, s);
+        }
+        bizx.cmp.ifConsent({ purposes: 'all', vendors: 'bombora'}, load_bombora);
+    })();
+</script>
+
+
+
+
+<script>
+    $(document).ready(function () {
+        $(".tooltip, .m-tooltip").each(function(){
+            let $el = $(this);
+            $el.tooltipster({
+                animation: 'fade',
+                delay: 200,
+                theme: 'tooltipster-light',
+                trigger: 'hover',
+                position: $el.data('position') || 'right',
+                iconCloning: false,
+                maxWidth: 300,
+                contentAsHTML: true,
+                interactive: true
+            }).focus(function () {
+                $(this).tooltipster('show');
+            }).blur(function () {
+                $(this).tooltipster('hide');
+            });
+        });
+    });
+</script>
+
+    
+
+
+
+<script type="text/javascript">
+    bizx.cmp.ifConsent({ purposes: ['storage', 'measurement'], vendors: 'google-analytics'}, function () {
+        /* jshint ignore:start */
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//web.archive.org/web/20260904091959/https://www.google-analytics.com/analytics.js','ga');
+        /* jshint ignore:end */
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ window.dataLayer.push(arguments); }
+        window.gtag = window.gtag || gtag;
+        bizx.cmp.embedScript("http://web.archive.org/web/20260904091959/https://www.googletagmanager.com/gtag/js");
+        gtag('js', new Date());
+        gtag('set', {
+            'page_location': 'http://web.archive.org/web/20260904091959/https://sourceforge.net/p/sevenzip/bugs/2692/',
+        });
+    });
+</script>
+
+
+<script type="text/javascript">
+    /*global ga, gtag */
+
+    
+        
+        bizx.cmp.ifConsent({ purposes: ['storage', 'measurement'], vendors: 'google-analytics'}, function () {
+            gtag('config', 'G-1H226E4E4L', {
+                
+                send_page_view: false,
+                'SF_Page_Type': '', 
+                user_properties: {
+                    'SF_Logged_in': 'Logged Out', 
+                },
+                'devicePixelRatio': SF.devicePixelRatio, 
+            });
+            gtag('event', 'page_view', { send_to: 'G-1H226E4E4L' });
+        });
+    
+    
+    
+        
+</script>
+
+</body>
+</html><!--
+     FILE ARCHIVED ON 09:19:59 Sep 04, 2026 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 06:54:10 Sep 26, 2026.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+-->
+<!--
+playback timings (ms):
+  captures_list: 0.429
+  exclusion.robots: 0.055
+  exclusion.robots.policy: 0.026
+  esindex: 0.008
+  cdx.remote: 34.283
+  LoadShardBlock: 73.709 (3)
+  PetaboxLoader3.resolve: 51.624 (3)
+  PetaboxLoader3.datanode: 182.175 (4)
+  load_resource: 174.04
+-->

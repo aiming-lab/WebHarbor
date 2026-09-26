@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile - SourceForge{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row"><div class="column large-10"><h1 class="page-title">Edit Profile</h1></div></div>
+</div>
+<div class="row main-content">
+  <div class="column small-12 medium-6">
+    <form method="post">
+      <label>Display Name: <input type="text" name="display_name" value="{{ current_user.display_name }}"></label>
+      <label>Country:
+        <select name="country">
+          <option value="" {% if not current_user.country %}selected{% endif %}></option>
+          <option value="US" {% if current_user.country == 'US' %}selected{% endif %}>United States</option>
+          <option value="CN" {% if current_user.country == 'CN' %}selected{% endif %}>China</option>
+          <option value="GB" {% if current_user.country == 'GB' %}selected{% endif %}>United Kingdom</option>
+          <option value="DE" {% if current_user.country == 'DE' %}selected{% endif %}>Germany</option>
+          <option value="FR" {% if current_user.country == 'FR' %}selected{% endif %}>France</option>
+          <option value="JP" {% if current_user.country == 'JP' %}selected{% endif %}>Japan</option>
+          <option value="KR" {% if current_user.country == 'KR' %}selected{% endif %}>Korea, Republic of</option>
+          <option value="BR" {% if current_user.country == 'BR' %}selected{% endif %}>Brazil</option>
+          <option value="IN" {% if current_user.country == 'IN' %}selected{% endif %}>India</option>
+          <option value="CA" {% if current_user.country == 'CA' %}selected{% endif %}>Canada</option>
+        </select>
+      </label>
+      <input type="submit" class="button green" value="Save Changes">
+    </form>
+  </div>
+</div>
+{% endblock %}

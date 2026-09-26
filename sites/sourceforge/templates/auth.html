@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row"><h1>Log In</h1></div>
+</section>
+<div class="row main-content-wrapper">
+  <div id="loginform" class="column small-12 medium-9 large-6">
+    <h2 class="show-for-large">Log in with a SourceForge account</h2>
+    <form method="post" action="/auth/">
+      <label for="username">Username:</label>
+      <input id="username" name="username" placeholder="Username" type="text" autocomplete="username">
+      <label for="password">Password:</label>
+      <input id="password" name="password" placeholder="Password" type="password" autocomplete="current-password">
+      <input type="hidden" name="return_to" value="{{ request.args.get('next','') }}">
+      <input class="submit" type="submit" value="Login">
+    </form>
+    <div class="help-block">
+      <a href="/auth/">Forgot your username/password?</a>
+    </div>
+  </div>
+  <div class="column small-12 medium-9 large-6 cta-register">
+    <div><h2>Need an account on SourceForge.net?</h2></div>
+    <div><a class="button blue hollow btn-create" href="/user/registration/">Create Account</a></div>
+  </div>
+</div>
+{% endblock %}

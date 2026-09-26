@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Top Software Downloads on SourceForge{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row">
+    <div class="column large-10">
+      <h1 class="page-title">Top Software Downloads on SourceForge</h1>
+    </div>
+  </div>
+</div>
+<div class="row main-content">
+  <div class="column small-12 medium-8">
+    <div class="as-header">
+      <h2>Most downloads over all time</h2>
+    </div>
+    <table>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Project Name</th><th scope="col">Downloads</th></tr></thead>
+      <tbody>
+        {% for p in all_time %}
+        <tr><td>{{ loop.index }}</td><td><a href="/projects/{{ p.shortname }}">{{ p.name }}</a></td><td>{{ fmt_compact(p.downloads_total) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="as-header">
+      <h2>Most downloads last week</h2>
+    </div>
+    <table>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Project Name</th><th scope="col">Downloads</th></tr></thead>
+      <tbody>
+        {% for p in weekly %}
+        <tr><td>{{ loop.index }}</td><td><a href="/projects/{{ p.shortname }}">{{ p.name }}</a></td><td>{{ fmt_compact(p.downloads_week) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} - Browse {{ '/'+path if path else '' }} at SourceForge.net{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="project-body">
+      <section class="project-masthead">
+        <div class="backdrop" style="box-sizing: content-box; padding-bottom: 49px"></div>
+        <div class="content">
+          <div class="overview">
+            <div class="project-icon">
+              {% if p.has_icon %}<img itemprop="image" alt="{{ p.name }}" title="{{ p.name }}" src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}">{% endif %}
+            </div>
+            <div class="title">
+              <h1>{{ p.name }} Files</h1>
+              <h2 class="as-h3 summary">{{ p.summary }}</h2>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div id="top_nav"><div id="top_nav_admin">
+        <ul class="dropdown">
+          {% for key, href, label in tabs %}
+          {% if key == 'tickets' %}
+          <li><a href="/p/{{ p.shortname }}/_list/tickets"><span>Tickets ▾</span></a>
+            <ul>{% for tkey, thref, tlabel in ticket_tabs %}<li><a href="{{ thref }}">{{ tlabel }}</a></li>{% endfor %}</ul>
+          </li>
+          {% else %}
+          <li class="{% if key == 'files' %}selected{% endif %}"><a href="{{ href }}"><span>{{ label }}</span></a></li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div></div>
+      <article class="main-content">
+        <section id="files" class="row">
+          <div class="download-bar column small-12">
+            <div class="files-messages"><ul class="warning"></ul></div>
+          </div>
+          <div class="files-toolbar btn-bar column small-12">
+            <div class="btn-set">
+              {% if latest %}
+              <a class="button green big-text download with-sub-label extra-wide" href="/projects/{{ p.shortname }}/files/latest/download" title="/{{ latest.path }}: released on {{ latest.modified }} UTC">
+                <img src="{{ url_for('static', filename='images/ui/sf-icon-black.svg') }}" alt="" class="sf-download-icon"/>
+                <span class="label">Download Latest Version</span>
+                <span class="sub-label">{{ latest.name }} ({{ latest.size_display }})</span>
+              </a>
+              {% endif %}
+              <div id="get-updates">
+                <img id="psp_newsletter_subscribe-icon" src="{{ url_for('static', filename='images/ui/sf_email_icon.svg') }}" alt="Email in envelope"/>
+                <h4>Get an email when there's a new version of {{ p.name }}</h4>
+                <div id="get-updates-form">
+                  <form><input type="email" name="email" placeholder="Enter your email address" value=""><a id="get-updates-button" class="button blue">Next</a></form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="files-breadcrumb column small-12">
+            <a id="home" href="/projects/{{ p.shortname }}/files/" title="Files root directory">Home</a>
+            {% for part, acc in breadcrumb %}
+            / <a href="/projects/{{ p.shortname }}/files/{{ acc }}/">{{ part }}</a>
+            {% endfor %}
+            {% if path %} / <span class="current-dir">{{ path.split('/')[-1] }}</span>{% endif %}
+          </div>
+          <table id="files_list">
+            <col class="name-column"><col class="date-column"><col class="size-column"><col class="downloads-column">
+            <thead>
+              <tr>
+                <th title="The file or folder's name" id="files_name_h" class="first">Name</th>
+                <th title="The file or folder's last modified date" id="files_date_h" class="opt">Modified</th>
+                <th title="The file size" id="files_size_h" class="opt">Size</th>
+                <th title="The weekly download count" id="files_downloads_h" class="opt"><span class="show-for-medium">Downloads / Week</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if path %}
+              <tr class="folder tablesorter-ignoreRow">
+                <th colspan="4" class="first" id="parent_folder"><a href="../" title="One level up">Parent folder</a></th>
+              </tr>
+              {% endif %}
+              {% for f in files %}
+              <tr title="{{ f.name }}" class="{{ 'folder' if f.is_folder else 'file' }}">
+                <th scope="row" headers="files_name_h">
+                  {% if f.is_folder %}
+                  <a href="/projects/{{ p.shortname }}/files/{{ f.path }}/" title="Click to enter {{ f.name }}"><span class="name">{{ f.name }}</span></a>
+                  {% else %}
+                  <a href="/projects/{{ p.shortname }}/files/{{ f.path }}/download" title="Click to download {{ f.name }}"><span class="name">{{ f.name }}</span></a>
+                  {% endif %}
+                </th>
+                <td headers="files_date_h" class="opt"><abbr title="{{ f.modified }}">{{ f.modified[:10] }}</abbr></td>
+                <td headers="files_size_h" class="opt">{{ f.size_display or '' }}</td>
+                <td headers="files_downloads_h" class="opt">
+                  <div class="stats show-for-medium">
+                    <a href="/projects/{{ p.shortname }}/files/{{ f.path }}/stats/timeline" class="{{ 'folder' if f.is_folder else 'file' }}" title="{{ f.downloads_week }} weekly downloads" rel="nofollow">
+                      <span class="count">{{ fmt_int(f.downloads_week) }}</span>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+      </article>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-side-column"></div>
+</div>
+{% endblock %}

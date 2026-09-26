@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} / Tickets{% endblock %}
+{% block content %}
+<div class="grid-20 pad">
+  <h2 class="dark title"><span>{{ p.name }} Ticket Trackers</span></h2>
+  <div>
+    <ul class="sidebarmenu">
+      {% for tracker in trackers %}
+      <li><a href="/p/{{ p.shortname }}/{{ tracker }}/">{{ {'bugs':'Bugs','feature-requests':'Feature Requests','support-requests':'Support Requests','patches':'Patches'}[tracker] }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

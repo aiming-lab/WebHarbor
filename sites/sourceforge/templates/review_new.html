@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Write a review of {{ p.name }}{% endblock %}
+{% block content %}
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="project-body">
+      <section class="project-masthead">
+        <div class="backdrop"></div>
+        <div class="content">
+          <div class="overview">
+            <div class="project-icon">{% if p.has_icon %}<img alt="{{ p.name }}" src="{{ url_for('static', filename='images/icons/' + p.shortname + '.png') }}">{% endif %}</div>
+            <div class="title"><h1>Rate {{ p.name }}</h1><h2 class="as-h3 summary">{{ p.summary }}</h2></div>
+          </div>
+        </div>
+      </section>
+      <article class="main-content">
+        <section class="row">
+          <div class="small-12 columns">
+            <h2>Write a Review</h2>
+            <form method="post" class="review-form">
+              <label>Star rating:
+                <select name="rating" required>
+                  <option value="5">★★★★★ (5)</option>
+                  <option value="4">★★★★ (4)</option>
+                  <option value="3">★★★ (3)</option>
+                  <option value="2">★★ (2)</option>
+                  <option value="1">★ (1)</option>
+                </select>
+              </label>
+              <label>Ease of use (1-5): <input type="number" name="ease" min="1" max="5" value="4"></label>
+              <label>Features (1-5): <input type="number" name="features" min="1" max="5" value="4"></label>
+              <label>Design (1-5): <input type="number" name="design" min="1" max="5" value="4"></label>
+              <label>Support (1-5): <input type="number" name="support" min="1" max="5" value="4"></label>
+              <label>Your review:
+                <textarea name="text" rows="6" required placeholder="Tell others what you think about {{ p.name }}..."></textarea>
+              </label>
+              <input type="submit" class="button green" value="Post Review">
+            </form>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+</div>
+{% endblock %}

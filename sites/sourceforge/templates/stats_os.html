@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} Download Statistics{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row"><h1>{{ p.name }} Download Statistics</h1></div>
+</section>
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div class="sidebar">
+        <ul class="sidebarmenu">
+          <li><a href="/projects/{{ p.shortname }}/files/stats/timeline" rel="nofollow"><h3>Downloads</h3><span class="stat-summary">{{ fmt_int(total) }}</span></a></li>
+          <li><a href="/projects/{{ p.shortname }}/files/stats/map" rel="nofollow"><h3>Countries</h3><span class="stat-summary">Top: <strong>US</strong></span></a></li>
+          <li class="active"><h3>Operating Systems</h3><span class="stat-summary">Top: <strong>{{ os_stats[0].label if os_stats }}</strong></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div id="stats-maincontent">
+      <h2 class="heading">Download Statistics</h2>
+      <div class="stats-selectors">
+        <div class="files-breadcrumb">
+          <a href="/projects/{{ p.shortname }}/files/stats/timeline">All Files</a>
+          <a data-type="folder" id="stat-file-picker-trigger" href="/projects/{{ p.shortname }}/files/"><span>(Change File)</span></a>
+        </div>
+      </div>
+      <div id="stats-table">
+        <table title="Listing of downloads broken down by operating system">
+          <thead>
+            <tr><th id="files_date_h" scope="col">Operating System</th><th id="files_downloads_h" scope="col">Downloads</th></tr>
+          </thead>
+          <tbody>
+            {% for s in os_stats %}
+            <tr><td>{{ s.label }}</td><td headers="files_downloads_h">{{ fmt_int(s.count) }}</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot><tr><td></td><td headers="files_downloads_h">{{ fmt_int(total) }}</td></tr></tfoot>
+        </table>
+      </div>
+      <div class="stats-status"><div>Last Updated: <b>&lt; 1 hour ago</b>.</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

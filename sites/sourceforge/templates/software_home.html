@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stars %}
+{% block title %}Business Software Directory - SourceForge{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row">
+    <h1>Business Software Directory</h1>
+    <div class="row align-justify">
+      <form method="GET" action="/software/" class="directory-search-box small-12 large-6">
+        <div class="typeahead__container"><div class="typeahead__field"><div class="typeahead__query">
+          <input name="q" placeholder="Search" autocomplete="off" value="{{ request.args.get('q','') }}">
+        </div>
+        <label><input type="submit" value="">
+        <svg data-name="search" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1216 832q0-185-131.5-316.5t-316.5-131.5-316.5 131.5-131.5 316.5 131.5 316.5 316.5 131.5 316.5-131.5 131.5-316.5zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225-55.5-273.5 55.5-273.5 150-225 225-150 273.5-55.5 273.5 55.5 225 150 150 225 55.5 273.5q0 220-124 399l343 343q37 37 37 90z"/></svg>
+        </label></div></div>
+      </form>
+    </div>
+  </div>
+</section>
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div id="all-facets" class="all-facets sidebar show-for-large">
+        <div class="facet">
+          <div class="as-h2">Categories</div>
+          <div id="facet-wrapper-category">
+            <ul id="facet-category" class="facet-items">
+              {% for c in categories %}
+              <li><label class="filter-choice"><a href="/software/{{ c.slug }}/" class="txt"><span class="filter-text">{{ c.name }}</span></a></label></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <section class="m-project-search-results">
+      <div class="as-header">
+        <div class="m-cross-dir-search-summary">
+          <h2>Compare Business Software &amp; Services</h2>
+        </div>
+      </div>
+      <ul class="projects" itemscope itemtype="http://schema.org/ItemList">
+        {% for product in top %}
+        <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem" class="project-commercial ">
+          <div class="result-heading">
+            <a class="project-icon show-outline" href="/software/product/{{ product.slug }}/">
+              <img alt="{{ product.name }}" title="{{ product.name }}" src="{{ url_for('static', filename='images/ui/biz-' + product.slug + '.png') }}" loading="lazy" onerror="this.style.display='none'"/>
+            </a>
+            <div class="result-heading-texts">
+              <div class="title-subtitle-wrapper">
+                <div>
+                  <a href="/software/product/{{ product.slug }}/" class="result-heading-title"><h3>{{ product.name }}</h3></a>
+                  <p class="subtitle">{{ product.description[:90] }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="project_info">
+            <div class="stats">
+              <div class="rating">
+                <div class="m-stars" aria-hidden="true">
+                  {% for cls in ['yellow','yellow','yellow','yellow','half'] %}
+                  <div class="star responsive {{ cls }}"><svg data-name="sf_star_yellow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 285.8"><polygon class="st0" fill="#ffcc00" points="150,0 185.4,109.2 300,109.2 207.3,176.6 242.7,285.8 150,218.3 57.3,285.8 92.7,176.6 0,109.2 114.6,109.2 "/></svg></div>
+                  {% endfor %}
+                </div>
+                <a href="/software/product/{{ product.slug }}/" class="count">{{ fmt_int(product.ratings_count) }} Ratings</a>
+              </div>
+              <a href="/software/product/{{ product.slug }}/" class="button blue hollow see-project">See Software</a>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}
