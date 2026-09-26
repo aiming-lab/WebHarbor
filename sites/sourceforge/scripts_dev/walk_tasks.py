@@ -259,24 +259,35 @@ def walk_3(pg):
     w.press_enter('#search input[name="q"]', "run the tracker search")
     hits = pg.locator("table tbody tr").count()
     assert hits >= 1  # the near-miss 2680 shows up
-    w.nav("/p/sevenzip/bugs/", "back to the full ticket list")
+    w.back()
     w.click('a:has-text("user interface misleading")', "open ticket 2701")
     t = w.body()
     status = w.grab(r"Status:\s*(\w+)")
     creator = w.grab(r"Creator:\s*([A-Za-z ]+?)\s+Private")
+    tkt_priority = w.grab(r"Priority:\s*(\d+)")
     reply = w.grab(r"(Maybe your usb was slow[^.]*\.)")
     w.back()
     w.fill('#search input[name="q"]', "CVE", "search tickets for CVE")
     w.press_enter('#search input[name="q"]', "run the CVE search")
+    cve_count = w.grab(r"results of (\d+)")
     cve_nums = sorted(set(re.findall(r"/p/sevenzip/bugs/(\d+)/", pg.content())))
+    # priorities live only on the ticket pages -> open both of the two newest
+    w.click('a:has-text("CVE-2026-58052")', "open the newest CVE ticket")
+    p_newest = w.grab(r"Priority:\s*(\d+)")
+    w.back()
+    w.click('a:has-text("CVE-2026-48102")', "open the second-newest CVE ticket")
+    p_second = w.grab(r"Priority:\s*(\d+)")
+    w.back()
     w.click('a:has-text("CVE-2026-48101")', "open the lowest-numbered CVE ticket")
     owner = w.grab(r"Owner:\s*([A-Za-z ]+?)\s+Labels")
     created = w.grab(r"Created:\s*([\d-]+)")
     assert status == "open" and creator == "Harry Stein" and reply, (status, creator)
-    assert cve_nums == ["2669", "2670", "2681"], cve_nums
+    assert tkt_priority == "5", tkt_priority
+    assert cve_count == "3" and cve_nums == ["2669", "2670", "2681"], (cve_count, cve_nums)
+    assert p_newest == "7" and p_second == "7", (p_newest, p_second)
     assert owner == "Igor Pavlov" and created == "2026-06-10", (owner, created)
     assert open_count == "31"
-    w.done("ticket 2701 + CVE audit + sidebar count confirmed")
+    w.done("ticket 2701 + both newest CVE priorities + lowest CVE owner + sidebar count")
     return w
 
 
@@ -287,7 +298,7 @@ def walk_4(pg):
     w.tab("Discussion")
     w.click('a[href*="discussion/45797"]', "open the Open Discussion forum")
     rows = pg.evaluate("""() => [...document.querySelectorAll('table tbody tr')].map(r => [
-        r.cells[0].innerText.replace(/\\s+/g,' ').trim(),
+        r.cells[0].innerText.replace(/\s+/g,' ').trim(),
         r.cells[1].innerText.trim(), r.cells[2].innerText.trim()])""")
     def row_of(sub):
         for r in rows:
@@ -296,35 +307,46 @@ def walk_4(pg):
     hv_row = max(rows, key=lambda r: int(r[2].replace(",", "")))
     w.click('a:has-text("Dark Mode")', "open the Dark Mode thread")
     dm = w.body()
+    health = w.grab(r"(greatly facilitates eye comfort[^.]*\.)")
     w.back()
     w.click('a:has-text("Dark Theme")', "open the Dark Theme thread")
-    dt = w.body()
+    dt_post = w.grab(r"kb0000001 - \w{3} \w{3} \d+, \d{4}\s+(Dark Theme)")
     w.back()
+    w.scroll("bring the highest-viewed thread row into view")
     w.click('a:has-text("7-Zip 26.02")', "open the highest-viewed thread")
     hv = w.body()
-    w.back(); w.back()
+    w.back()
+    w.back()
     w.click('a[href*="discussion/45798"]', "open the Help forum")
     hthreads = pg.locator("table tbody tr").count()
     top_help = pg.evaluate("""() => {
         const rows = [...document.querySelectorAll('table tbody tr')];
-        return rows.map(r => [r.cells[0].innerText.replace(/\\s+/g,' ').trim(),
+        return rows.map(r => [r.cells[0].innerText.replace(/\s+/g,' ').trim(),
                               r.cells[1].innerText.trim(), r.cells[2].innerText.trim()])
                    .sort((a, b) => parseInt(b[2].replace(/,/g,'')) - parseInt(a[2].replace(/,/g,'')))[0];
     }""")
-    assert dark and "Carlos Nunes" in dark[0] and dark[2] == "3,206", dark
-    assert theme and "kb0000001" in theme[0] and theme[2] == "9,620", theme
+    w.scroll("bring the highest-viewed Help thread into view")
+    w.click('a:has-text("Compress multiple files to individual ZIP archives with fixed size")',
+            "open the Help forum's highest-viewed thread")
+    rtm_sub = w.grab(r"(Compress multiple files to individual ZIP archives with fixed size)")
+    rtm_by = w.grab(r"Forum: Help Creator: (\S+)")
+    assert dark and "Carlos Nunes" in dark[0] and "Tue Jul 08, 2025" in dark[0], dark
+    assert dark[1] == "4" and dark[2] == "3,206", dark
+    assert theme and "kb0000001" in theme[0] and "Wed Jan 29, 2025" in theme[0], theme
+    assert theme[1] == "18" and theme[2] == "9,620", theme
+    assert health and "eye problems related to brightness" in health, health
+    assert dt_post == "Dark Theme", dt_post
     assert hv_row[2] == "297,148" and "Igor Pavlov" in hv_row[0] and "7-Zip 26.02" in hv, hv_row
-    assert "Carlos Nunes" in dm and "kb0000001" in dt
     assert hthreads == 25 and "rtm" in top_help[0] and top_help[2] == "3,161", (hthreads, top_help)
-    w.done("both dark-mode threads + highest-view threads of both forums")
+    assert rtm_sub and rtm_by == "rtm", (rtm_sub, rtm_by)
+    w.done("both dark threads quoted + both forums' highest-viewed threads opened")
     return w
 
 
 def walk_5(pg):
     w = Walk(pg)
     w.nav("/", "start at the homepage")
-    w.scroll("reach the footer")
-    w.click('footer a:has-text("Top Downloaded Projects")', "open the Top Downloaded Projects page")
+    w.click('a[href="/top"]', "open the Top Downloaded Projects page")
     t = w.body()
     all1 = w.grab(r"1\s+Microsoft's TrueType core fonts\s+([\d.]+B)")
     week1 = w.grab(r"1\s+MinGW - Minimalist GNU for Windows\s+([\d.]+M)")
@@ -333,25 +355,33 @@ def walk_5(pg):
     cf = project_facts(w)
     w.tab("Reviews")
     cf["rating"] = w.grab(r"([\d.]+) out of 5 stars")
+    cf["hist"] = pg.evaluate("() => [...document.querySelectorAll('.bargraph .rating-label')].map(e => e.innerText.trim())")
     w.back(); w.back()
     w.click('table a:has-text("MinGW")', "open the weekly #1 project")
     mw = project_facts(w)
     w.tab("Reviews")
     mw["rating"] = w.grab(r"([\d.]+) out of 5 stars")
+    mw["hist"] = pg.evaluate("() => [...document.querySelectorAll('.bargraph .rating-label')].map(e => e.innerText.trim())")
     w.back(); w.back()
     w.click('table a:has-text("Notepad++ Plugin Manager")', "open the all-time #3 project")
     npp = project_facts(w)
-    w.back()
+    w.tab("Reviews")
+    npp["rating"] = w.grab(r"([\d.]+) out of 5 stars")
+    npp["hist"] = pg.evaluate("() => [...document.querySelectorAll('.bargraph .rating-label')].map(e => e.innerText.trim())")
+    w.back(); w.back()
     w.click('table a:has-text("7-Zip")', "open 7-Zip from the Top table")
     sz = project_facts(w)
+    w.tab("Reviews")
+    sz_rating = w.grab(r"([\d.]+) out of 5 stars")
     assert all1 == "3.3B" and week1 == "3.6M" and sz_rank == ("10", "430M"), (all1, week1, sz_rank)
     assert cf["reg"] == "2001-08-22" and cf["week"] == "3,000,000" and cf["rating"] == "4.1"
-    assert "GPL" in (cf["license"] or "")
+    assert cf["hist"] == ["40", "3", "1", "1", "1"] and "GPL" in (cf["license"] or "")
     assert mw["reg"] == "2000-02-09" and mw["week"] == "3,600,000" and mw["rating"] == "4.6"
-    assert "BSD" in (mw["license"] or "")
-    assert npp["reg"] == "2011-11-29" and npp["week"] == "109,095"
-    assert sz["upd"] == "2026-09-04"
-    w.done("top-3 all-time + both #1s + 7-Zip cross-checked")
+    assert mw["hist"] == ["150", "11", "5", "1", "4"] and "BSD" in (mw["license"] or "")
+    assert npp["reg"] == "2011-11-29" and npp["week"] == "109,095" and npp["rating"] == "4.4"
+    assert npp["hist"] == ["49", "7", "3", "4", "1"]
+    assert sz["upd"] == "2026-09-04" and sz["reviews"] == "831" and sz_rating == "4.8"
+    w.done("top-3 + both #1s + 7-Zip: pages, reviews and ratings cross-checked")
     return w
 
 
@@ -518,26 +548,42 @@ def walk_12(pg):
     w.nav("/", "start at the homepage")
     w.open_project("7-Zip")
     w.click('.brought-by a:has-text("ipavlov")', "open the developer's profile")
-    t = w.body()
+    username = w.grab(r"Username:\s*(\w+)Joined")
     joined = w.grab(r"Joined:\s*([\d-]+)")
     projs = re.findall(r"/projects/([\w.-]+)/", pg.content())
-    assert joined == "2000-08-17" and set(projs) == {"p7zip", "sevenfar", "sevenmax", "sevenzip"}, projs
-    w.click('a:has-text("p7zip")', "open the most recently updated other project")
+    w.click('a:has-text("p7zip")', "open the p7zip project")
     p7 = project_facts(w)
+    p7_sum = w.grab(r"p7zip\s+(Command-line port[^.]*\.)")
     w.back()
-    w.click('a:has-text("7-max")', "open the oldest-updated project")
+    w.click('a:has-text("7-max")', "open the 7-max project")
     mx = project_facts(w)
+    mx_sum = w.grab(r"(7-max speeds up Windows applications by optimising memory allocation\.)")
     w.back()
-    w.click('a:has-text("7-Far")', "open the remaining project")
+    w.click('a:has-text("7-Far")', "open the 7-Far project")
     far = project_facts(w)
-    w.open_project("7-Zip")
+    far_sum = w.grab(r"(7-Zip archiver plugin for the FAR Manager file manager\.)")
+    w.back()
+    w.click('a:has-text("7-Zip")', "open the 7-Zip project")
+    sz = project_facts(w)
     w.tab("Reviews")
     sz_rating = w.grab(r"([\d.]+) out of 5 stars")
-    assert p7["upd"] == "2016-10-04" and p7["reg"] == "2004-06-12" and "LGPL" in (p7["license"] or "")
-    assert mx["upd"] == "2007-06-19" and mx["reg"] == "2004-08-12"
-    assert far["upd"] == "2011-09-23" and far["reg"] == "2009-12-28"
-    assert sz_rating == "4.8"
-    w.done("developer profile + p7zip/7-max facts + 7-Zip rating")
+    w.click(".sort-options .sort-drop-down > a", "open the Filter Reviews dropdown")
+    w.scroll("bring the star filter links into view")
+    w.click('#filter-rating a[href*="filter-stars=1"]', "apply the 1-star filter")
+    one = pg.locator("#project-reviews > li").count()
+    w.click(".sort-options .sort-drop-down > a", "open the Filter Reviews dropdown")
+    w.scroll("bring the star filter links into view")
+    w.click('#filter-rating a[href*="filter-stars=4"]', "apply the 4-star filter")
+    four = pg.locator("#project-reviews > li").count()
+    assert username == "ipavlov" and joined == "2000-08-17", (username, joined)
+    assert set(projs) == {"p7zip", "sevenfar", "sevenmax", "sevenzip"}, projs
+    assert p7["reg"] == "2004-06-12" and p7["upd"] == "2016-10-04" and "LGPL" in (p7["license"] or ""), p7
+    assert mx["reg"] == "2004-08-12" and mx["upd"] == "2007-06-19" and "LGPL" in (mx["license"] or ""), mx
+    assert far["reg"] == "2009-12-28" and far["upd"] == "2011-09-23" and "LGPL" in (far["license"] or ""), far
+    assert p7_sum and mx_sum and far_sum, (p7_sum, mx_sum, far_sum)
+    assert sz["reviews"] == "831" and sz_rating == "4.8", (sz["reviews"], sz_rating)
+    assert one == 3 and four == 6, (one, four)
+    w.done("profile + all three other projects + 7-Zip star filter views")
     return w
 
 
@@ -716,14 +762,12 @@ def walk_17(pg):
 def walk_19(pg):
     w = Walk(pg)
     w.nav("/", "start at the homepage")
-    w.scroll("reach the footer")
-    w.click('footer a:has-text("About")', "open the About page")
-    founded = w.grab(r"Founded in (\d{4})")
-    titles = w.grab(r"([\d,]+)\s+software titles")
-    w.click('a:has-text("Team")', "open the Leadership page")
-    m1 = w.grab(r"(Logan Abbott)\s+(President, SourceForge & COO, Slashdot Media)")
-    m2 = w.grab(r"(Roger Sheppard)\s+(President of Slashdot Media)")
-    w.click('.sf-logo', "return to the homepage")
+    w.click('.l-header-nav-top .links a:has-text("Create")', "open the Create page")
+    create_invite = w.grab(r"(Find, Create & Publish Open Source software for free)")
+    w.click('.l-header-nav-top .links a:has-text("Help")', "open the Support page")
+    support_fast = w.grab(r"fastest way to get help is (.{0,60})")
+    w.click('.l-header-nav-top .links a:has-text("For Vendors")', "open the For Vendors page")
+    vendors_offer = w.grab(r"(list your product in the Business Software directory)")
     w.click('.l-header-nav-bottom .links a:has-text("SourceForge Podcast")', "open the Podcast page")
     ep1 = w.grab(r"(Mobile Data Collection and Analytics.{0,120}episode #138)")
     ep_date = w.grab(r"episode #138\s*(2026-\d\d-\d\d)")
@@ -734,22 +778,34 @@ def walk_19(pg):
     w.click('.l-header-nav-bottom .nav-dropdown:has-text("Resources")', "open the Resources menu")
     w.click('.nav-dropdown.open .nav-dropdown-menu a:has-text("Case Studies")', "open the Case Studies page")
     vendors = pg.evaluate("() => [...document.querySelectorAll('.featured-vendors a')].map(a => a.innerText.trim())")
+    w.click('a:has-text("NinjaOne")', "open the NinjaOne product page")
+    ninja = w.grab(r"([\d,]+)\s*Ratings")
+    w.back()
+    w.click('a:has-text("Google Cloud Platform")', "open the Google Cloud Platform product page")
+    gcp = w.grab(r"([\d,]+)\s*Ratings")
     w.click('.l-header-nav-bottom .nav-dropdown:has-text("Resources")', "open the Resources menu")
     w.click('.nav-dropdown.open .nav-dropdown-menu a:has-text("Blog")', "open the Blog page")
     blog1 = w.grab(r"(Trend Analysis and Capacity Planning[^|]{0,10})")
-    w.click('.l-header-nav-top .links a:has-text("Create")', "open the Create page")
-    create_invite = w.grab(r"(Find, Create & Publish Open Source software for free)")
-    w.click('.l-header-nav-top .links a:has-text("Help")', "open the Support page")
-    support_fast = w.grab(r"fastest way to get help is (.{0,60})")
-    w.scroll("reach the footer")
+    blog_date = w.grab(r"Decisions\s+Articles\s+·\s+(2026-\d\d-\d\d)")
+    w.click('footer a:has-text("About")', "open the About page")
+    founded = w.grab(r"Founded in (\d{4})")
+    titles = w.grab(r"([\d,]+)\s+software titles")
+    w.scroll("bring the Team link into view")
+    w.click('a:has-text("Team")', "open the Team page")
+    m1 = w.grab(r"(Logan Abbott)\s+(President, SourceForge & COO, Slashdot Media)")
+    m2 = w.grab(r"(Roger Sheppard)\s+(President of Slashdot Media)")
     addr = w.grab(r"(1320 Columbia Street Suite 310)")
+    w.search("file compression", "search the directory for file compression")
+    total = w.grab(r"Showing ([\d,]+) open source projects")
     assert founded == "1999" and titles, (founded, titles)
     assert m1 and m2
     assert ep1 and ep_date == "2026-09-03", (ep_date,)
     assert art and art_date == "2026-09-03"
-    assert vendors and "NinjaOne" in vendors, vendors
-    assert blog1 and create_invite and support_fast
+    assert vendors and "NinjaOne" in vendors and "Google Cloud Platform" in vendors, vendors
+    assert ninja == "6,035" and gcp == "61,049", (ninja, gcp)
+    assert blog1 and blog_date == "2026-09-03" and create_invite and support_fast and vendors_offer
     assert addr == "1320 Columbia Street Suite 310"
+    assert total == "96", total
     w.done("site survey complete")
     return w
 
