@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Online check-in {{ booking.booking_ref }} — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:760px; margin-top:40px;">
+  <div class="card">
+    <h1 style="font-size:1.4rem;">Online check-in — {{ booking.booking_ref }}</h1>
+    {% set out_route = booking.outbound_schedule.route %}
+    <p style="font-size:.95rem;">
+      <strong>{{ out_route.origin.name }} → {{ out_route.destination.name }}</strong><br>
+      {{ booking.outbound_date.strftime('%A %d %B %Y') }} · {{ booking.outbound_schedule.departure }} - {{ booking.outbound_schedule.arrival }} · {{ booking.outbound_schedule.flight_number }}
+    </p>
+    {% if booking.inbound_schedule %}
+    {% set in_route = booking.inbound_schedule.route %}
+    <p style="font-size:.95rem;">
+      <strong>{{ in_route.origin.name }} → {{ in_route.destination.name }}</strong><br>
+      {{ booking.inbound_date.strftime('%A %d %B %Y') }} · {{ booking.inbound_schedule.departure }} - {{ booking.inbound_schedule.arrival }} · {{ booking.inbound_schedule.flight_number }}
+    </p>
+    {% endif %}
+
+    <div class="table-scroll">
+    <table class="fare-table-mini" style="margin-top:10px;">
+      <tr><th>Passenger</th><th>Seat (outbound)</th>{% if booking.inbound_schedule %}<th>Seat (return)</th>{% endif %}</tr>
+      {% for p in booking.passengers %}
+      <tr>
+        <td>{{ p.title }} {{ p.first_name }} {{ p.last_name }}</td>
+        <td>{{ p.seat_out or 'To be allocated at check-in' }}</td>
+        {% if booking.inbound_schedule %}<td>{{ p.seat_in or 'To be allocated at check-in' }}</td>{% endif %}
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+
+    {% if booking.checked_in %}
+    <p style="margin-top:14px;"><span class="badge badge--checked-in">Checked in</span></p>
+    <a class="ry-button ry-button--gradient-blue" href="/gb/en/boarding-pass/{{ booking.booking_ref }}">View boarding passes</a>
+    {% elif minutes_to_departure > window %}
+    <div class="flash flash--error" style="margin-top:14px;">
+      Online check-in opens {{ '60 days' if has_assigned else '24 hours' }} before departure.
+      Your flight departs in {{ (minutes_to_departure // 1440) }} day(s) — please come back later.
+      Customers who have not checked in online at least 2 hours before departure will be charged the airport check-in fee of £55.
+    </div>
+    {% elif minutes_to_departure < 120 %}
+    <div class="flash flash--error" style="margin-top:14px;">Online check-in closed 2 hours before departure. Airport check-in costs £55.</div>
+    {% else %}
+    <form method="post" action="{{ url_for('checkin', ref=booking.booking_ref) }}" style="margin-top:16px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="checkin">
+      <button type="submit" class="ry-button ry-button--gradient-yellow">Check in now</button>
+    </form>
+    <p style="font-size:.78rem;color:var(--standard-grey);margin-top:8px;">
+      {% if has_assigned %}Your allocated seats are shown above. {% else %}Seats will be randomly allocated at check-in. {% endif %}
+      Boarding passes are issued digitally in the Ryanair app.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

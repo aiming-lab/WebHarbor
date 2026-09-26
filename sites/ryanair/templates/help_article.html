@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}{{ topic.title }} — Ryanair Help Centre{% endblock %}
+{% block content %}
+<div class="container" style="max-width:820px; margin-top:30px;">
+  <p style="font-size:.85rem;"><a href="/gb/en/r/help">Help Centre</a> / {{ topic.title }}</p>
+  <div class="card help-body">
+    <h1 style="font-size:1.5rem;">{{ topic.title }}</h1>
+    <p style="font-size:.92rem;color:var(--standard-grey);">{{ topic.summary }}</p>
+    {% for kind, value in body_blocks %}
+      {% if kind == 'h2' %}<h2>{{ value }}</h2>
+      {% elif kind == 'p' %}<p>{{ value }}</p>
+      {% elif kind == 'table' %}
+        <div class="table-scroll">
+        <table class="fee-table">
+          <tr><th>Item</th><th>Online</th><th>At the airport</th><th>Notes</th></tr>
+          {% for fee in fees %}
+          <tr><td>{{ fee.item }}</td><td>{{ fee.online }}</td><td>{{ fee.airport }}</td><td>{{ fee.note }}</td></tr>
+          {% endfor %}
+        </table>
+    </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h2 class="card__title">Related help topics</h2>
+    {% for other in related %}
+    <div class="booking-row"><a href="/gb/en/r/help/{{ other.slug }}">{{ other.title }}</a></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

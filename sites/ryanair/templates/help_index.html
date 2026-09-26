@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Help Centre — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1000px; margin-top:30px;">
+  <h1 style="font-size:1.6rem;">Help Centre</h1>
+  <p style="font-size:.9rem;color:var(--standard-grey);">Everything you would like to know about travel, Ryanair and everything in between.</p>
+  <form method="get" action="{{ url_for('help_index') }}" class="search-box" style="max-width:520px; margin:14px 0;">
+    <input name="q" value="{{ q }}" placeholder="Search help articles (e.g. check-in, bags, fees)">
+  </form>
+
+  {% if q %}
+  <div class="card">
+    <h2 class="card__title">Results for “{{ q }}”</h2>
+    {% for topic in results %}
+    <div class="booking-row">
+      <span><a href="/gb/en/r/help/{{ topic.slug }}"><strong>{{ topic.title }}</strong></a><br>
+        <small style="color:var(--standard-grey);">{{ topic.summary }}</small></span>
+    </div>
+    {% else %}
+    <p>No help articles matched. Try different keywords.</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="help-grid">
+    {% for topic in topics %}
+    <a class="help-card" href="/gb/en/r/help/{{ topic.slug }}">
+      <div class="help-card__title">{{ topic.title }}</div>
+      <div class="help-card__summary">{{ topic.summary }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

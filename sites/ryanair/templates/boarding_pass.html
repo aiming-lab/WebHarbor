@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Boarding pass {{ booking.booking_ref }} — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:40px;">
+  {% for p in booking.passengers %}
+  <div class="boarding-pass">
+    <div class="boarding-pass__head">
+      <div><img src="{{ url_for('static', filename='icons/ryanair-harp.svg') }}" alt="Ryanair" style="height:40px;"></div>
+      <div style="text-align:right;">
+        <div style="font-size:.75rem;">BOARDING PASS</div>
+        <div style="font-weight:700;">{{ booking.booking_ref }}</div>
+      </div>
+    </div>
+    <div class="boarding-pass__body">
+      <div class="bp-row"><span class="bp-label">Passenger</span><span class="bp-value">{{ p.first_name }} {{ p.last_name }}</span></div>
+      <div class="bp-row"><span class="bp-label">From</span><span class="bp-value">{{ booking.outbound_schedule.route.origin.name }} ({{ booking.outbound_schedule.route.origin_code }})</span></div>
+      <div class="bp-row"><span class="bp-label">To</span><span class="bp-value">{{ booking.outbound_schedule.route.destination.name }} ({{ booking.outbound_schedule.route.destination_code }})</span></div>
+      <div class="bp-row"><span class="bp-label">Flight</span><span class="bp-value">{{ booking.outbound_schedule.flight_number }}</span></div>
+      <div class="bp-row"><span class="bp-label">Date</span><span class="bp-value">{{ booking.outbound_date.strftime('%d %b %Y') }}</span></div>
+      <div class="bp-row"><span class="bp-label">Departs</span><span class="bp-value">{{ booking.outbound_schedule.departure }}</span></div>
+      <div class="bp-row"><span class="bp-label">Gate</span><span class="bp-value">—</span></div>
+      <div class="bp-row"><span class="bp-label">Boarding</span><span class="bp-value">{{ booking.outbound_schedule.departure }} (gate closes 30 min before)</span></div>
+      <div class="bp-row"><span class="bp-label">Seat</span><span class="bp-value">{{ p.seat_out }}</span></div>
+      <div class="bp-row"><span class="bp-label">Fare</span><span class="bp-value">{{ booking.fare_type|title }}</span></div>
+      <div class="bp-qr" title="Scan at the gate"></div>
+      <p style="font-size:.68rem; color:var(--standard-grey); text-align:center;">
+        Show this boarding pass on your mobile device. Paper boarding passes are no longer issued;
+        a re-issued boarding pass at the airport costs £20 per passenger.</p>
+    </div>
+  </div>
+  {% if not loop.last %}<div style="height:18px;"></div>{% endif %}
+  {% endfor %}
+  {% if booking.inbound_schedule %}
+  <p style="text-align:center; font-size:.8rem; color:var(--standard-grey); margin-top:12px;">
+    Return boarding passes ({{ booking.inbound_schedule.route.origin_code }}-{{ booking.inbound_schedule.route.destination_code }},
+    {{ booking.inbound_date.strftime('%d %b') }}) become available in the app 24 hours before the return flight departs.</p>
+  {% endif %}
+  <div style="text-align:center; margin: 20px 0;">
+    <a class="ry-button ry-button--outline-dark-blue" href="/gb/en/booking/{{ booking.booking_ref }}">Back to my booking</a>
+  </div>
+</div>
+{% endblock %}

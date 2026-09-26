@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}Ryanair — Choose your seat{% endblock %}
+{% block content %}
+<div class="trip-header">
+  <div class="trip-header__row">
+    <div class="trip-header__route">
+      <span class="price-badge">{{ money(grand) }}</span>
+      <span>{{ out_sched.route.origin.name }} → {{ out_sched.route.destination.name }}</span>
+      {% if in_sched %}<span>· {{ in_sched.route.origin.name }} → {{ in_sched.route.destination.name }}</span>{% endif %}
+    </div>
+    <div class="trip-header__meta">
+      <span>{{ data.dateOut }}</span>
+      {% if in_sched %}<span>- {{ data.dateIn }}</span>{% endif %}
+      <span>{{ pax|length }} passengers</span>
+    </div>
+  </div>
+  <div class="stepper">
+    <span class="stepper__item"><span class="stepper__dot"></span>Flights</span>
+    <span class="stepper__item stepper__item--active"><span class="stepper__dot"></span>Seats</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Bags</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Extras</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Review &amp; Pay</span>
+  </div>
+</div>
+
+<div class="trip-body">
+  <div>
+    <div class="card">
+      <h2 class="card__title">Choose your seat preference</h2>
+      <div class="seat-options">
+        <div class="seat-option">
+          <div class="seat-option__title">Option 1: Sit where you want</div>
+          <p style="font-size:.85rem;color:var(--standard-grey);">Pick your seats on the map below and pay only for the seats you choose.</p>
+        </div>
+        <div class="seat-option">
+          <div class="seat-option__title">Option 2: Select seats later</div>
+          <p style="font-size:.85rem;color:var(--standard-grey);">We will randomly allocate you a seat at check-in (opens 24 hours before departure).</p>
+          <form method="post" action="{{ url_for('seats') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="random">
+            <button type="submit" class="ry-button ry-button--outline-light-blue">Continue without a seat</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="seat-bands">
+        {% for row in [1, 3, 7, 16, 18] %}
+        {% set band = seat_band(row) %}
+        <div class="seat-band"><span class="seat-band__label">{{ band[0] }}</span> — {{ band[1] }}<br>ROWS {{ band[2] }} · from {{ money(seat_price(row)) }}</div>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="{{ url_for('seats') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="pick">
+        <h3 style="font-size:1rem;">Outbound flight — {{ out_sched.flight_number }} · {{ out_sched.route.origin_code }}-{{ out_sched.route.destination_code }} · {{ out_day.strftime('%d %b') }}</h3>
+        <div class="seat-map" data-direction="out">
+          <div class="seat-map__grid">
+            <div></div>
+            {% for letter in seat_letters %}<div class="seat-map__rowlabel" style="text-align:center">{{ letter }}</div>{% endfor %}
+            {% for row in seat_rows %}
+            <div class="seat-map__rowlabel">{{ row }}</div>
+            {% for letter in seat_letters %}
+              {% set seat = row ~ letter %}
+              {% set occupied = seat in occupied_out %}
+              {% if row <= 2 or (16 <= row <= 17) %}{% set extra_class = 'seat--xl' %}{% else %}{% set extra_class = '' %}{% endif %}
+              <div class="seat {{ extra_class }} {% if occupied %}seat--occupied{% endif %}"
+                   data-seat="{{ seat }}" data-row="{{ row }}"
+                   data-price="{{ seat_price(row) }}"
+                   title="{{ seat }} — {{ money(seat_price(row)) }}{% if occupied %} (occupied){% endif %}">
+                <span>{{ seat }}</span>
+                {% if not occupied %}<span class="seat__price">{{ seat_price(row) }}</span>{% endif %}
+              </div>
+            {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if in_sched %}
+        <h3 style="font-size:1rem; margin-top:22px;">Return flight — {{ in_sched.flight_number }} · {{ in_sched.route.origin_code }}-{{ in_sched.route.destination_code }} · {{ in_day.strftime('%d %b') }}</h3>
+        <div class="seat-map" data-direction="in">
+          <div class="seat-map__grid">
+            <div></div>
+            {% for letter in seat_letters %}<div class="seat-map__rowlabel" style="text-align:center">{{ letter }}</div>{% endfor %}
+            {% for row in seat_rows %}
+            <div class="seat-map__rowlabel">{{ row }}</div>
+            {% for letter in seat_letters %}
+              {% set seat = row ~ letter %}
+              {% set occupied = seat in occupied_in %}
+              {% if row <= 2 or (16 <= row <= 17) %}{% set extra_class = 'seat--xl' %}{% else %}{% set extra_class = '' %}{% endif %}
+              <div class="seat {{ extra_class }} {% if occupied %}seat--occupied{% endif %}"
+                   data-seat="{{ seat }}" data-row="{{ row }}"
+                   data-price="{{ seat_price(row) }}"
+                   title="{{ seat }} — {{ money(seat_price(row)) }}{% if occupied %} (occupied){% endif %}}">
+                <span>{{ seat }}</span>
+                {% if not occupied %}<span class="seat__price">{{ seat_price(row) }}</span>{% endif %}
+              </div>
+            {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="seat-assign">
+          {% for p in pax %}
+          {% set i = loop.index0 %}
+          <div class="seat-assign__row">
+            <strong>{{ p.first[:1] }}{{ p.last[:1] }} · {{ p.first }} {{ p.last }}</strong>
+            <span>Outbound seat</span>
+            <input name="seat_out_{{ i }}" placeholder="e.g. 12B" maxlength="4" value="{{ data.seats.out[i] if data.seats.out and data.seats.out|length > i else '' }}">
+            {% if in_sched %}
+            <span>Return seat</span>
+            <input name="seat_in_{{ i }}" placeholder="e.g. 12C" maxlength="4" value="{{ data.seats.in[i] if data.seats.in and data.seats.in|length > i else '' }}">
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button type="submit" class="ry-button ry-button--gradient-yellow">Continue with these seats</button>
+        </div>
+      </form>
+      <form method="post" action="{{ url_for('seats') }}" style="margin-top:10px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="recommended">
+        <button type="submit" class="ry-button ry-button--outline-dark-blue">Add recommended seats (cheapest together)</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card summary-panel">
+      <h3 class="card__title">Price Breakdown</h3>
+      {% for label, value in lines %}
+      <div class="summary-line"><span>{{ label }}</span><span>{{ money(value) }}</span></div>
+      {% endfor %}
+      <div class="summary-line"><span>Card processing fee</span><span>{{ money(card_fee) }}</span></div>
+      <div class="summary-panel__total-row"><span>Total to pay</span><span>{{ money(grand) }}</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.seat:not(.seat--occupied)').forEach(function (seat) {
+  seat.addEventListener('click', function () {
+    var seatId = seat.getAttribute('data-seat');
+    var direction = seat.closest('.seat-map').getAttribute('data-direction') || 'out';
+    var inputs = document.querySelectorAll('input[name^="seat_' + direction + '_"]');
+    var input = Array.prototype.find.call(inputs, function (i) { return !i.value; });
+    if (input) {
+      input.value = seatId;
+      input.classList.add('seat-flash');
+      setTimeout(function () { input.classList.remove('seat-flash'); }, 600);
+    }
+  });
+});
+</script>
+{% endblock %}

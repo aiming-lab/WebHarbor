@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Ryanair — Cabin Bags{% endblock %}
+{% block content %}
+<div class="trip-header">
+  <div class="trip-header__row">
+    <div class="trip-header__route">
+      <span class="price-badge">{{ money(grand) }}</span>
+      <span>{{ out_sched.route.origin.name }} → {{ out_sched.route.destination.name }}</span>
+      {% if in_sched %}<span>· {{ in_sched.route.origin.name }} → {{ in_sched.route.destination.name }}</span>{% endif %}
+    </div>
+    <div class="trip-header__meta"><span>{{ data.dateOut }}</span>{% if in_sched %}<span>- {{ data.dateIn }}</span>{% endif %}</div>
+  </div>
+  <div class="stepper">
+    <span class="stepper__item"><span class="stepper__dot"></span>Flights</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Seats</span>
+    <span class="stepper__item stepper__item--active"><span class="stepper__dot"></span>Bags</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Extras</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Review &amp; Pay</span>
+  </div>
+</div>
+
+<div class="trip-body">
+  <div>
+    <form method="post" action="{{ url_for('bags') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="save">
+      <div class="card">
+        <h2 class="card__title">Cabin Bags *</h2>
+        <p style="font-size:.82rem;color:var(--standard-grey);">Please choose what type of bag you want to bring on board · * Mandatory selection (applies to all passengers)</p>
+
+        <div class="bag-option">
+          <input class="bag-option__radio" type="radio" name="cabin_default" value="small-bag" id="cabin-small" {% if (pax[0].cabin_out if pax else 'small-bag') == 'small-bag' %}checked{% endif %}>
+          <div>
+            <div class="bag-option__title">1 Small Bag only</div>
+            <div class="bag-option__sub">40 x 30 x 20cm · fits under your seat · Standard queue</div>
+          </div>
+          <div class="bag-option__price">Included with fare</div>
+        </div>
+        <div class="bag-option">
+          <input class="bag-option__radio" type="radio" name="cabin_default" value="priority" id="cabin-priority" {% if (pax[0].cabin_out if pax else '') == 'priority' %}checked{% endif %}>
+          <div>
+            <div class="bag-option__title">Priority Boarding &amp; 2 Cabin Bags</div>
+            <div class="bag-option__sub">40 x 30 x 20cm and 55 x 40 x 20cm · Be the first on board · guaranteed overhead locker space</div>
+          </div>
+          <div class="bag-option__price">From {{ money(priority_price) }}<br><small>per person, per flight</small></div>
+        </div>
+        {% if has_return %}
+        <label style="font-size:.85rem; display:flex; gap:6px; align-items:center; margin:8px 0;">
+          <input type="checkbox" name="same_both_flights" checked> Same selection for both flights?
+        </label>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Check-in Bags</h2>
+        <p style="font-size:.82rem;color:var(--standard-grey);">Leave them at the check-in desk, board hands-free. Best price if you buy it now.</p>
+        <table class="bag-table">
+          <tr>
+            <th>Passenger</th>
+            <th>10kg Check-in Bag<br><small>{{ money(bag_prices['10kg']) }} per flight</small></th>
+            <th>20kg Check-in Bag<br><small>{{ money(bag_prices['20kg']) }} per flight</small></th>
+            <th>23kg Check-in Bag<br><small>{{ money(bag_prices['23kg']) }} per flight</small></th>
+          </tr>
+          {% for p in pax %}
+          <tr>
+            <td><strong>{{ p.first }} {{ p.last }}</strong></td>
+            <td>
+              <span class="bag-counter">
+                <button type="button" data-target="bag_10kg_out_{{ loop.index0 }}" data-delta="-1">−</button>
+                <span id="val_bag_10kg_out_{{ loop.index0 }}">{{ p.bag_10kg_out or 0 }}</span>
+                <button type="button" data-target="bag_10kg_out_{{ loop.index0 }}" data-delta="1">+</button>
+              </span>
+              <input type="hidden" name="bag_10kg_out_{{ loop.index0 }}" id="bag_10kg_out_{{ loop.index0 }}" value="{{ p.bag_10kg_out or 0 }}">
+            </td>
+            <td>
+              <span class="bag-counter">
+                <button type="button" data-target="bag_20kg_out_{{ loop.index0 }}" data-delta="-1">−</button>
+                <span id="val_bag_20kg_out_{{ loop.index0 }}">{{ p.bag_20kg_out or 0 }}</span>
+                <button type="button" data-target="bag_20kg_out_{{ loop.index0 }}" data-delta="1">+</button>
+              </span>
+              <input type="hidden" name="bag_20kg_out_{{ loop.index0 }}" id="bag_20kg_out_{{ loop.index0 }}" value="{{ p.bag_20kg_out or 0 }}">
+            </td>
+            <td>
+              <span class="bag-counter">
+                <button type="button" data-target="bag_23kg_out_{{ loop.index0 }}" data-delta="-1">−</button>
+                <span id="val_bag_23kg_out_{{ loop.index0 }}">{{ p.bag_23kg_out or 0 }}</span>
+                <button type="button" data-target="bag_23kg_out_{{ loop.index0 }}" data-delta="1">+</button>
+              </span>
+              <input type="hidden" name="bag_23kg_out_{{ loop.index0 }}" id="bag_23kg_out_{{ loop.index0 }}" value="{{ p.bag_23kg_out or 0 }}">
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+        <p style="font-size:.78rem;color:var(--standard-grey);">Buy now and avoid paying up to £75 at the airport. Same selection applies to both flights.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Equipment</h2>
+        <p style="font-size:.85rem;color:var(--standard-grey);">Need to bring sports, music or baby equipment? Add it via <a href="/gb/en/r/help/checkin-bags">My bookings</a> after payment — from £15.00 per item per flight.</p>
+      </div>
+
+      <button type="submit" class="ry-button ry-button--gradient-yellow">Continue</button>
+    </form>
+  </div>
+
+  <div>
+    <div class="card summary-panel">
+      <h3 class="card__title">Price Breakdown</h3>
+      {% for label, value in lines %}
+      <div class="summary-line"><span>{{ label }}</span><span>{{ money(value) }}</span></div>
+      {% endfor %}
+      <div class="summary-line"><span>Card processing fee</span><span>{{ money(card_fee) }}</span></div>
+      <div class="summary-panel__total-row"><span>Total to pay</span><span>{{ money(grand) }}</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.bag-counter button').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var target = btn.getAttribute('data-target');
+    var delta = parseInt(btn.getAttribute('data-delta'), 10);
+    var input = document.getElementById(target);
+    var value = Math.max(0, Math.min(3, parseInt(input.value, 10) + delta));
+    input.value = value;
+    document.getElementById('val_' + target).textContent = value;
+  });
+});
+</script>
+{% endblock %}

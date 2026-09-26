@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Official Ryanair website | Book direct for the lowest fares | Ryanair.com{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<div class="cookie-banner" id="cookie-banner" style="display:none">
+  <div class="cookie-banner__inner">
+    <div class="cookie-banner__text">We value your privacy. By clicking “Yes, I agree”, you agree to
+      Ryanair using cookies to improve your browsing experience, to personalise content and to analyse traffic.</div>
+    <div class="cookie-banner__actions">
+      <button class="ry-button ry-button--outline-light-blue" id="cookie-settings">View Cookie Settings</button>
+      <button class="ry-button ry-button--gradient-yellow" id="cookie-accept">Yes, I agree</button>
+    </div>
+  </div>
+</div>
+
+<header class="header">
+  <div class="header__top">
+    <div class="header__container">
+      <a class="header__logo" href="/gb/en" aria-label="Ryanair home">
+        <img src="{{ url_for('static', filename='icons/ryanair-harp.svg') }}" alt="" class="header__harp">
+        <img src="{{ url_for('static', filename='icons/ryanair-wordmark.svg') }}" alt="Ryanair" class="header__wordmark">
+      </a>
+      <nav class="header__links">
+        <div class="header__dropdown">
+          <button class="header__link header__link--dropdown" data-ref="dropdown-header-section-item__Plan" aria-label="Plan">Plan</button>
+          <div class="header__dropdown-menu">
+            <a href="/gb/en/cheap-flight-destinations">Fare Finder</a>
+            <a href="/gb/en/route-map">Route map</a>
+            <a href="/gb/en/trip/flights/timetable">Flight timetable</a>
+            <a href="/gb/en/r/help">Help centre</a>
+          </div>
+        </div>
+        <a class="header__link" href="/gb/en/r/help">FAQs</a>
+        <a class="header__link" href="/gb/en/my-bookings" data-ref="main-links__my_bookings">My bookings</a>
+        {% if current_user.is_authenticated %}
+          <a class="header__link header__link--strong" href="/gb/en/myryanair/account">{{ current_user.first_name }}’s account</a>
+          <a class="header__link" href="/gb/en/myryanair/logout">Log out</a>
+        {% else %}
+          <a class="header__link" href="/gb/en/myryanair/login" data-ref="main-links__log-in">Log in</a>
+        {% endif %}
+        <a class="header__link header__link--strong" href="/gb/en/myryanair/account" data-ref="main-links__myryanair-portal">myRyanair Portal</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main-content">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="footer__main">
+    <div class="footer__container">
+      <div class="footer__col">
+        <h4>Your Trip</h4>
+        <a href="/gb/en/lp/check-in">Online check-in</a>
+        <a href="/gb/en/lp/travel-updates">Travel Updates</a>
+        <a href="/gb/en/r/help">Help Centre</a>
+        <a href="/gb/en/my-bookings">View booking history</a>
+      </div>
+      <div class="footer__col">
+        <h4>Useful Info</h4>
+        <a href="/gb/en/r/help/fees">Fees</a>
+        <a href="/gb/en/r/help/cabin-bags">Cabin Bag Policy</a>
+        <a href="/gb/en/r/help/check-in">Check-in</a>
+        <a href="/gb/en/r/help/travel-documents">Travel documents</a>
+      </div>
+      <div class="footer__col">
+        <h4>Corporate</h4>
+        <a href="/gb/en/lp/about">About us</a>
+        <a href="/gb/en/lp/careers">Careers</a>
+        <a href="/gb/en/lp/media">Media centre</a>
+        <a href="/gb/en/lp/investors">Investor relations</a>
+      </div>
+      <div class="footer__col">
+        <h4>Cheap flights</h4>
+        <a href="/flights/gb/en/flights-to-dublin">Flights to Dublin</a>
+        <a href="/flights/gb/en/flights-to-malaga">Flights to Malaga</a>
+        <a href="/flights/gb/en/flights-to-barcelona">Flights to Barcelona</a>
+        <a href="/flights/gb/en/flights-to-paris">Flights to Paris</a>
+        <a href="/flights/gb/en/flights-to-alicante">Flights to Alicante</a>
+      </div>
+      <div class="footer__col footer__col--apps">
+        <h4>Download now</h4>
+        <div class="footer__app-badges">
+          <img src="{{ url_for('static', filename='images/footer/google-play.png') }}" alt="Google Play">
+          <img src="{{ url_for('static', filename='images/footer/apple.png') }}" alt="App Store">
+        </div>
+        <div class="footer__payments">
+          <img src="{{ url_for('static', filename='images/footer/mastercard.png') }}" alt="Mastercard">
+          <img src="{{ url_for('static', filename='images/footer/visa.png') }}" alt="Visa">
+          <img src="{{ url_for('static', filename='images/footer/americanexpress.png') }}" alt="American Express">
+          <img src="{{ url_for('static', filename='images/footer/paypal-img.png') }}" alt="PayPal">
+          <img src="{{ url_for('static', filename='images/footer/diners.png') }}" alt="Diners">
+          <img src="{{ url_for('static', filename='images/footer/discover.png') }}" alt="Discover">
+          <img src="{{ url_for('static', filename='images/footer/uatp.png') }}" alt="UATP">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer__legal">
+    <div class="footer__container footer__legal-row">
+      <div class="footer__legal-copy">
+        2026 © Ryanair DAC. All rights reserved.
+        A card payment processing fee may be applied to your booking. This fee will be reflected
+        in the total price once the card number has been entered. Please see our
+        <a href="/gb/en/r/help/fees">fees</a> for more details.
+      </div>
+      <div class="footer__legal-links">
+        <a href="/gb/en/r/help/general-terms-carriage">General terms &amp; conditions of carriage</a>
+        <a href="/gb/en/lp/terms-of-use">Terms of Use</a>
+        <a href="/gb/en/lp/privacy-policy">Privacy Policy</a>
+        <a href="/gb/en/r/help">Contact us</a>
+        <button class="footer__cookie-prefs" id="cookie-prefs">Cookie preferences</button>
+      </div>
+    </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

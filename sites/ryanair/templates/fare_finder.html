@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Cheap flight destinations — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1100px; margin-top:26px;">
+  <h1 style="font-size:1.6rem;">Cheap flight destinations from {{ origin.name }}</h1>
+  <p style="font-size:.9rem;color:var(--standard-grey);">By selecting a destination, you agree to the Website Terms of Use. Prices shown are the lowest available one-way Basic fare per person over the next 30 days. Newsletter subscribers get 10% off the flight fare with promo code RYANAIR10.</p>
+
+  <form method="get" action="{{ url_for('fare_finder') }}" class="ff-filters">
+    <div class="ff-filter">
+      <label>From</label>
+      <select name="originIata" onchange="this.form.submit()" style="padding:8px; border:1px solid var(--light-grey); border-radius:4px;">
+        {% for code, name in origin_choices|sort %}
+        <option value="{{ code }}" {% if code == origin.code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="ff-filter">
+      <label>Max price (£)</label>
+      <input type="number" name="maxPrice" min="0" step="1" value="{{ request.args.get('maxPrice', '') }}" placeholder="any">
+    </div>
+    <div class="ff-filter">
+      <label>Min price (£)</label>
+      <input type="number" name="minPrice" min="0" step="1" value="{{ request.args.get('minPrice', '') }}" placeholder="any">
+    </div>
+    <div class="ff-filter">
+      <label>Max flight time (min)</label>
+      <input type="number" name="maxDuration" min="0" step="10" value="{{ request.args.get('maxDuration', '') }}" placeholder="any">
+    </div>
+    <button type="submit" class="ry-button ry-button--flat-blue ry-button--small">Apply filters</button>
+    <span style="font-size:.8rem;color:var(--standard-grey);">{{ cards|length }} of {{ total }} destinations</span>
+  </form>
+
+  <div class="ff-grid">
+    {% for card in cards %}
+    <div class="ff-card">
+      <div class="ff-card__img" style="background-image:url('{{ url_for('static', filename='images/' ~ card.airport.image) }}')"></div>
+      <div class="ff-card__body">
+        <div class="ff-card__name">{{ card.airport.name }}</div>
+        <div class="ff-card__meta">{{ card.airport.country }} · {{ card.route.duration_label }} · {{ card.date.strftime('%d %b') }}</div>
+        <div class="ff-card__price">From {{ money(card.price) }} <small>one way</small></div>
+        <a class="ry-button ry-button--small ry-button--gradient-yellow"
+           href="/gb/en/trip/flights/select?originIata={{ origin.code }}&destinationIata={{ card.airport.code }}&dateOut={{ card.date.isoformat() }}&isReturn=false&adults=1">Book flight</a>
+      </div>
+    </div>
+    {% else %}
+    <p>No destinations match these filters. Widen the price or duration range.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

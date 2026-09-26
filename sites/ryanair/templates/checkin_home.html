@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Check-in — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:700px; margin-top:40px;">
+  <div class="card">
+    <h1 style="font-size:1.4rem;">Check-in</h1>
+    <p style="font-size:.9rem;color:var(--standard-grey);">Manage your bookings and account · Check in and get your boarding passes</p>
+    {% if current_user.is_authenticated and bookings %}
+    <h2 class="card__title" style="margin-top:12px;">Your bookings</h2>
+    {% for booking in bookings %}
+    <div class="booking-row">
+      <span><strong>{{ booking.booking_ref }}</strong> ·
+        {{ booking.outbound_schedule.route.origin_code }}-{{ booking.outbound_schedule.route.destination_code }}
+        · {{ booking.outbound_date.strftime('%d %b %Y') }}</span>
+      <a href="/gb/en/check-in/{{ booking.booking_ref }}">Check in</a>
+    </div>
+    {% endfor %}
+    {% endif %}
+    <h2 class="card__title" style="margin-top:12px;">Find your booking</h2>
+    <form method="post" action="{{ url_for('checkin_home') }}" class="payment-grid" style="grid-template-columns:1fr auto; align-items:end;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div><label class="form-label">Reservation number</label>
+        <input name="ref" placeholder="e.g. Q8XYZ9" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div><button type="submit" class="ry-button ry-button--gradient-yellow">Check in</button></div>
+    </form>
+    <p style="font-size:.78rem;color:var(--standard-grey);margin-top:10px;">
+      Customers who purchased an allocated seat can check in from 60 days up to 2 hours before departure.
+      Customers with a randomly allocated seat can check in from 24 hours up to 2 hours before departure.
+      Airport check-in costs £55 per passenger.</p>
+  </div>
+</div>
+{% endblock %}

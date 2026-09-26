@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Sign up — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:460px; margin-top:40px;">
+  <div class="card">
+    <h1 style="font-size:1.5rem;">Sign up</h1>
+    <p style="font-size:.85rem;color:var(--standard-grey);">Create a myRyanair account for faster checkout, saved passengers and the latest deals.</p>
+    <form method="post" action="{{ url_for('register') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="margin-bottom:12px;"><label class="form-label">First name</label>
+        <input name="first" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div style="margin-bottom:12px;"><label class="form-label">Last name</label>
+        <input name="last" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div style="margin-bottom:12px;"><label class="form-label">Email address</label>
+        <input type="email" name="email" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div style="margin-bottom:12px;"><label class="form-label">Password (min 8 characters)</label>
+        <input type="password" name="password" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div style="margin-bottom:14px;"><label class="form-label">Confirm password</label>
+        <input type="password" name="password2" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <label style="display:flex; gap:8px; font-size:.85rem; margin-bottom:14px;">
+        <input type="checkbox" name="newsletter" checked> Send me the latest Ryanair deals and new route news.
+      </label>
+      <button type="submit" class="ry-button ry-button--gradient-yellow" style="width:100%;">Sign up</button>
+    </form>
+    <p style="font-size:.85rem; margin-top:14px;">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

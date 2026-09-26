@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}myRyanair account{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1000px; margin-top:24px;">
+  <h1 style="font-size:1.5rem;">Hi {{ current_user.first_name }}, welcome back</h1>
+  <div class="account-grid">
+    <div class="account-nav">
+      <a href="#profile" class="active">Profile</a>
+      <a href="#payment">Payment methods</a>
+      <a href="#bookings">My bookings</a>
+      <a href="/gb/en/lp/check-in">Check-in</a>
+      <a href="/gb/en/myryanair/logout">Log out</a>
+    </div>
+    <div>
+      <div class="card" id="profile">
+        <h2 class="card__title">Profile</h2>
+        <form method="post" action="{{ url_for('account') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="profile">
+          <div class="payment-grid">
+            <div><label class="form-label">First name</label><input name="first" value="{{ current_user.first_name }}"></div>
+            <div><label class="form-label">Last name</label><input name="last" value="{{ current_user.last_name }}"></div>
+            <div><label class="form-label">Email address</label><input value="{{ current_user.email }}" disabled></div>
+            <div><label class="form-label">Mobile number</label><input name="phone" value="{{ current_user.phone }}"></div>
+            <div><label class="form-label">Address line 1</label><input name="address1" value="{{ current_user.address_line1 }}"></div>
+            <div><label class="form-label">Address line 2</label><input name="address2" value="{{ current_user.address_line2 }}"></div>
+            <div><label class="form-label">City</label><input name="city" value="{{ current_user.city }}"></div>
+            <div><label class="form-label">Postcode</label><input name="postcode" value="{{ current_user.postcode }}"></div>
+          </div>
+          <label style="display:flex; gap:8px; font-size:.85rem; margin:10px 0;">
+            <input type="checkbox" name="newsletter" {% if current_user.newsletter %}checked{% endif %}> Send me the latest deals by email.
+          </label>
+          <button type="submit" class="ry-button ry-button--gradient-yellow">Save changes</button>
+        </form>
+      </div>
+
+      <div class="card" id="payment">
+        <h2 class="card__title">Payment methods</h2>
+        {% for card in current_user.payment_methods %}
+        <div class="booking-row">
+          <span>{{ card.card_type }} ending {{ card.last4 }} · {{ card.holder }} · exp {{ card.expiry }} {% if card.is_default %}<span class="badge badge--confirmed">default</span>{% endif %}</span>
+          <form method="post" action="{{ url_for('account') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="remove_card">
+            <input type="hidden" name="card_id" value="{{ card.id }}">
+            <button type="submit" class="ry-button ry-button--small ry-button--outline-light-blue">Remove</button>
+          </form>
+        </div>
+        {% else %}
+        <p style="font-size:.85rem;color:var(--standard-grey);">No saved payment methods yet.</p>
+        {% endfor %}
+        <h3 style="font-size:.95rem; margin-top:14px;">Add a card</h3>
+        <form method="post" action="{{ url_for('account') }}" class="payment-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="add_card">
+          <div><label class="form-label">Card number</label><input name="cardNumber" placeholder="1234 5678 9012 3456"></div>
+          <div><label class="form-label">Name on card</label><input name="cardName"></div>
+          <div><label class="form-label">Expiry (MM/YY)</label><input name="cardExpiry" placeholder="09/29" maxlength="5"></div>
+          <div style="align-self:end;"><button type="submit" class="ry-button ry-button--flat-blue">Add card</button></div>
+        </form>
+      </div>
+
+      <div class="card" id="bookings">
+        <h2 class="card__title">My bookings</h2>
+        {% for booking in bookings %}
+        <div class="booking-row">
+          <span>
+            <strong>{{ booking.booking_ref }}</strong> ·
+            {{ booking.outbound_schedule.route.origin_code }}-{{ booking.outbound_schedule.route.destination_code }}
+            · {{ booking.outbound_date.strftime('%d %b %Y') }}
+            {% if booking.inbound_schedule %} - {{ booking.inbound_date.strftime('%d %b %Y') }}{% endif %}
+            · {{ money(booking.total) }}
+          </span>
+          <span>
+            <span class="badge badge--{{ booking.status }}">{{ booking.status }}</span>
+            {% if booking.checked_in %}<span class="badge badge--checked-in">checked in</span>{% endif %}
+            <a href="/gb/en/booking/{{ booking.booking_ref }}">View</a>
+          </span>
+        </div>
+        {% else %}
+        <p style="font-size:.85rem;color:var(--standard-grey);">No bookings yet — search for a flight to get started.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

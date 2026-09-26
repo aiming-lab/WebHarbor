@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Booking {{ booking.booking_ref }} — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:900px; margin-top:30px;">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <h1 style="font-size:1.4rem;">Booking {{ booking.booking_ref }}</h1>
+      <div>
+        <span class="badge badge--{{ booking.status }}">{{ booking.status }}</span>
+        {% if booking.checked_in %}<span class="badge badge--checked-in">checked in</span>{% endif %}
+      </div>
+    </div>
+    <p style="font-size:.85rem;color:var(--standard-grey);">Contact: {{ booking.contact_email }}{% if booking.contact_phone %} · {{ booking.contact_phone }}{% endif %}</p>
+
+    <h2 class="card__title" style="margin-top:16px;">Flights</h2>
+    {% set out_route = booking.outbound_schedule.route %}
+    <div class="breakdown-leg">
+      <strong>{{ out_route.origin.name }} ({{ out_route.origin_code }}) → {{ out_route.destination.name }} ({{ out_route.destination_code }})</strong><br>
+      {{ booking.outbound_date.strftime('%A %d %B %Y') }} · {{ booking.outbound_schedule.departure }} - {{ booking.outbound_schedule.arrival }} ·
+      {{ booking.outbound_schedule.flight_number }} · {{ out_route.duration_label }}
+    </div>
+    {% if booking.inbound_schedule %}
+    {% set in_route = booking.inbound_schedule.route %}
+    <div class="breakdown-leg">
+      <strong>{{ in_route.origin.name }} ({{ in_route.origin_code }}) → {{ in_route.destination.name }} ({{ in_route.destination_code }})</strong><br>
+      {{ booking.inbound_date.strftime('%A %d %B %Y') }} · {{ booking.inbound_schedule.departure }} - {{ booking.inbound_schedule.arrival }} ·
+      {{ booking.inbound_schedule.flight_number }} · {{ in_route.duration_label }}
+    </div>
+    {% endif %}
+
+    <h2 class="card__title" style="margin-top:16px;">Passengers ({{ booking.fare_type|title }} fare)</h2>
+    <div class="table-scroll">
+    <table class="fare-table-mini">
+      <tr><th>Name</th><th>Seat (outbound)</th>{% if booking.inbound_schedule %}<th>Seat (return)</th>{% endif %}<th>Cabin bag</th><th>Check-in bags</th></tr>
+      {% for p in booking.passengers %}
+      <tr>
+        <td>{{ p.title }} {{ p.first_name }} {{ p.last_name }}</td>
+        <td>{{ p.seat_out or 'Random at check-in' }}</td>
+        {% if booking.inbound_schedule %}<td>{{ p.seat_in or 'Random at check-in' }}</td>{% endif %}
+        <td>{{ 'Priority & 2 cabin bags' if p.cabin_out == 'priority' else '1 small bag' }}</td>
+        <td>
+          {% if p.bag_count(True) or p.bag_count(False) %}
+            Out: {{ p.bag_count(True) }} · In: {{ p.bag_count(False) }}
+          {% else %}None{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+
+    <h2 class="card__title" style="margin-top:16px;">Extras</h2>
+    <p style="font-size:.88rem;">
+      {% if booking.insurance_key %}Travel insurance: {{ booking.insurance_key|title }}<br>{% endif %}
+      {% if booking.fast_track_out %}Security Fast Track included<br>{% endif %}
+      {% if booking.inflight_credit %}Pre-paid inflight credit: {{ money(booking.inflight_credit) }}<br>{% endif %}
+      {% if booking.sms_updates %}SMS flight updates: {{ money(2.99) }}<br>{% endif %}
+      {% if not booking.insurance_key and not booking.fast_track_out and not booking.inflight_credit and not booking.sms_updates %}No extras on this booking.{% endif %}
+    </p>
+
+    <h2 class="card__title" style="margin-top:16px;">Price breakdown</h2>
+    {% for label, value in booking.breakdown_lines() %}
+    <div class="summary-line"><span>{{ label }}</span><span>{{ money(value) }}</span></div>
+    {% endfor %}
+    <div class="summary-panel__total-row"><span>Total paid</span><span>{{ money(booking.total) }}</span></div>
+
+    <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+      {% if not booking.checked_in and booking.status == 'confirmed' %}
+      <a class="ry-button ry-button--gradient-blue" href="/gb/en/check-in/{{ booking.booking_ref }}">Check in online</a>
+      {% elif booking.checked_in %}
+      <a class="ry-button ry-button--gradient-blue" href="/gb/en/boarding-pass/{{ booking.booking_ref }}">View boarding pass</a>
+      {% endif %}
+      <a class="ry-button ry-button--outline-dark-blue" href="/gb/en/r/help/flight-changes">Change my flight</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

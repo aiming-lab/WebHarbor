@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Login — Ryanair{% endblock %}
+{% block content %}
+<div class="container" style="max-width:460px; margin-top:40px;">
+  <div class="card">
+    <h1 style="font-size:1.5rem;">Log in</h1>
+    <p style="font-size:.85rem;color:var(--standard-grey);">Log in to your myRyanair account to manage your bookings, check in and access saved details.</p>
+    <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="margin-bottom:12px;"><label class="form-label">Email address</label>
+        <input type="email" name="email" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <div style="margin-bottom:14px;"><label class="form-label">Password</label>
+        <input type="password" name="password" style="width:100%; padding:10px; border:1px solid var(--light-grey); border-radius:4px;" required></div>
+      <button type="submit" class="ry-button ry-button--gradient-yellow" style="width:100%;">Log in</button>
+    </form>
+    <p style="font-size:.85rem; margin-top:14px;">New to myRyanair? <a href="{{ url_for('register') }}">Sign up</a></p>
+  </div>
+  <div class="card">
+    <h2 class="card__title">Manage your bookings and account</h2>
+    <p style="font-size:.85rem;color:var(--standard-grey);">Check in and get your boarding passes · View and manage your support cases · Save passengers and payment details for faster checkout</p>
+  </div>
+</div>
+{% endblock %}

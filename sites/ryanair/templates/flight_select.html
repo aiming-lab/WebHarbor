@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% block title %}Ryanair{% endblock %}
+{% block content %}
+<div class="trip-header">
+  <div class="trip-header__row">
+    <div class="trip-header__route">
+      <span class="price-badge" id="trip-total">{{ money(total if total is defined else 0) }}</span>
+      <span>{{ origin.name }}</span><span>→</span><span>{{ dest.name }}</span>
+    </div>
+    <div class="trip-header__meta">
+      <span>{{ 'Return' if not one_way else 'One way' }}</span>
+      <span>{{ date_out.strftime('%d %b') }}{% if date_in %} &nbsp;-&nbsp; {{ date_in.strftime('%d %b') }}{% endif %}</span>
+      <span>{{ adults + teens + children }} {{ 'passenger' if (adults+teens+children)==1 else 'passengers' }}</span>
+      <a class="trip-header__edit" href="/gb/en">Edit search</a>
+    </div>
+  </div>
+  <div class="stepper">
+    <span class="stepper__item stepper__item--active"><span class="stepper__dot"></span>Flights</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Seats</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Bags</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Extras</span>
+    <span class="stepper__item"><span class="stepper__dot"></span>Review &amp; Pay</span>
+  </div>
+</div>
+
+<div class="trip-body">
+  <div>
+    <!-- outbound section -->
+    <div class="card">
+      <h2 class="card__title">{{ origin.name }} to {{ dest.name }}</h2>
+      <div class="date-strip">
+        {% for cell in strip_out %}
+        {% if cell.selected %}
+          <div class="date-strip__cell date-strip__cell--selected">
+            <div class="date-strip__dow">{{ cell.date.strftime('%a') }}</div>
+            <div class="date-strip__day">{{ cell.date.strftime('%d %b') }}</div>
+            <div class="date-strip__price">{{ money(cell.price) if cell.price else '—' }}</div>
+          </div>
+        {% elif cell.enabled and cell.price %}
+          <form method="post" action="{{ url_for('flight_select') }}" class="date-strip__form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="change_date">
+            <input type="hidden" name="which" value="out">
+            <input type="hidden" name="date" value="{{ cell.date.isoformat() }}">
+            <button type="submit" class="date-strip__cell">
+              <div class="date-strip__dow">{{ cell.date.strftime('%a') }}</div>
+              <div class="date-strip__day">{{ cell.date.strftime('%d %b') }}</div>
+              <div class="date-strip__price">{{ money(cell.price) }}</div>
+            </button>
+          </form>
+        {% else %}
+          <div class="date-strip__cell date-strip__cell--disabled">
+            <div class="date-strip__dow">{{ cell.date.strftime('%a') }}</div>
+            <div class="date-strip__day">{{ cell.date.strftime('%d %b') }}</div>
+            <div class="date-strip__price">—</div>
+          </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if data.outboundSchedule and not out_views|selectattr('selected')|list %}
+      <div class="flight-card flight-card--selected">
+        {% set sel = out_views | selectattr('selected') | list %}
+        {% set v = sel[0] if sel else none %}
+        <div class="flight-card__airline"><img src="{{ url_for('static', filename='icons/ryanair-harp.svg') }}" alt="">Ryanair</div>
+        <div class="flight-card__dep"><div class="flight-card__time">{{ v.departure if v else '' }}</div><div class="flight-card__city">{{ origin.name }}</div></div>
+        <div class="flight-card__mid"><div class="flight-card__num">{{ v.flight_number if v else '' }}</div>{{ v.duration if v else '' }}</div>
+        <div class="flight-card__arr"><div class="flight-card__time">{{ v.arrival if v else '' }}</div><div class="flight-card__city">{{ dest.name }}</div></div>
+        <div class="flight-card__price"><span class="flight-card__fare-label">Selected</span></div>
+      </div>
+      {% endif %}
+      {% for v in out_views %}
+      <div data-e2e="flight-card--outbound" class="flight-card {% if v.selected %}flight-card--selected{% endif %}">
+        <div class="flight-card__airline"><img src="{{ url_for('static', filename='icons/ryanair-harp.svg') }}" alt="">Ryanair</div>
+        <div class="flight-card__dep"><div class="flight-card__time">{{ v.departure }}</div><div class="flight-card__city">{{ origin.name }}</div></div>
+        <div class="flight-card__mid"><div class="flight-card__num">{{ v.flight_number }}</div>{{ v.duration }}</div>
+        <div class="flight-card__arr"><div class="flight-card__time">{{ v.arrival }}</div><div class="flight-card__city">{{ dest.name }}</div></div>
+        <div class="flight-card__price">
+          <span class="flight-card__fare-label">Basic Fare</span>
+          {% if v.original_price %}<span class="flight-card__price-original">{{ money(v.original_price) }}</span>{% endif %}
+          <span class="flight-card__price-value">{{ money(v.price) }}</span>
+          {% if v.seats_left <= 5 %}<span class="flight-card__seats-left">{{ v.seats_left }} seats left at this price</span>{% endif %}
+        </div>
+        <div class="flight-card__cta">
+          {% if v.selected %}
+            <button class="ry-button ry-button--outline-light-blue" disabled>Select</button>
+          {% else %}
+          <form method="post" action="{{ url_for('flight_select') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="select_outbound">
+            <input type="hidden" name="schedule_id" value="{{ v.schedule.id }}">
+            <button type="submit" class="ry-button ry-button--gradient-yellow" data-ref="regular-price-select">Select</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if not out_views %}
+        <p>No flights operate on this date for this route. Try a nearby day from the strip above.</p>
+      {% endif %}
+    </div>
+
+    <!-- inbound section -->
+    {% if not one_way %}
+    <div class="card">
+      <h2 class="card__title">{{ dest.name }} to {{ origin.name }}</h2>
+      <div class="date-strip">
+        {% for cell in strip_in %}
+        {% if cell.selected %}
+          <div class="date-strip__cell date-strip__cell--selected">
+            <div class="date-strip__dow">{{ cell.date.strftime('%a') }}</div>
+            <div class="date-strip__day">{{ cell.date.strftime('%d %b') }}</div>
+            <div class="date-strip__price">{{ money(cell.price) if cell.price else '—' }}</div>
+          </div>
+        {% elif cell.enabled and cell.price %}
+          <form method="post" action="{{ url_for('flight_select') }}" class="date-strip__form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="change_date">
+            <input type="hidden" name="which" value="in">
+            <input type="hidden" name="date" value="{{ cell.date.isoformat() }}">
+            <button type="submit" class="date-strip__cell">
+              <div class="date-strip__dow">{{ cell.date.strftime('%a') }}</div>
+              <div class="date-strip__day">{{ cell.date.strftime('%d %b') }}</div>
+              <div class="date-strip__price">{{ money(cell.price) }}</div>
+            </button>
+          </form>
+        {% else %}
+          <div class="date-strip__cell date-strip__cell--disabled">
+            <div class="date-strip__dow">{{ cell.date.strftime('%a') }}</div>
+            <div class="date-strip__day">{{ cell.date.strftime('%d %b') }}</div>
+            <div class="date-strip__price">—</div>
+          </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% for v in in_views %}
+      <div data-e2e="flight-card--inbound" class="flight-card {% if v.selected %}flight-card--selected{% endif %}">
+        <div class="flight-card__airline"><img src="{{ url_for('static', filename='icons/ryanair-harp.svg') }}" alt="">Ryanair</div>
+        <div class="flight-card__dep"><div class="flight-card__time">{{ v.departure }}</div><div class="flight-card__city">{{ dest.name }}</div></div>
+        <div class="flight-card__mid"><div class="flight-card__num">{{ v.flight_number }}</div>{{ v.duration }}</div>
+        <div class="flight-card__arr"><div class="flight-card__time">{{ v.arrival }}</div><div class="flight-card__city">{{ origin.name }}</div></div>
+        <div class="flight-card__price">
+          <span class="flight-card__fare-label">Basic Fare</span>
+          {% if v.original_price %}<span class="flight-card__price-original">{{ money(v.original_price) }}</span>{% endif %}
+          <span class="flight-card__price-value">{{ money(v.price) }}</span>
+          {% if v.seats_left <= 5 %}<span class="flight-card__seats-left">{{ v.seats_left }} seats left at this price</span>{% endif %}
+        </div>
+        <div class="flight-card__cta">
+          {% if v.selected %}
+            <button class="ry-button ry-button--outline-light-blue" disabled>Select</button>
+          {% else %}
+          <form method="post" action="{{ url_for('flight_select') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="select_inbound">
+            <input type="hidden" name="schedule_id" value="{{ v.schedule.id }}">
+            <button type="submit" class="ry-button ry-button--gradient-yellow" data-ref="regular-price-select">Select</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if not in_views %}
+        <p>No return flights operate on this date for this route. Try a nearby day from the strip above.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- fare selection -->
+    {% if fare_table %}
+    <div class="card">
+      <h2 class="card__title">Choose your fare</h2>
+      <p style="font-size:.82rem; color:var(--standard-grey);">* The selected fare type applies to all passengers for all flights</p>
+      <div class="fare-table-wrap">
+        <table class="fare-table">
+          <tr>
+            <th style="text-align:left;"></th>
+            {% for f in fare_table %}<th class="fare-cell {{ 'fare-cell--selected' if data.fare == f.key }}">
+              <div class="fare-name">{{ f.name }}</div>
+              <div class="fare-tagline">{{ f.tagline }}</div>
+            </th>{% endfor %}
+          </tr>
+          {% set features = fare_table[0].features %}
+          <tr>
+            <td class="fare-feature fare-feature--on">{{ features[0] }}</td>
+            {% for f in fare_table %}<td class="fare-cell {{ 'fare-cell--selected' if data.fare == f.key }}">✓</td>{% endfor %}
+          </tr>
+          {% for feat in ['Reserved seat', 'Priority boarding', '10kg overhead locker bag',
+                          '20kg check-in bag', 'Speed through security (Fast Track)',
+                          'Change flights with no fees', 'Move to an earlier flight'] %}
+          <tr>
+            <td class="fare-feature {% if loop.index > 4 %}fare-feature--off{% else %}fare-feature--on{% endif %}">{{ feat }}</td>
+            {% for f in fare_table %}
+              {% set on = (feat == 'Reserved seat' and f.key in ['regular','plus','flexi_plus'])
+                or (feat == 'Priority boarding' and f.key in ['regular','plus','flexi_plus'])
+                or (feat == '10kg overhead locker bag' and f.key == 'regular')
+                or (feat == '20kg check-in bag' and f.key in ['plus','flexi_plus'])
+                or (feat == 'Speed through security (Fast Track)' and f.key in ['plus','flexi_plus'])
+                or (feat == 'Change flights with no fees' and f.key == 'flexi_plus')
+                or (feat == 'Move to an earlier flight' and f.key == 'flexi_plus') %}
+              <td class="fare-cell {{ 'fare-cell--selected' if data.fare == f.key }}">{{ '✓' if on else '' }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          <tr>
+            <td></td>
+            {% for f in fare_table %}
+            <td class="fare-cell {{ 'fare-cell--selected' if data.fare == f.key }}">
+              <div class="fare-price">{{ money(f.total) }}</div>
+              <div class="fare-delta">{{ ('+' ~ money(f.delta) ~ ' per person, on each flight') if f.delta else 'Included' }}</div>
+              <form method="post" action="{{ url_for('flight_select') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="choose_fare">
+                <input type="hidden" name="fare" value="{{ f.key }}">
+                <button type="submit" class="ry-button ry-button--{{ 'gradient-yellow' if data.fare == f.key else 'outline-light-blue' }}">
+                  {{ 'Selected' if data.fare == f.key else ('Continue with ' ~ f.name.title()) }}
+                </button>
+              </form>
+            </td>
+            {% endfor %}
+          </tr>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- passenger details -->
+    {% if show_pax %}
+    <div class="card pax-form">
+      <h2 class="card__title">Passengers</h2>
+      <p style="font-size:.85rem; color:var(--standard-grey);">Please enter names as they appear on passport or travel documentation</p>
+      <form method="post" action="{{ url_for('flight_select') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="save_passengers">
+        {% set total_pax = adults + teens + children %}
+        {% for i in range(total_pax) %}
+          {% set p = pax_forms[i] if pax_forms|length > i else {'title':'Mr','first':'','last':''} %}
+          <div class="pax-form__title">
+            {% if i < adults %}Passenger {{ i+1 }} — Adult{% elif i < adults+teens %}Passenger {{ i+1 }} — Teen{% else %}Passenger {{ i+1 }} — Child{% endif %}
+          </div>
+          <div class="pax-form__row">
+            <div style="flex:0 0 130px;">
+              <label class="form-label">Title</label>
+              <select name="title_{{ i }}">
+                {% for t in ['Mr','Mrs','Ms','Mx'] %}
+                <option value="{{ t }}" {{ 'selected' if p.title == t }}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div><label class="form-label">First name</label>
+              <input name="first_{{ i }}" value="{{ p.first }}" placeholder="Enter first name" required></div>
+            <div><label class="form-label">Last name</label>
+              <input name="last_{{ i }}" value="{{ p.last }}" placeholder="Enter last name" required></div>
+          </div>
+        {% endfor %}
+        <button type="submit" class="ry-button ry-button--gradient-yellow">Continue</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- summary sidebar -->
+  <div>
+    <div class="card summary-panel">
+      <h3 class="card__title">Price Breakdown</h3>
+      {% if promo_pct %}
+      <div class="summary-line"><span>Promo {{ promo }} ({{ promo_pct }}% off)</span><span>applied</span></div>
+      {% endif %}
+      {% if fare_table and data.fare %}
+      <div class="summary-line"><span>Fare</span><span>{{ fare_table | selectattr('key','equalto',data.fare) | list | first | attr('name') }}</span></div>
+      {% endif %}
+      <div class="summary-line"><span>Passengers</span><span>{{ adults + teens + children }}</span></div>
+      <div class="summary-line"><span>Total so far</span><span id="summary-total">{{ money(summary_total) }}</span></div>
+    </div>
+    <div class="card">
+      <h3 class="card__title">Free online check-in</h3>
+      <p style="font-size:.82rem;color:var(--standard-grey);">Free online check-in is available on the Ryanair website or App up to 2 hours before the scheduled departure of the flight.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
