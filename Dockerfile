@@ -307,8 +307,11 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/mta
 RUN cd /opt/WebSyn/mta && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
+# Parkers ships its frozen seed and inventoried images via the pinned asset archive.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/parkers
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40093
+EXPOSE 8101 40000-40125
 
 CMD ["/opt/websyn_start.sh"]

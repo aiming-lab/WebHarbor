@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>{{ heading }}</h1>
+    <div class="page-heading__sub">{{ filter_note }} — {{ '{:,}'.format(total) }} cars found</div>
+  </div>
+  <div class="cards-grid">
+    {% for l in listings %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__meta">{{ l.derivative_text }}</div>
+        <div class="card__meta">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <p><a class="btn btn--primary" href="/cars-for-sale/search-results/">Search all cars for sale</a></p>
+</div>
+{% endblock %}

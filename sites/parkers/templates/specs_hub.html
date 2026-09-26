@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Check car specs by registration{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Car specs</h1>
+    <div class="page-heading__sub">Full specifications, dimensions, fuel economy and equipment lists</div>
+  </div>
+  <div class="search-card" style="box-shadow:none;border:1px solid #e6e6e6">
+    <h2>Find a car's specs</h2>
+    <form method="get" action="/car-specs/" class="form-row">
+      <div class="field">
+        <label for="spec-make">Make</label>
+        <select id="spec-make" name="make" data-auto-submit>
+          <option value="">Select a make</option>
+          {% for mk in makes %}<option value="{{ mk.slug }}" {{ 'selected' if request.args.get('make') == mk.slug }}>{{ mk.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="spec-model">Model</label>
+        <select id="spec-model" name="model">
+          <option value="">Select a model</option>
+          {% if make_models %}
+          {% for m in make_models %}<option value="{{ m.slug }}" {{ 'selected' if request.args.get('model') == m.slug }}>{{ m.name }}</option>{% endfor %}
+          {% else %}
+          {% for m in popular %}<option value="{{ m.slug }}">{{ m.make.name }} {{ m.name }}</option>{% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <button class="btn btn--primary" type="submit">Search</button>
+    </form>
+    {% if request.args.get('make') and request.args.get('model') %}
+    {% set sel_m = make_models | selectattr('slug', 'equalto', request.args.get('model')) | list %}
+    {% if sel_m %}
+    <p><a class="btn btn--cta" href="/{{ request.args.get('make') }}/{{ request.args.get('model') }}/specs/">View {{ sel_m[0].make.name }} {{ sel_m[0].name }} specs</a></p>
+    {% endif %}
+    {% endif %}
+  </div>
+  <div class="section-heading"><h2>Popular specs</h2></div>
+  <div class="cards-grid">
+    {% for m in popular %}
+    <a class="card" href="/{{ m.make.slug }}/{{ m.slug }}/specs/">
+      <div class="card__image">{% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ m.make.name }} {{ m.name }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ m.make.name }} {{ m.name }} specs</div>
+        <div class="card__meta">Dimensions, MPG, boot space, equipment</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

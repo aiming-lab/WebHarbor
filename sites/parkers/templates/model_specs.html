@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} specs{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-specs/">Car specs</a> › {{ m.make.name }} {{ m.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} — Specs &amp; dimensions</h1>
+    <div class="page-heading__sub">Select a model from the {{ m.make.name }} {{ m.name }} range</div>
+  </div>
+  {% for g in gens %}
+  <div class="sidebar-box">
+    <h3>{{ g.name }} ({{ g.years_label }})</h3>
+    <p><a class="btn btn--primary" href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/specs/">View {{ g.name }} specs</a></p>
+    <p class="small"><a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/used-prices/">Used prices</a> ·
+       <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/insurance-groups/">Insurance groups</a> ·
+       <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/car-tax/">Car tax</a> ·
+       <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/owner-reviews/">Owner reviews</a></p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

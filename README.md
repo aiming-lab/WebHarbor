@@ -100,6 +100,7 @@ All registered websites and their default ports, in registration order from left
 | Megabus | 40087 | Michaels | 40088 | Micro Center | 40089 |
 | OhioMeansJobs | 40090 | Ohio.gov | 40091 | NFL | 40092 |
 | MTA | 40093 | | | | |
+| Parkers | 40125 | | | | |
 
 ## 🤝 Contribute
 

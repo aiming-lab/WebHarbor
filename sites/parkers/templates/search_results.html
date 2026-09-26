@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Search Parkers</h1>
+  </div>
+  <form method="get" action="/search/" class="form-row">
+    <div class="field">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search reviews, news, specs and cars for sale">
+    </div>
+    <button class="btn btn--primary" type="submit">Search</button>
+  </form>
+  {% if q %}
+  <p class="muted">{{ counts.models }} reviews · {{ counts.news }} news articles · {{ counts.guides }} guides · {{ counts.listings }} cars for sale match "{{ q }}"</p>
+  {% if results.models %}
+  <div class="section-heading"><h2>Car reviews</h2></div>
+  <div class="cards-grid">
+    {% for m in results.models %}
+    <a class="card" href="/{{ m.make.slug }}/{{ m.slug }}/review/">
+      <div class="card__image">{% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ m.make.name }} {{ m.name }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ m.make.name }} {{ m.name }}</div>
+        <div class="card__meta">{{ m.headline }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if results.news %}
+  <div class="section-heading"><h2>News</h2></div>
+  <div class="cards-grid">
+    {% for a in results.news %}
+    <a class="card" href="/car-news/{{ a.slug }}/">
+      <div class="card__body">
+        <div class="card__title">{{ a.title }}</div>
+        <div class="card__meta">{{ a.published }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if results.guides %}
+  <div class="section-heading"><h2>Buying guides</h2></div>
+  <div class="cards-grid">
+    {% for g in results.guides %}
+    <a class="card" href="/best-cars/{{ g.slug }}/">
+      <div class="card__body"><div class="card__title">{{ g.title }}</div></div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if results.listings %}
+  <div class="section-heading"><h2>Cars for sale</h2></div>
+  <div class="cards-grid">
+    {% for l in results.listings %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if not (results.models or results.news or results.guides or results.listings) %}
+  <div class="callout">No results for "{{ q }}". Try a make, model or topic.</div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

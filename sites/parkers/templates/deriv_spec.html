@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ g.name }} {{ d.name }} specs{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/{{ m.make.slug }}/{{ m.slug }}/specs/">{{ m.make.name }} {{ m.name }} specs</a> › <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/specs/">{{ g.name }}</a> › {{ d.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ g.name }} {{ d.name }} — Specs &amp; dimensions</h1>
+    <div class="page-heading__sub">Parkers is the most comprehensive source for {{ m.make.name }} {{ g.name }} specs</div>
+  </div>
+  <h2>Specs overview</h2>
+  <table class="data-table">
+    {% for k, v in spec.items() %}
+    <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+    {% endfor %}
+  </table>
+  {% if equipment %}
+  <h2>Equipment list</h2>
+  <ul class="plan-list">
+    {% for e in equipment %}<li>{{ e }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}

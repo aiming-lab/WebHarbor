@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Car tax checker | Free Tax Price Calculator{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Car tax calculator</h1>
+    <div class="page-heading__sub">Find a car's road tax and what you'll pay each year</div>
+  </div>
+  <div class="search-card" style="box-shadow:none;border:1px solid #e6e6e6">
+    <h2>Find a car's road tax</h2>
+    <form method="get" action="/car-tax/" class="form-row" data-cascade>
+      <div class="field">
+        <label for="tax-make">Make</label>
+        <select id="tax-make" name="make" data-auto-submit data-make-select>
+          <option value="">Select a make</option>
+          {% for mk in makes %}<option value="{{ mk.slug }}" {{ 'selected' if request.args.get('make') == mk.slug }}>{{ mk.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="tax-model">Model</label>
+        <select id="tax-model" name="model" data-model-select>
+          <option value="">Select a model</option>
+          {% for m in make_models %}<option value="{{ m.slug }}" {{ 'selected' if request.args.get('model') == m.slug }}>{{ m.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn btn--primary" type="submit">Check tax</button>
+    </form>
+    {% if request.args.get('make') and request.args.get('model') %}
+    {% set sel_m = make_models | selectattr('slug', 'equalto', request.args.get('model')) | list %}
+    {% if sel_m %}
+    <p>Road tax pages for {{ sel_m[0].name }}:</p>
+    <p>{% for g in sel_m[0].generations %}<a class="btn btn--cta" href="/{{ request.args.get('make') }}/{{ request.args.get('model') }}/{{ g.slug }}/car-tax/">{{ g.name }}</a> {% endfor %}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+  <h2>Current road tax rates</h2>
+  <table class="data-table">
+    <tr><th>Category</th><th>Band / detail</th><th>First year</th><th>Standard annual</th></tr>
+    {% for r in rates %}
+    <tr>
+      <td>{{ r.category }}</td>
+      <td>{{ r.band }}</td>
+      <td>{{ money(r.first_year) if r.first_year else '—' }}</td>
+      <td>{{ money(r.standard) if r.standard else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="callout"><p class="small">Rates shown are the current published VED rates for the 2026/27 tax year (from 1 April 2026). Electric cars pay a £10 first-year rate, then the standard annual rate.</p></div>
+</div>
+{% endblock %}

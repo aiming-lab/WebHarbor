@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ m.headline or ((m.make.name ~ ' ' ~ m.name ~ ' review')) }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-reviews/">Car reviews</a> › <a href="/{{ m.make.slug }}/reviews/">{{ m.make.name }}</a> › {{ m.name }}</div>
+  <div class="review-header">
+    <div class="review-header__main">
+      <h1>{{ m.headline or (m.make.name ~ ' ' ~ m.name ~ ' review') }}</h1>
+      <div class="page-heading__sub">{{ m.date_published }} · by {{ m.author or 'Parkers team' }}</div>
+      <p class="star-rating">
+        <span class="muted">Parkers overall rating:</span>
+        <span class="star-pips">{% if m.rating %}{% for _ in range(star_count(m.rating)) %}★{% endfor %}{% endif %}</span>
+        <span class="star-rating__text">{{ m.rating or '—' }}</span>
+        <span class="muted small">out of 5</span>
+      </p>
+      {% if m.strapline %}<p class="callout">" {{ m.strapline|firstline }} "</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="review-hero">
+    {% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ m.make.name }} {{ m.name }} review">{% endif %}
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h2>At a glance</h2>
+      <table class="data-table">
+        {% if m.price_new_text %}<tr><th>Price new</th><td>{{ m.price_new_text }}</td></tr>{% endif %}
+        {% if m.used_prices_text %}<tr><th>Used prices</th><td>{{ m.used_prices_text }}</td></tr>{% endif %}
+        {% if m.road_tax_text %}<tr><th>Road tax cost</th><td>{{ m.road_tax_text }}</td></tr>{% endif %}
+        {% if m.insurance_text %}<tr><th>Insurance group</th><td>{{ m.insurance_text }}</td></tr>{% endif %}
+        {% if m.fuel_types %}<tr><th>Available fuel types</th><td>{{ m.fuel_types }}</td></tr>{% endif %}
+      </table>
+
+      <h2>Pros &amp; cons</h2>
+      <div class="pros-cons">
+        <div class="box">
+          <h3>PROS</h3>
+          <ul>{% for p in m.pros %}<li>{{ p }}</li>{% endfor %}</ul>
+        </div>
+        <div class="box">
+          <h3>CONS</h3>
+          <ul>{% for c in m.cons %}<li>{{ c }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+
+      <h2>Overview</h2>
+      <div class="review-prose">
+        {% for p in m.review_intro_paras %}<p>{{ p }}</p>{% endfor %}
+      </div>
+
+      <div class="review-contents-nav">
+        <strong>Review contents</strong>
+        <ul>
+          {% for key, label, note in REVIEW_SECTIONS if key in sections %}
+          <li><a class="{{ 'current' if key == 'overview' }}" href="/{{ m.make.slug }}/{{ m.slug }}/review/{{ key if key != 'overview' else '' }}">{{ label|safe }}{% if note %} <span class="muted small">— {{ note }}</span>{% endif %}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      {% if m.rivals %}
+      <h2>{{ m.make.name }} {{ m.name }} rivals</h2>
+      <div class="cards-grid">
+        {% for r in m.rivals %}
+        <div class="card"><div class="card__body">
+          <div class="card__title">{{ r.name }}</div>
+          <div class="card__meta">{{ r.text }}</div>
+        </div></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <aside>
+      <div class="sidebar-box">
+        <h3>More about this car</h3>
+        <ul>
+          <li><a href="/{{ m.make.slug }}/{{ m.slug }}/specs/">Specs &amp; dimensions</a></li>
+          <li><a href="/{{ m.make.slug }}/{{ m.slug }}/used-prices/">Used prices &amp; valuations</a></li>
+          {% if m.generations %}<li><a href="/{{ m.make.slug }}/{{ m.slug }}/{{ m.generations[0].slug }}/insurance-groups/">Insurance groups</a></li>{% endif %}
+          <li><a href="/{{ m.make.slug }}/{{ m.slug }}/for-sale/">Cars for sale</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-box">
+        <h3>About the author</h3>
+        <p class="small">{{ m.author or 'Parkers team' }}</p>
+        <p class="small muted">Parkers reviewers cover thousands of miles in every car before publishing a verdict.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

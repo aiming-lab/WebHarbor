@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ make.name }} cars for sale{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>{{ make.name }} cars for sale</h1>
+    <div class="page-heading__sub">{{ '{:,}'.format(total) }} {{ make.name }} cars available from UK dealers</div>
+  </div>
+  <div class="section-heading"><h2>Popular {{ make.name }} models</h2></div>
+  <p>
+    {% for m in models[:14] %}
+    <a class="btn btn--outline btn--sm" href="/{{ make.slug }}/{{ m.slug }}/for-sale/" style="margin:0 .3rem .4rem 0">{{ m.name }}</a>
+    {% endfor %}
+  </p>
+  <div class="cards-grid">
+    {% for l in listings %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__meta">{{ l.derivative_text }}</div>
+        <div class="card__meta">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

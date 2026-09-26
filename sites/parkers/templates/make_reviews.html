@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ make.name }} Reviews{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-reviews/">Car reviews</a> › {{ make.name }}</div>
+  <div class="page-heading">
+    <h1>{{ make.name }} Reviews</h1>
+    <div class="page-heading__sub">All {{ models|length }} {{ make.name }} models reviewed by Parkers</div>
+  </div>
+  <div class="cards-grid">
+    {% for m in models %}
+    <a class="card" href="/{{ m.make.slug }}/{{ m.slug }}/review/">
+      <div class="card__image">{% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ m.make.name }} {{ m.name }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ m.make.name }} {{ m.name }}</div>
+        <div class="card__meta">{{ m.fuel_types }}</div>
+        {% if m.rating %}<div class="star-rating"><span class="star-pips">{% for _ in range(star_count(m.rating)) %}★{% endfor %}</span><span class="star-rating__text">{{ m.rating }}</span></div>{% endif %}
+        <div class="small"><a href="/{{ m.make.slug }}/{{ m.slug }}/specs/">Specs</a> · <a href="/{{ m.make.slug }}/{{ m.slug }}/used-prices/">Used prices</a></div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

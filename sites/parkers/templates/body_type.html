@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} car reviews{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-reviews/">Car reviews</a> › {{ label }}</div>
+  <div class="page-heading">
+    <h1>{{ label }}: expert reviews</h1>
+    <div class="page-heading__sub">{{ models|length }} {{ label|lower }} reviewed by the Parkers team</div>
+  </div>
+  <div class="cards-grid">
+    {% for m in models %}
+    <a class="card" href="/{{ m.make.slug }}/{{ m.slug }}/review/">
+      <div class="card__image">{% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ m.make.name }} {{ m.name }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ m.make.name }} {{ m.name }}</div>
+        <div class="card__meta">{{ m.price_new_text }}</div>
+        <div class="star-rating"><span class="star-pips">{% if m.rating %}{% for _ in range(star_count(m.rating)) %}★{% endfor %}{% endif %}</span><span class="star-rating__text">{{ m.rating or '—' }}</span></div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Car reviews 2026: new and used cars tested extensively{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Car reviews 2026: new and used cars tested extensively</h1>
+    <div class="page-heading__sub">Expert Parkers reviews with ratings, running costs and buying advice</div>
+  </div>
+  <div class="section-heading"><h2>Browse reviews by car type</h2></div>
+  <div class="cards-grid">
+    {% for body, label in BODY_TYPES %}
+    <a class="card" href="/car-reviews/{{ body }}/">
+      <div class="card__body">
+        <div class="card__title">{{ label }}</div>
+        <div class="card__meta">{{ counts[body] }} models reviewed</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <hr class="section-rule">
+  <div class="section-heading"><h2>Browse by make</h2></div>
+  <div class="brand-grid">
+    {% for mk in makes %}
+    <a class="brand-cell" href="/{{ mk.slug }}/reviews/">
+      {% if mk.logo_path %}<img src="{{ mk.logo_path }}" alt="{{ mk.name }}">{% endif %}
+      <div class="name">{{ mk.name }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

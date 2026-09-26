@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} {{ g.name }} insurance groups{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-insurance/insurance-groups/">Insurance groups</a> › {{ m.make.name }} {{ m.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} {{ g.name }} ({{ g.years_label }}) insurance groups</h1>
+    <div class="page-heading__sub">Insurance group for every version of the {{ m.make.name }} {{ m.name }} {{ g.name }}</div>
+  </div>
+  {% for trim, dlist in trims.items() %}
+  <div class="sidebar-box">
+    <h3>{{ trim }}</h3>
+    <table class="data-table">
+      <tr><th>Version</th><th>Insurance group</th></tr>
+      {% for d in dlist %}
+      <tr>
+        <td>{{ d.name }}</td>
+        <td>{{ d.insurance_group or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endfor %}
+  <div class="callout">
+    <p class="small">Cars in lower groups are typically cheaper to insure. The group for each version accounts for its performance, price when new and repair costs.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ a.title }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-news/">Car news</a> › {{ a.title }}</div>
+  <article class="two-col">
+    <div>
+      <div class="page-heading">
+        <h1>{{ a.title }}</h1>
+        <div class="page-heading__sub">{{ a.published }} · by {{ a.author }} · {{ a.category }}</div>
+      </div>
+      {% if a.standfirst %}<p class="callout">{{ a.standfirst }}</p>{% endif %}
+      {% if a.image %}<div class="review-hero"><img src="{{ a.image }}" alt="{{ a.title }}"></div>{% endif %}
+      <div class="review-prose">
+        {% for p in a.body %}<p>{{ p }}</p>{% endfor %}
+      </div>
+    </div>
+    <aside>
+      <div class="sidebar-box">
+        <h3>More from Parkers</h3>
+        <ul>
+          {% for x in more %}<li><a href="/car-news/{{ x.slug }}/">{{ x.title }}</a></li>{% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </article>
+</div>
+{% endblock %}

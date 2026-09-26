@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Your Parkers Free Valuation for {{ m.make.name }} {{ m.name }} {{ g.name }} {{ d.name }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Your Parkers Free Valuation for<br>{{ m.make.name }} {{ m.name }} {{ g.name }} {{ d.name }} {{ v.year_plate }}</h1>
+    <div class="page-heading__sub">Free Valuation</div>
+  </div>
+  {% if saved_flash %}<div class="flash flash--success">Valuation saved to your Parkers account.</div>{% endif %}
+  <div class="valuation-result">
+    <div class="range-line">Buying privately, aim for <strong>{{ money(v.private_low) }} - {{ money(v.private_high) }}</strong>*</div>
+    <div class="range-line">Buying from a dealer, aim for <strong>{{ money(v.dealer_low) }} - {{ money(v.dealer_high) }}</strong>*</div>
+    <p class="small muted">* Estimated values based on a typical mileage for a car of this age with no optional extras.</p>
+  </div>
+  {% if v.part_ex_low %}
+  <div class="callout">Part exchange value: {{ money(v.part_ex_low) }} - {{ money(v.part_ex_high) }} based on the same age and mileage profile.</div>
+  {% endif %}
+  <p>
+    <a class="btn btn--outline" href="/car-valuation/">Value another car</a>
+    <a class="btn btn--outline" href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/{{ d.slug }}/{{ v.id }}/pro-valuation/">Upgrade to a Pro Valuation</a>
+  </p>
+  <div class="pro-card">
+    <h3>Inside a Parkers Pro Valuation</h3>
+    <p class="small">Here's a preview of the level of detail you can expect in your Parkers Pro Valuation.</p>
+    <p class="small"><strong>{{ m.make.name }} {{ g.name }} {{ d.name }} {{ v.year_plate }}</strong><br>Mileage: 10,000 · Optional extras: Heated seats, Sunroof, Leather seats</p>
+    <table class="data-table">
+      <tr><th>Private sale price</th><td>£X,XXX</td></tr>
+      <tr><th>Part exchange</th><td>£X,XXX</td></tr>
+      <tr><th>Franchise dealer price</th><td>£X,XXX</td></tr>
+      <tr><th>Independent dealer price</th><td>£X,XXX</td></tr>
+      <tr><th>Original price when new</th><td>£X,XXX</td></tr>
+    </table>
+    <p><a class="btn btn--cta" href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/{{ d.slug }}/{{ v.id }}/pro-valuation/">Get a Parkers Pro Valuation from £6.99</a></p>
+  </div>
+  {% if featured %}
+  <h2>Featured cars for sale</h2>
+  <div class="cards-grid">
+    {% for l in featured %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__meta">{{ l.derivative_text }}</div>
+        <div class="card__meta">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

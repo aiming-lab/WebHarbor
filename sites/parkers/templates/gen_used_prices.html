@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} {{ g.name }} used prices{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-valuation/">Car valuations</a> › <a href="/{{ m.make.slug }}/used-prices/">{{ m.make.name }}</a> › <a href="/{{ m.make.slug }}/{{ m.slug }}/used-prices/">{{ m.name }}</a> › {{ g.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} {{ g.name }} — used prices</h1>
+    <div class="page-heading__sub">Get your free {{ m.make.name }} {{ m.name }} valuation in under a minute</div>
+  </div>
+  <div class="valuation-panel">
+    <h2>{{ m.make.name }} {{ g.name }}</h2>
+    <h3>Which of the following describes why you are looking at car valuations today?</h3>
+    <form method="get" action="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/used-prices/" class="form-row">
+      <div class="radio-row" style="width:100%">
+        {% for p in VALUATION_PURPOSES %}
+        <label class="{{ 'on' if purpose == p }}"><input type="radio" name="purpose" value="{{ p }}" {{ 'checked' if purpose == p }} onchange="this.form.submit()"> {{ p }}</label>
+        {% endfor %}
+      </div>
+      <div class="field">
+        <label for="val-year">Year and plate</label>
+        <select id="val-year" name="year" data-auto-submit>
+          {% for yp in years %}
+          <option value="{{ yp }}" {{ 'selected' if yp == year }}>{{ yp }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="val-version">Version</label>
+        <select id="val-version" name="version" data-auto-submit>
+          <option value="">Select a version</option>
+          {% for d in versions %}
+          <option value="{{ d.id }}" {{ 'selected' if sel_deriv and sel_deriv.id == d.id }}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if sel_deriv and sel_deriv.valuation_for_year(year) %}
+      <a class="btn btn--cta" href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/{{ sel_deriv.urlslug }}/{{ sel_deriv.valuation_for_year(year).id }}/select-a-valuation/">Get your free valuation</a>
+      {% else %}
+      <button class="btn btn--cta" disabled>Get your free valuation</button>
+      {% endif %}
+    </form>
+    {% if not versions and year %}
+    <p class="small muted">No versions listed for {{ year }} — choose another year and plate.</p>
+    {% endif %}
+  </div>
+  <div class="sidebar-box">
+    <h3>How Parkers valuations work</h3>
+    <p class="small">Values are based on a standard mileage for a car of this age with no optional extras. The private price is what you could expect selling to another person; the dealer price is what a dealer would ask retailing the car.</p>
+  </div>
+</div>
+{% endblock %}
