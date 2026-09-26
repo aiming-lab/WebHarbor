@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=1100">
+<meta name="viewport" content="{% block viewport %}width=device-width, initial-scale=1.0, user-scalable=no{% endblock %}">
 <title>{% block title %}SourceForge{% endblock %}</title>
 <link rel="icon" sizes="180x180" href="{{ url_for('static', filename='images/ui/logo-180x180.png') }}" type="image/png">
 <link rel="icon" sizes="any" href="{{ url_for('static', filename='images/ui/sf-icon-orange-no_sf.svg') }}" type="image/svg+xml">
@@ -10,11 +10,11 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/lato.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sandiego.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/forge.css') }}">
+{% block forge_css %}{% endblock %}
 {% block head_css %}{% endblock %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
 </head>
-<body class="body_class sandiego_chrome legacy_chrome {% block body_class %}{% endblock %}" id="forge">
+<body class="{% block body_classes %}anonymous sandiego v-sf{% endblock %}" id="{% block body_id %}{% endblock %}">
 <div class="off-canvas position-right" id="offCanvas" data-off-canvas>
   <ul class="header-nav-menulist">
     <li class="highlight search">
@@ -35,8 +35,9 @@
     <li><a href="/directory/">Open Source Software</a></li>
     <li><a href="/software/vendors/" title="For Vendors">For Vendors</a></li>
     <li><a href="/about">About</a></li>
+    <li><a href="/blog/">Blog</a></li>
     <li><a href="/create">Create</a></li>
-    <li><a href="/top" title="Top Downloaded Projects">Top Downloaded Projects</a></li>
+    <li><a href="/podcast/" title="SourceForge Podcast">SourceForge Podcast</a></li>
   </ul>
 </div>
 <div class="off-canvas-content" data-off-canvas-content>
@@ -78,12 +79,12 @@
       <div class="links">
         <div class="nav-dropdown"><a href="/software/">Business Software</a></div>
         <div class="nav-dropdown"><a href="/directory/" title="Browse">Open Source Software</a></div>
-        <div class="nav-dropdown"><a href="/top">Top Downloaded Projects</a></div>
+        <div class="nav-dropdown"><a href="/podcast/">SourceForge Podcast</a></div>
         <div class="nav-dropdown"><a>Resources</a>
           <ul class="nav-dropdown-menu">
-            <li><a href="/reviews">Reviews</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/about/leadership">Team</a></li>
+            <li><a href="/articles/">Articles</a></li>
+            <li><a href="/software/case-studies/">Case Studies</a></li>
+            <li><a href="/blog/">Blog</a></li>
           </ul>
         </div>
       </div>
@@ -105,9 +106,7 @@
   </section>
 </div>
 {% block page_body %}
-<section id="page-body" class="">
-  {% block content %}{% endblock %}
-</section>
+{% block content %}{% endblock %}
 {% endblock %}
 <footer class="sandiego">
   <div class="as-row">

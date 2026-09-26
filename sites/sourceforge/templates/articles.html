@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block body_classes %}anonymous sandiego v-sf{% endblock %}
+{% block title %}SourceForge Articles - Software, Technology, &amp; IT{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row"><div class="column large-10"><h1 class="page-title">SourceForge Articles</h1></div></div>
+</div>
+<div class="row main-content">
+  <div class="column small-12">
+    <p>{{ description }}</p>
+    <ul class="article-list">
+      {% for a in posts %}
+      <li class="article">
+        <h3 class="article-title">{{ a.title }}</h3>
+        <div class="article-meta">
+          <span class="article-category">{{ a.category }}</span> &middot;
+          <time class="article-date" datetime="{{ a.date }}">{{ a.date }}</time>
+        </div>
+      </li>
+      {% else %}
+      <li>No articles published yet.</li>
+      {% endfor %}
+    </ul>
+    <p>Looking for the podcast? Episodes are published under the SourceForge Podcast category &mdash; see the <a href="/podcast/">SourceForge Podcast</a> page.</p>
+  </div>
+</div>
+{% endblock %}

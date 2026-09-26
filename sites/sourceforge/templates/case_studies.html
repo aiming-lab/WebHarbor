@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block body_id %}pg_directory{% endblock %}
+{% block body_classes %}l-directory anonymous sandiego v-sf{% endblock %}
+{% block title %}Case Studies - SourceForge{% endblock %}
+{% block content %}
+<section class="l-header-nav-top directory-header">
+  <div class="row"><h1>Case Studies</h1></div>
+</section>
+<div class="l-two-column-page">
+  <div class="l-content-column l-has-sidebar">
+    <div class="main-content">
+      <section class="row">
+        <div class="small-12 columns">
+          <p>SourceForge case studies show how teams evaluate, deploy, and benefit from the business software and IT services listed in our directory &mdash; written with the vendors and customers who know them best.</p>
+          <h3>Featured vendors</h3>
+          <p>Start with the vendors currently featured in the Business Software directory:</p>
+          <ul class="featured-vendors">
+            {% for p in featured %}
+            <li class="vendor">
+              <a href="/software/product/{{ p.slug }}/">{{ p.name }}</a>
+              <span class="vendor-rating">{{ p.rating_avg }} out of 5</span>
+            </li>
+            {% else %}
+            <li>No featured vendors right now.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+      <section class="row">
+        <div class="small-12 columns">
+          <h3>Explore more</h3>
+          <p>Browse <a href="/software/">Business Software</a> by category to find vendor profiles, ratings, and the solutions other teams chose.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div class="m-sidebar-widget">
+        <div class="as-header">Software Categories</div>
+        <div class="body">
+          <ul>
+            {% for c in categories[:12] %}
+            <li class="item"><a href="/software/{{ c.slug }}/">{{ c.name }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -335,8 +335,8 @@ def _seed_sevenzip_deep(sz, data):
         ("7-Zip", True, None, None, "2026-09-04 08:06:43", 23345, 430_000_000),
         ("LZMA SDK", True, None, None, "2026-09-04 08:06:10", 675, 12_000_000),
         ("OldFiles", True, None, None, "2006-09-15 06:56:52", 37, 900_000),
-        ("7-Zip/26.03", True, None, None, "2026-09-04 08:07:13", 0, 0),
-        ("7-Zip/26.02", True, None, None, "2026-09-04 08:05:16", 0, 0),
+        ("7-Zip/26.03", True, None, None, "2026-09-04 08:07:13", 29589, 3_370_000),
+        ("7-Zip/26.02", True, None, None, "2026-09-04 08:05:16", 21750, 1_820_000),
         ("7-Zip/26.01", True, None, None, "2026-04-29 18:25:51", 5494, 4_100_000),
         ("7-Zip/26.00", True, None, None, "2026-02-19 09:07:04", 2038, 2_200_000),
         ("7-Zip/25.01", True, None, None, "2025-08-03 13:07:26", 415, 3_000_000),
@@ -628,13 +628,11 @@ def _seed_site_content(proj_rows):
         },
         "oss_categories": [
             {"slug": "artificial-intelligence", "name": "Artificial Intelligence"},
-            {"slug": "blockchain", "name": "Blockchain"},
             {"slug": "business", "name": "Business"},
             {"slug": "communications", "name": "Communications"},
             {"slug": "database", "name": "Database"},
             {"slug": "desktop-environment", "name": "Desktop Environment"},
             {"slug": "education", "name": "Education"},
-            {"slug": "formats-and-protocols", "name": "Formats and Protocols"},
             {"slug": "games", "name": "Games"},
             {"slug": "internet", "name": "Internet"},
             {"slug": "mobile", "name": "Mobile"},
@@ -647,7 +645,6 @@ def _seed_site_content(proj_rows):
             {"slug": "social-sciences", "name": "Social sciences"},
             {"slug": "software-development", "name": "Software Development"},
             {"slug": "system", "name": "System"},
-            {"slug": "terminals", "name": "Terminals"},
             {"slug": "text-editors", "name": "Text Editors"},
         ],
         "business_categories": [
@@ -727,6 +724,75 @@ def _seed_site_content(proj_rows):
             "keepass": ["keepass", "password manager", "keepass2", "password safe"],
             "filezilla": ["filezilla", "ftp client", "filezilla download", "sftp"],
         },
+        # Real content captured from the upstream Wayback snapshots
+        # (source_data/pages/podcast_clean.html + articles_clean.html,
+        # web.archive.org captures of sourceforge.net, 2026-09-06/08).
+        "podcast_description": (
+            "Dynamic interviews with tech and software CEOs, leaders, and "
+            "changemakers. The SourceForge Podcast by Slashdot Media gives you "
+            "insight into the cutting edge of software, B2B SaaS, and "
+            "trailblazing technology."
+        ),
+        "podcast_episodes": [
+            {"title": "Mobile Data Collection and Analytics: FastField | "
+                      "SourceForge Podcast, episode #138",
+             "slug": "mobile-data-collection-and-analytics-fastfield-"
+                     "sourceforge-podcast-episode-138",
+             "date": "2026-09-03"},
+            {"title": "Hybrid Bare Metal Cloud Infrastructure: Servers.com by "
+                      "Nexcess | SourceForge Podcast, episode #137",
+             "slug": "hybrid-bare-metal-cloud-infrastructure-servers-com-by-"
+                     "nexcess-sourceforge-podcast-episode-137",
+             "date": "2026-09-01"},
+            {"title": "Online Interactive Flipbook Maker: Flipsnack | "
+                      "SourceForge Podcast, episode #136",
+             "slug": "online-interactive-flipbook-maker-flipsnack-"
+                     "sourceforge-podcast-episode-136",
+             "date": "2026-08-28"},
+            {"title": "Laundromat POS System & Laundry Software: Wash-Dry-Fold "
+                      "POS | SourceForge Podcast, episode #135",
+             "slug": "laundromat-pos-system-laundry-software-wash-dry-fold-"
+                     "pos-sourceforge-podcast-episode-135",
+             "date": "2026-08-26"},
+            {"title": "AI-Powered Retail Intelligence: FarsightIQ | "
+                      "SourceForge Podcast, episode #134",
+             "slug": "ai-powered-retail-intelligence-farsightiq-"
+                     "sourceforge-podcast-episode-134",
+             "date": "2026-08-24"},
+        ],
+        "articles_description": (
+            "In-depth and comprehensive thought leadership articles about "
+            "software, technology, and IT topics from industry experts, CEOs, "
+            "and software thought leaders. Interviews and long-form detailed "
+            "articles about cutting-edge software products."
+        ),
+        "articles": [
+            {"title": "Trend Analysis and Capacity Planning: Turning Monitoring "
+                      "Data Into Better Infrastructure Decisions",
+             "slug": "trend-analysis-and-capacity-planning-turning-monitoring-"
+                     "data-into-better-infrastructure-decisions",
+             "date": "2026-09-03", "category": "Articles"},
+            {"title": "Mobile Data Collection and Analytics: FastField | "
+                      "SourceForge Podcast, episode #138",
+             "slug": "mobile-data-collection-and-analytics-fastfield-"
+                     "sourceforge-podcast-episode-138",
+             "date": "2026-09-03", "category": "SourceForge Podcast"},
+            {"title": "How AI Agent Orchestration Keeps Multi-Agent Workflows "
+                      "Under Control",
+             "slug": "how-ai-agent-orchestration-keeps-multi-agent-workflows-"
+                     "under-control",
+             "date": "2026-09-02", "category": "Articles"},
+            {"title": "Hybrid Bare Metal Cloud Infrastructure: Servers.com by "
+                      "Nexcess | SourceForge Podcast, episode #137",
+             "slug": "hybrid-bare-metal-cloud-infrastructure-servers-com-by-"
+                     "nexcess-sourceforge-podcast-episode-137",
+             "date": "2026-09-01", "category": "SourceForge Podcast"},
+            {"title": "How Much of Your Network\u2019s Reliability Depends on One "
+                      "Person\u2019s Memory?",
+             "slug": "how-much-of-your-networks-reliability-depends-on-one-"
+                     "persons-memory",
+             "date": "2026-08-31", "category": "Articles"},
+        ],
     }
     for key, value in content.items():
         db.session.add(SiteContent(key=key, value_json=json.dumps(value)))

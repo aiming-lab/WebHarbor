@@ -25,6 +25,23 @@
         });
       }
     });
+    // Reviews "Filter Reviews" dropdown (Foundation dropdown-pane replacement)
+    var filterToggle = document.querySelector('.sort-options [data-toggle="filter-rating"] .sort-drop-down > a, [data-toggle="filter-rating"] .sort-drop-down > a');
+    var filterPane = document.getElementById('filter-rating');
+    if (filterToggle && filterPane) {
+      filterToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        filterPane.classList.toggle('is-open');
+      });
+      // close on outside click, like Foundation does
+      document.addEventListener('click', function (e) {
+        if (filterPane.classList.contains('is-open') &&
+            !filterPane.contains(e.target) &&
+            !filterToggle.contains(e.target)) {
+          filterPane.classList.remove('is-open');
+        }
+      });
+    }
     // Sort-by dropdown: follow data-action links
     document.querySelectorAll('.sort-by .menu a[data-action]').forEach(function (a) {
       a.addEventListener('click', function (e) {

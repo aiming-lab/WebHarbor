@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block body_classes %}anonymous sandiego v-sf{% endblock %}
+{% block title %}SourceForge Podcast{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row"><div class="column large-10"><h1 class="page-title">SourceForge Podcast</h1></div></div>
+</div>
+<div class="row main-content">
+  <div class="column small-12 medium-8">
+    <p>{{ description }}</p>
+    <p>New episodes are published on the SourceForge network and announced on the <a href="/articles/">Articles</a> hub. Recent episodes:</p>
+    <ul class="podcast-episodes">
+      {% for ep in episodes %}
+      <li class="episode">
+        <span class="episode-title">{{ ep.title }}</span>
+        <time class="episode-date" datetime="{{ ep.date }}">{{ ep.date }}</time>
+      </li>
+      {% else %}
+      <li>No episodes published yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="column small-12 medium-4">
+    <section class="project-info">
+      <h3>Listen</h3>
+      <p>The SourceForge Podcast is available on your favorite podcast app and on the SourceForge network.</p>
+      <p><a class="button blue hollow" href="/articles/">Browse Articles</a></p>
+    </section>
+  </div>
+</div>
+{% endblock %}

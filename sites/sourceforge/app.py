@@ -562,6 +562,28 @@ SORT_ORDERS = {
 }
 
 
+def sorted_results(q, sort, qs):
+    """Result list for the directory: relevance search when a query is
+    present (optionally re-sorted by the requested order), or a plain
+    ordered browse otherwise. The sort control stays meaningful in both
+    modes, matching the upstream directory behavior."""
+    if not q:
+        return SORT_ORDERS.get(sort, SORT_ORDERS["popular"])[1](qs).all()
+    base = scored_projects(q, qs)
+    if sort == "score" or sort not in SORT_ORDERS:
+        return base
+    if sort == "popular":
+        return sorted(base, key=lambda p: (-(p.downloads_week or 0), p.name or ""))
+    if sort == "update":
+        by_name = sorted(base, key=lambda p: (p.name or "").lower())
+        return sorted(by_name, key=lambda p: p.updated or "", reverse=True)
+    if sort == "name":
+        return sorted(base, key=lambda p: (p.name or "").lower())
+    if sort == "rating":
+        return sorted(base, key=lambda p: (-(p.rating_avg or 0), p.name or ""))
+    return base
+
+
 def facet_counts(projects, kind):
     counts = {}
     for p in projects:
@@ -620,10 +642,7 @@ def directory():
 
     qs = Project.query
     qs = apply_facets(qs, active)
-    if q:
-        base = scored_projects(q, qs)
-    else:
-        base = SORT_ORDERS.get(sort, SORT_ORDERS["popular"])[1](qs).all()
+    base = sorted_results(q, sort, qs)
 
     facets = {kind: facet_counts(base, kind) for kind, _ in FACET_KINDS}
     page_items, total, pages = paginate(base, page)
@@ -653,14 +672,11 @@ def directory_facet(slug):
         if not found:
             abort(404)
     q = (request.args.get("q") or "").strip()
-    sort = request.args.get("sort", "popular")
+    sort = request.args.get("sort", "score" if q else "popular")
     page = parse_int(request.args.get("page"), 1)
     qs = Project.query
     qs = apply_facets(qs, active)
-    if q:
-        base = scored_projects(q, qs)
-    else:
-        base = SORT_ORDERS.get(sort, SORT_ORDERS["popular"])[1](qs).all()
+    base = sorted_results(q, sort, qs)
     facets = {k: facet_counts(base, k) for k, _ in FACET_KINDS}
     page_items, total, pages = paginate(base, page)
     heading = "Open Source Software"
@@ -1074,6 +1090,7 @@ def reviews_hub():
 
 
 @app.route("/create")
+@app.route("/create/")
 def create_project():
     return render_template("create.html", logged_in=current_user.is_authenticated)
 
@@ -1081,6 +1098,44 @@ def create_project():
 @app.route("/support")
 def support_page():
     return render_template("support.html")
+
+
+# ---------------------------------------------------------------------------
+# Routes — content pages (podcast / articles / case studies / blog)
+# ---------------------------------------------------------------------------
+@app.route("/podcast/")
+def podcast():
+    episodes = get_content("podcast_episodes", [])
+    description = get_content("podcast_description", "")
+    return render_template("podcast.html", episodes=episodes,
+                           description=description)
+
+
+@app.route("/articles/")
+def articles():
+    posts = get_content("articles", [])
+    description = get_content("articles_description", "")
+    return render_template("articles.html", posts=posts,
+                           description=description)
+
+
+@app.route("/software/case-studies/")
+def case_studies():
+    categories = get_content("business_categories", [])
+    featured = BusinessProduct.query.filter_by(is_featured=True).all()
+    return render_template("case_studies.html",
+                           categories=categories, featured=featured)
+
+
+@app.route("/software/vendors/")
+def vendors():
+    return render_template("vendors.html")
+
+
+@app.route("/blog/")
+def blog():
+    posts = get_content("articles", [])
+    return render_template("blog.html", posts=posts)
 
 
 # ---------------------------------------------------------------------------

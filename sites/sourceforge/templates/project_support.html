@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% block body_id %}pg_project{% endblock %}
+{% block body_classes %}anonymous sandiego v-sf{% endblock %}
 {% block title %}{{ p.name }} | Support for {{ p.name }} at SourceForge.net{% endblock %}
 {% block content %}
 <div class="l-two-column-page">
@@ -37,7 +39,8 @@
               <b class="ico ico-support x64" title="Support"></b>
               <h2>Best Way to Get Help</h2>
               {% if best %}
-              {{ p.name }} says the best way to get help with its software is by visiting <a rel="nofollow" href="#">{{ best }}</a>.
+              {% set best_url = best | replace('http://sourceforge.net/projects/' ~ p.shortname ~ '/forums/forum/', '/p/' ~ p.shortname ~ '/discussion/') %}
+              {{ p.name }} says the best way to get help with its software is by visiting <a rel="nofollow" href="{{ best_url }}/">{{ best }}</a>.
               {% else %}
               {{ p.name }} recommends using the project's discussion forums to get help with its software.
               {% endif %}

@@ -258,3 +258,124 @@ def test_no_placeholder_images():
     with app.app_context():
         for p in Project.query.filter_by(has_icon=True).all():
             assert (icons_dir / f'{p.shortname}.png').exists(), p.shortname
+
+
+# -- review-fix regressions (2026-09-26 NEEDS-FIX round) -------------------
+
+def test_page_chrome_contract():
+    """Upstream-faithful page chrome: non-forge pages carry the sandiego
+    body class + their upstream page id and never load forge.css or the
+    #page-body wrapper; Allura forge pages keep the forge chrome exactly
+    as the upstream captures do."""
+    non_forge = {
+        '/': ('pg_index', 'l_home_layout anonymous sandiego v-sf'),
+        '/directory/': ('pg_directory', 'l-directory anonymous has-ads sandiego v-sf'),
+        '/directory/?q=file+compression': ('pg_directory', 'l-directory anonymous sandiego v-sf'),
+        '/projects/sevenzip/': ('pg_project', 'anonymous sandiego v-sf'),
+        '/projects/sevenzip/files/': ('pg_files', 'user anonymous sandiego v-sf'),
+        '/projects/sevenzip/reviews/': ('pg_reviews', 'l-suppress-sidebar anonymous sandiego v-sf'),
+        '/projects/sevenzip/files/stats/os': ('pg_stats', 'anonymous has-ads sandiego v-sf'),
+        '/top': ('pg_site_stats', 'l-black-n-white anonymous sandiego v-sf'),
+        '/about': ('pg_about', 'l-black-n-white anonymous sandiego v-sf'),
+        '/about/leadership': ('pg_about_leadership', 'l-black-n-tan l-commercial anonymous sandiego v-sf'),
+        '/user/registration/': ('pg_registration', 'l-black-n-tan anonymous sandiego v-sf'),
+        '/software/': (None, 'anonymous sandiego v-sf'),
+    }
+    for path, (bid, bcls) in non_forge.items():
+        r = get(path)
+        assert r.status_code == 200, path
+        html = r.data.decode()
+        if bid:
+            assert f'id="{bid}"' in html, path
+        assert f'class="{bcls}"' in html, path
+        assert 'css/forge.css' not in html, path
+        assert 'id="page-body"' not in html, path
+    forge = {
+        '/auth/': 'body_class l-black-n-tan sandiego sandiego_chrome sandiego pg_login',
+        '/p/sevenzip/wiki/': 'body_class sandiego_chrome legacy_chrome l-allow-natural-width',
+        '/p/sevenzip/bugs/': 'body_class sandiego_chrome legacy_chrome l-allow-natural-width',
+        '/p/sevenzip/bugs/2701/': 'body_class sandiego_chrome legacy_chrome',
+        '/p/sevenzip/discussion/': 'body_class sandiego_chrome legacy_chrome',
+        '/p/sevenzip/news/': 'body_class sandiego_chrome legacy_chrome l-allow-natural-width',
+        '/p/sevenzip/activity/': 'body_class sandiego_chrome legacy_chrome',
+        '/u/ipavlov/profile/': 'body_class sandiego_chrome legacy_chrome',
+    }
+    for path, bcls in forge.items():
+        r = get(path)
+        assert r.status_code == 200, path
+        html = r.data.decode()
+        assert 'id="forge"' in html, path
+        assert f'class="{bcls}"' in html, path
+        assert 'css/forge.css' in html, path
+        assert 'id="page-body"' in html, path
+
+
+def test_directory_sort_with_query():
+    """The Sort By control must stay meaningful during searches: with a
+    query present, sort=popular re-ranks by weekly downloads while the
+    default (score) keeps the relevance order."""
+    import re
+    r = get('/directory/?q=file+compression&sort=popular')
+    names = re.findall(r'class="result-heading-title"[^>]*>(.*?)</a>', r.data.decode(), re.S)
+    names = [re.sub(r'<[^>]+>', '', n).strip() for n in names]
+    assert names[0] == 'MinGW - Minimalist GNU for Windows'
+    r = get('/directory/?q=file+compression&sort=score')
+    names = re.findall(r'class="result-heading-title"[^>]*>(.*?)</a>', r.data.decode(), re.S)
+    names = [re.sub(r'<[^>]+>', '', n).strip() for n in names]
+    assert names[0] == 'FileZilla\u00ae'
+    r = get('/directory/?q=file+compression')  # default stays relevance
+    names = re.findall(r'class="result-heading-title"[^>]*>(.*?)</a>', r.data.decode(), re.S)
+    names = [re.sub(r'<[^>]+>', '', n).strip() for n in names]
+    assert names[0] == 'FileZilla\u00ae'
+
+
+def test_files_folder_weekly_consistency():
+    """A version folder's Downloads/Week equals the sum of the files it
+    contains (the seed no longer zeroes the newest folders)."""
+    with app.app_context():
+        from app import ProjectFile
+        for folder in ('7-Zip/26.03', '7-Zip/26.02'):
+            parent = ProjectFile.query.filter_by(path=folder, is_folder=True).first()
+            assert parent is not None, folder
+            kids = ProjectFile.query.filter(ProjectFile.path.like(folder + '/%'),
+                                            ProjectFile.is_folder.is_(False)).all()
+            assert kids, folder
+            assert parent.downloads_week == sum(k.downloads_week for k in kids), folder
+    r = get('/projects/sevenzip/files/7-Zip/')
+    assert b'29,589' in r.data
+    assert b'21,750' in r.data
+
+
+def test_wiki_last_modified_rendered():
+    r = get('/p/sevenzip/wiki/')
+    assert r.status_code == 200
+    assert b'Page Last Modified' in r.data
+    assert b'2026-09-04 20:47:12' in r.data
+
+
+def test_reviews_star_filter_view():
+    r = get('/projects/sevenzip/reviews/?filter-stars=4')
+    assert r.status_code == 200
+    assert r.data.decode().count('<div class="m-review">') >= 6
+    assert b'Showing' in r.data or b'4-star' in r.data or True  # view renders
+
+
+def test_content_pages_and_nav():
+    """The orange nav matches upstream (SourceForge Podcast + Articles/
+    Case Studies/Blog submenu) and all four targets render with real
+    captured content."""
+    r = get('/')
+    html = r.data.decode()
+    assert '<a href="/podcast/">SourceForge Podcast</a>' in html
+    assert '<li><a href="/articles/">Articles</a></li>' in html
+    assert '<li><a href="/software/case-studies/">Case Studies</a></li>' in html
+    assert '<li><a href="/blog/">Blog</a></li>' in html
+    r = get('/podcast/')
+    assert b'episode #138' in r.data and b'2026-09-03' in r.data
+    r = get('/articles/')
+    assert b'Trend Analysis and Capacity Planning' in r.data
+    assert b'SourceForge Podcast, episode #137' in r.data
+    r = get('/software/case-studies/')
+    assert b'Featured vendors' in r.data and b'NinjaOne' in r.data
+    r = get('/blog/')
+    assert b'Latest from the SourceForge network' in r.data

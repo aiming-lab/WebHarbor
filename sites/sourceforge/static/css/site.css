@@ -21,6 +21,20 @@
 .cta-register { padding-top: 30px; }
 .no-results { padding: 30px; font-size: 1.1rem; color: #666; }
 /* Dropdown menus (vanilla-JS replacements for Foundation) */
+/* Long URLs in the support recommendation must wrap instead of overflowing
+   narrow viewports (Foundation would clip via its grid; plain anchors don't). */
+#support-preferred a { overflow-wrap: anywhere; }
+/* The registration form nests rows inside a full-width column; Foundation's
+   nested-row negative margins would push the form past a 768px viewport. */
+#register .row { margin-left: 0; margin-right: 0; }
+#register .row .column { padding-left: 0; padding-right: 0; }
+
+/* Rules ported from the upstream forge.css for pages that no longer load it
+   (files toolbar, support icon, stats zebra rows). */
+.btn-bar { display: block; clear: both; padding: 10px; border-radius: 4px; text-decoration: none; min-width: 1em; }
+.btn-bar .btn { margin: 0; }
+.x64 { font-size: 64px; width: 64px; height: 64px; }
+table.striped tbody tr:nth-child(odd) { background-color: rgb(241.3, 241.3, 241.3); }
 .nav-dropdown { position: relative; }
 .nav-dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #ccc; border-radius: 3px; min-width: 180px; padding: 6px 0; z-index: 60; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
 .nav-dropdown.open .nav-dropdown-menu { display: block; }
@@ -30,9 +44,10 @@
 #top_nav_admin ul.dropdown > li > ul { display: none; position: absolute; top: 100%; left: 0; background: #4b4949; border-radius: 0 0 3px 3px; min-width: 200px; z-index: 60; list-style: none; padding: 4px 0; }
 #top_nav_admin ul.dropdown > li.show-sub > ul { display: block; }
 #top_nav_admin ul.dropdown > li > ul a { display: block; padding: 8px 16px; color: #fff !important; font-size: 0.85rem; white-space: nowrap; }
-.sort-by { position: relative; }
-.sort-by .menu { display: none; position: absolute; top: 100%; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 3px; min-width: 170px; padding: 6px 0; z-index: 60; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
-.sort-by .is-dropdown-submenu-parent.open .menu { display: block; }
+.sort-by { display: flex; align-items: center; justify-content: flex-end; }
+.sort-by .menu.is-dropdown-submenu { display: none; position: absolute; top: 100%; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 3px; min-width: 170px; padding: 6px 0; z-index: 60; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
+.sort-by .is-dropdown-submenu-parent.open .menu.is-dropdown-submenu { display: block; }
+.sort-by .is-dropdown-submenu-parent { position: relative; }
 .sort-by .menu a { display: block; padding: 8px 16px; color: #333 !important; font-size: 0.85rem; }
 .sort-by .menu a.active { font-weight: bold; }
 .off-canvas { display: none; }

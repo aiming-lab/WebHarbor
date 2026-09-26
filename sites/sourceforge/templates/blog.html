@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block body_classes %}anonymous sandiego v-sf{% endblock %}
+{% block title %}SourceForge Blog{% endblock %}
+{% block content %}
+<div class="header">
+  <div class="row"><div class="column large-10"><h1 class="page-title">SourceForge Blog</h1></div></div>
+</div>
+<div class="row main-content">
+  <div class="column small-12">
+    <p>News, product updates, and stories from the SourceForge team &mdash; plus highlights from across the SourceForge network.</p>
+    <h3>Latest from the SourceForge network</h3>
+    <ul class="article-list">
+      {% for a in posts %}
+      <li class="article">
+        <h4 class="article-title">{{ a.title }}</h4>
+        <div class="article-meta">
+          <span class="article-category">{{ a.category }}</span> &middot;
+          <time class="article-date" datetime="{{ a.date }}">{{ a.date }}</time>
+        </div>
+      </li>
+      {% else %}
+      <li>No posts yet.</li>
+      {% endfor %}
+    </ul>
+    <p>For long-form thought leadership, browse the <a href="/articles/">Articles</a> hub.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,7 +1,12 @@
 {% extends "base.html" %}
+{% block viewport %}width=1100{% endblock %}
+{% block body_id %}forge{% endblock %}
+{% block body_classes %}body_class sandiego_chrome legacy_chrome l-allow-natural-width{% endblock %}
+{% block forge_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/forge.css') }}">{% endblock %}
 {% block title %}{{ p.name }} / Wiki / {{ page.title }}{% endblock %}
 {% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">{% endblock %}
 {% block content %}
+<section id="page-body" class="neighborhood-Projects project-{{ p.shortname }} mountpoint-wiki">
 <div class="l-two-column-page">
   <div class="l-side-column l-has-sidebar">
     <div class="side-column-contents">
@@ -26,6 +31,10 @@
           <label class="simple">Authors: </label>
           {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/" class="user-mention">{{ dn }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
         </div>
+        <div class="grid-9 gravatar sm">
+          <label class="simple">Page Last Modified: </label>
+          <span class="wiki-mod-date">{{ page.mod_date }}</span>
+        </div>
       </div>
       <div>
         <div><div class="markdown_content">{{ page.body }}</div></div>
@@ -35,4 +44,5 @@
     </div>
   </div>
 </div>
+</section>
 {% endblock %}

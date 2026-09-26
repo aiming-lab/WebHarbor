@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% block body_id %}pg_stats{% endblock %}
+{% block body_classes %}anonymous has-ads sandiego v-sf{% endblock %}
 {% block title %}{{ p.name }} Download Statistics{% endblock %}
 {% block head_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/activity.css') }}">{% endblock %}
 {% block content %}
@@ -18,13 +20,13 @@
           <li>
             <a href="/projects/{{ p.shortname }}/files/stats/map" rel="nofollow">
               <h3>Countries</h3>
-              <span class="stat-summary">Top: <strong>{{ top_country.label.split()[0] if top_country }}</strong>, at {{ ((top_country.count / total * 100) | round(0)) | int }}%</span>
+              <span class="stat-summary">Top: <strong>{{ top_country.label.split()[0] if top_country }}</strong>{% if top_country %}, at {{ ((top_country.count / total * 100) | round(0)) | int }}%{% endif %}</span>
             </a>
           </li>
           <li>
             <a href="/projects/{{ p.shortname }}/files/stats/os" rel="nofollow">
               <h3>Operating Systems</h3>
-              <span class="stat-summary">Top: <strong>{{ top_os.label if top_os }}</strong>, at {{ ((top_os.count / total * 100) | round(0)) | int }}%</span>
+              <span class="stat-summary">Top: <strong>{{ top_os.label if top_os }}</strong>{% if top_os %}, at {{ ((top_os.count / total * 100) | round(0)) | int }}%{% endif %}</span>
             </a>
           </li>
         </ul>
