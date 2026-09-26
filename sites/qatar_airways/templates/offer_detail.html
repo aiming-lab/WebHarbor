@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ offer.title }} | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Offers › {{ offer.category }}</div>
+    <h1>{{ offer.title }}</h1>
+    <p class="sub" style="margin:0">{{ offer.discount_line }}{% if offer.valid_until and offer.valid_until != 'Ongoing' %} · Offer valid until {{ offer.valid_until }}{% endif %}</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <img src="{{ offer.image }}" alt="{{ offer.title }}" style="border-radius:6px;width:100%;height:320px;object-fit:cover">
+    <h2 style="margin-top:18px">About this offer</h2>
+    <p>{{ offer.description }}</p>
+    {% if offer.terms %}
+    <h3>Terms and conditions</h3>
+    <p class="hint">{{ offer.terms }}</p>
+    {% endif %}
+  </div>
+  <aside>
+    {% if offer.promo_code %}
+    <div class="tier-card" style="border-color:var(--qr-burgundy)">
+      <div class="tier-name">Promo code</div>
+      <p style="font-size:26px;font-weight:700;letter-spacing:.12em;margin:10px 0;color:var(--qr-burgundy)">{{ offer.promo_code }}</p>
+      <p class="hint">{{ offer.discount_line }}</p>
+      <a class="btn btn-primary" href="/en/homepage.html">Use this code when booking</a>
+    </div>
+    {% else %}
+    <div class="tier-card">
+      <div class="tier-name">{{ offer.discount_line }}</div>
+      <p class="hint">No promo code needed for this offer.</p>
+      <a class="btn btn-outline" href="/en/homepage.html">Plan your trip</a>
+    </div>
+    {% endif %}
+    <h3 style="margin-top:22px">Other offers</h3>
+    {% for other in others %}
+    <p style="margin:8px 0"><a href="{{ other.detail_path() }}">{{ other.title }}</a></p>
+    {% endfor %}
+  </aside>
+</div>
+{% endblock %}

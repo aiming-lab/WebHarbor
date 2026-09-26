@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ dest.title_h1 or ('Flights to ' ~ dest.city) }} | Qatar Airways{% endblock %}
+{% block content %}
+<div class="dest-hero">
+  <img src="{{ dest.hero_image or dest.h1_image or dest.card_image }}" alt="{{ dest.city }}">
+  <div class="dest-hero-body">
+    <div class="crumbs" style="color:#eee">Home › Destinations › {{ dest.city }}</div>
+    <h1>{{ dest.title_h1 or ('Flights to ' ~ dest.city) }}</h1>
+{# Upstream guide copy carries the live site's own paragraph markup
+   (<p>/<br>/<a>/<span> + &nbsp; entities; audited: no script/event
+   handlers anywhere in the 172 payloads), so render it as HTML like
+   qatarairways.com does instead of dumping escaped tags on the page. #}
+    <p style="margin:6px 0 0;max-width:640px">{{ dest.intro | safe }}</p>
+  </div>
+</div>
+<div class="wrap">
+  <div class="dest-tabs">
+    <a class="active" href="#overview">Overview</a>
+    <a href="#attractions">{{ dest.attractions_heading or 'Things to do' }}</a>
+    <a href="#activities">{{ dest.activities_heading or 'Activities' }}</a>
+    <a href="#dining">{{ dest.dining_heading or 'Food' }}</a>
+    <a href="#shopping">{{ dest.shopping_heading or 'Shopping' }}</a>
+  </div>
+  <div class="actions-bar">
+    <a class="btn btn-primary" href="/en/search-results.html?from=DOH&amp;to={{ search_code }}&amp;adults=1&amp;cabin=Economy">Search flights to {{ dest.city }} ({{ search_code }})</a>
+    <span class="hint" style="align-self:center">{{ dest.country }} · {{ dest.region.replace('themiddleeast','Middle East').replace('theamericas','The Americas') }}</span>
+  </div>
+
+  <section class="dest-section" id="overview">
+    <div>
+      <h2>{{ dest.overview_heading or ('Book your visit to ' ~ dest.city) }}</h2>
+      <p>{{ dest.overview_text | safe }}</p>
+    </div>
+    <img src="{{ dest.overview_image or dest.card_image }}" alt="{{ dest.city }} overview">
+  </section>
+  <section class="dest-section" id="attractions">
+    <img src="{{ dest.attractions_image or dest.card_image }}" alt="Things to do in {{ dest.city }}">
+    <div>
+      <h2>{{ dest.attractions_heading or ('Things to do in ' ~ dest.city) }}</h2>
+      <p>{{ dest.attractions_text | safe }}</p>
+    </div>
+  </section>
+  <section class="dest-section" id="activities">
+    <div>
+      <h2>{{ dest.activities_heading or ('Activities in ' ~ dest.city) }}</h2>
+      <p>{{ dest.activities_text | safe }}</p>
+    </div>
+    <img src="{{ dest.activities_image or dest.card_image }}" alt="Activities in {{ dest.city }}">
+  </section>
+  <section class="dest-section" id="dining">
+    <img src="{{ dest.dining_image or dest.card_image }}" alt="Food in {{ dest.city }}">
+    <div>
+      <h2>{{ dest.dining_heading or ('Food in ' ~ dest.city) }}</h2>
+      <p>{{ dest.dining_text | safe }}</p>
+    </div>
+  </section>
+  <section class="dest-section" id="shopping">
+    <div>
+      <h2>{{ dest.shopping_heading or ('Shopping in ' ~ dest.city) }}</h2>
+      <p>{{ dest.shopping_text | safe }}</p>
+    </div>
+    <img src="{{ dest.shopping_image or dest.card_image }}" alt="Shopping in {{ dest.city }}">
+  </section>
+
+  <section class="section section-alt" style="margin-top:20px;border-radius:6px">
+    <h2>Flight FAQ</h2>
+    <details class="faq-item"><summary>Are there direct flights to {{ dest.city }}?</summary>
+      <div class="faq-body">Qatar Airways operates direct flights to {{ dest.city }} ({{ dest.iata }}). You can check our timetable for flight times and frequency.</div></details>
+    <details class="faq-item"><summary>How can I fly to {{ dest.city }} with Qatar Airways?</summary>
+      <div class="faq-body">You can fly directly to {{ dest.city }} on Qatar Airways. We connect to over 170 destinations via Doha, offering smooth and efficient transfers at Hamad International Airport.</div></details>
+    <details class="faq-item"><summary>What travel classes are available on flights to {{ dest.city }}?</summary>
+      <div class="faq-body">Travel class availability depends on the route and operating airline. For flights operated by Qatar Airways, you can enjoy Business Class (featuring Qsuite on select aircraft) and Economy Class.</div></details>
+  </section>
+
+  <section class="section">
+    <h2>Feeling inspired? Explore beyond {{ dest.country }}</h2>
+    <div class="card-grid">
+      {% for d in related %}
+      <div class="card">
+        <img src="{{ d.card_image }}" alt="{{ d.city }}">
+        <div class="card-body">
+          <h3>{{ d.city }}</h3>
+          <p>{{ d.country }}</p>
+          <a class="btn btn-outline btn-sm" href="{{ d.detail_path() }}">Flights to {{ d.city }}</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

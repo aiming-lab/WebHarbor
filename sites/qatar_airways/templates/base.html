@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Book Flights with a World-class Airline | Qatar Airways{% endblock %}</title>
+  <meta name="description" content="Book trips to destinations around the world with Qatar Airways &amp; fly on board an award-winning airline. Enjoy special fares, collect Avios &amp; more.">
+  <link rel="icon" href="/static/icons/favicon.ico">
+  <link rel="stylesheet" href="/static/css/qr.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="qr-header">
+  <div class="header-top">
+    <div class="wrap header-top-inner">
+      <span class="travel-alert">Travel alerts: 18 June 2026 — Updates on Travelling with Power Banks · Qatar Airways Expands Global Network to over 160 Destinations</span>
+      <nav class="header-top-links">
+        <a href="/en/help.html">Help</a>
+        <a href="/en/check-in.html">Check in online</a>
+        <a href="/en/manage-booking.html">Manage booking</a>
+        <a href="/en/destinations.html">Destinations</a>
+      </nav>
+    </div>
+  </div>
+  <div class="header-main">
+    <div class="wrap header-main-inner">
+      <a class="brand" href="/en/homepage.html">
+        <img src="/static/icons/qr-official-logo.png" alt="Qatar Airways">
+      </a>
+      <nav class="main-nav">
+        <a href="/en/destinations.html">Explore</a>
+        <a href="/en/offers.html">Offers</a>
+        <a href="/en/baggage.html">Experience</a>
+        <a href="/en/our-fleet.html">Our fleet</a>
+        <a href="/en/Privilege-Club/membership-tiers.html">Privilege Club</a>
+        <a href="/en/flight-status.html">Flight status</a>
+      </nav>
+      <div class="header-actions">
+        {% if pc_user %}
+          <a class="btn btn-outline" href="/en/Privilege-Club/dashboard.html">Hi, {{ pc_user.first_name }} ({{ pc_user.tier }})</a>
+          <form method="post" action="/en/Privilege-Club/logout.html" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <a class="btn btn-outline" href="/en/Privilege-Club/login.html">Log in</a>
+          <a class="btn btn-primary" href="/en/Privilege-Club/join.html">Join Privilege Club</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="wrap">
+      {% for category, message in messages %}
+        <div class="flash {{ 'flash-ok' if category == 'ok' else 'flash-error' }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="qr-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <h4>Group companies</h4>
+      <ul>
+        <li><a href="/en/help.html">Business solutions</a></li>
+        <li><a href="/en/help.html">About us</a></li>
+        <li><a href="/en/help.html">Careers</a></li>
+        <li><a href="/en/help.html">Press releases</a></li>
+        <li><a href="/en/help.html">Contact us</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Plan your trip</h4>
+      <ul>
+        <li><a href="/en/homepage.html">Book flights</a></li>
+        <li><a href="/en/manage-booking.html">Manage booking</a></li>
+        <li><a href="/en/check-in.html">Check in</a></li>
+        <li><a href="/en/baggage.html">Baggage allowance</a></li>
+        <li><a href="/en/our-fleet.html">Our fleet</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Experience</h4>
+      <ul>
+        <li><a href="/en/offers/qsuite-experience.html">Qsuite</a></li>
+        <li><a href="/en/offers/starlink-wifi.html">Onboard Wi-Fi</a></li>
+        <li><a href="/en/help.html">Special services</a></li>
+        <li><a href="/en/help.html">Lounges</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Privilege Club</h4>
+      <ul>
+        <li><a href="/en/Privilege-Club/join.html">Join now</a></li>
+        <li><a href="/en/Privilege-Club/membership-tiers.html">Member tiers &amp; benefits</a></li>
+        <li><a href="/en/Privilege-Club/avios-calculator.html">Avios calculator</a></li>
+        <li><a href="/en/offers.html">Member offers</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap footer-legal">
+    <p>World's Best Business Class · World's Best Business Class Lounge · Best Airline in the Middle East</p>
+    <p>© 2026 Qatar Airways. All rights reserved · <a href="/en/help.html">Cookie policy</a> · <a href="/en/help.html">Legal</a> · <a href="/en/help.html">Privacy</a> · <a href="/en/help.html">Accessibility</a></p>
+  </div>
+</footer>
+</body>
+</html>

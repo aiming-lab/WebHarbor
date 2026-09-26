@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Privilege Club login | Qatar Airways{% endblock %}
+{% block content %}
+<div class="wrap section" style="max-width:560px">
+  <h1>Welcome back</h1>
+  <p class="sub">Log in to your Privilege Club account to manage your Avios, Qpoints and trips.</p>
+  {% if error %}<div class="form-errors"><p>{{ error }}</p></div>{% endif %}
+  <form method="post" action="/en/Privilege-Club/login.html">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Email address</label>
+    <input type="email" name="email" placeholder="you@example.com" required>
+    <label>Password</label>
+    <input type="password" name="password" placeholder="Your password" required>
+    <div class="actions-bar">
+      <button class="btn btn-primary" type="submit">Log in</button>
+    </div>
+  </form>
+  <p class="hint">Not a member yet? <a href="/en/Privilege-Club/join.html">Join Privilege Club</a> — it's free.</p>
+</div>
+{% endblock %}

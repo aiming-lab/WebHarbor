@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Join Privilege Club | Qatar Airways{% endblock %}
+{% block content %}
+<div class="wrap section two-col">
+  <div>
+    <h1>Join Privilege Club</h1>
+    <p class="sub">Unlock a world of exclusive rewards: earn Avios on every journey, spend them on award flights and upgrades, and pay with Cash + Avios to save.</p>
+    {% if errors %}
+    <div class="form-errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <form method="post" action="/en/Privilege-Club/join.html" style="max-width:560px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div style="flex:0 0 110px">
+          <label>Title</label>
+          <select name="title"><option>Mr</option><option>Mrs</option><option>Ms</option></select>
+        </div>
+        <div><label>First name</label><input type="text" name="first_name" required></div>
+        <div><label>Last name</label><input type="text" name="last_name" required></div>
+      </div>
+      <label>Email address</label>
+      <input type="email" name="email" placeholder="you@example.com" required>
+      <label>Password (at least 8 characters)</label>
+      <input type="password" name="password" minlength="8" required>
+      <div class="form-row">
+        <div><label>Country/Region of residence</label><input type="text" name="country" placeholder="Qatar"></div>
+        <div><label>Mobile number</label><input type="text" name="mobile" placeholder="+974 1234 5678"></div>
+      </div>
+      <div class="actions-bar">
+        <button class="btn btn-primary" type="submit">Join now</button>
+      </div>
+    </form>
+  </div>
+  <aside>
+    <img src="/static/images/brand/PCC-351x565.jpg" alt="Privilege Club" style="border-radius:6px;max-height:420px;object-fit:cover;width:100%">
+    <h3>Why join?</h3>
+    <ul>
+      <li>Earn Avios on every booking with Qatar Airways and oneworld partners</li>
+      <li>Access member-only offers and up to 20% off at Qatar Duty Free</li>
+      <li>Free Starlink Wi-Fi on board</li>
+      <li>Upgrade with Avios via Manage booking</li>
+    </ul>
+  </aside>
+</div>
+{% endblock %}

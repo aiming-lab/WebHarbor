@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Choose your return flight | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Book › Search results › Return flight</div>
+    <h1>Choose your return flight</h1>
+    <p class="sub" style="margin:0">
+      Outbound {{ outbound.code }} {{ outbound.origin_code }} → {{ outbound.dest_code }} on {{ q.depart }}
+      · returning {{ ret.strftime('%a, %d %b %Y') }} · {{ q.cabin }} Class · {{ q.fare }}
+    </p>
+  </div>
+</div>
+<div class="wrap section">
+  {% if not inbound %}
+    <div class="notice">No Qatar Airways flights operate {{ q.to }} → {{ q.from }} in our schedule. Go back and choose a one-way trip.</div>
+  {% else %}
+  {% for flight in inbound %}
+  <div class="flight-card">
+    <div class="flight-head">
+      <div>
+        <div class="route">{{ flight.code }} · {{ flight.origin_code }} → {{ flight.dest_code }}</div>
+        <div class="meta">{{ flight.equipment_name }} · {{ ret.strftime('%a, %d %b %Y') }}</div>
+      </div>
+    </div>
+    <div class="flight-times">
+      <div class="time-box"><div class="t">{{ flight.dep_time }}</div><div class="c">{{ flight.origin_code }}</div></div>
+      <div class="duration"><div class="line"><span class="dot"></span></div>{{ flight.duration_min // 60 }}h {{ '%02d' % (flight.duration_min % 60) }}m</div>
+      <div class="time-box"><div class="t">{{ flight.arr_time }}</div><div class="c">{{ flight.dest_code }}</div></div>
+    </div>
+    <div style="padding:0 18px 16px">
+      <a class="btn btn-primary btn-sm"
+         href="/en/booking/passenger-details.html?from={{ q.from }}&amp;to={{ q.to }}&amp;depart={{ q.depart }}&amp;ret={{ q.ret }}&amp;ret_flight={{ flight.id }}&amp;adults={{ q.adults }}&amp;children={{ q.children }}&amp;cabin={{ q.cabin }}&amp;fare={{ q.fare }}&amp;flight={{ q.flight }}{% if q.promo %}&amp;promo={{ q.promo }}{% endif %}">Select return flight</a>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

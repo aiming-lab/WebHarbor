@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Passenger details | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Book › Passenger details</div>
+    <h1>Passenger details</h1>
+    <p class="sub" style="margin:0">{{ flight.code }} {{ flight.origin_code }} → {{ flight.dest_code }} on {{ q.depart }}
+    {% if q.get('ret') and q.get('ret_flight') %} · return on {{ q.ret }}{% endif %}
+    · {{ q.adults }} adult(s){% if q.get('children') and q.children|int > 0 %} + {{ q.children }} child(ren){% endif %} · {{ q.cabin }} Class</p>
+  </div>
+</div>
+<div class="wrap section">
+  {% if errors %}
+  <div class="form-errors">
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form method="post" action="/en/booking/passenger-details.html" style="max-width:860px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="from" value="{{ q.get('from') }}">
+    <input type="hidden" name="to" value="{{ q.get('to') }}">
+    <input type="hidden" name="depart" value="{{ q.get('depart') }}">
+    <input type="hidden" name="ret" value="{{ q.get('ret') or '' }}">
+    <input type="hidden" name="ret_flight" value="{{ q.get('ret_flight') or '' }}">
+    <input type="hidden" name="adults" value="{{ q.get('adults') }}">
+    <input type="hidden" name="children" value="{{ q.get('children') }}">
+    <input type="hidden" name="cabin" value="{{ q.get('cabin') }}">
+    <input type="hidden" name="fare" value="{{ q.get('fare') }}">
+    <input type="hidden" name="flight" value="{{ q.get('flight') }}">
+    <input type="hidden" name="promo" value="{{ q.get('promo') or '' }}">
+
+    {% set n_pax = (q.get('adults', '1')|int) + (q.get('children', '0')|int) %}
+    {% for i in range(n_pax) %}
+    <fieldset style="border:1px solid var(--qr-line);border-radius:6px;margin-bottom:16px;padding:14px 18px">
+      <legend style="font-weight:700">Passenger {{ i + 1 }}{% if i >= (q.get('adults','1')|int) %} (child){% endif %}</legend>
+      <div class="form-row">
+        <div style="flex:0 0 110px">
+          <label>Title</label>
+          <select name="title_{{ i }}">
+            <option>Mr</option><option>Mrs</option><option>Ms</option><option>Mstr</option>
+          </select>
+        </div>
+        <div>
+          <label>First name</label>
+          <input type="text" name="first_{{ i }}" value="{{ q.get('first_' ~ i, '') }}" required>
+        </div>
+        <div>
+          <label>Last name</label>
+          <input type="text" name="last_{{ i }}" value="{{ q.get('last_' ~ i, '') }}" required>
+        </div>
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <div class="form-row">
+      <div>
+        <label>Contact email</label>
+        <input type="email" name="email" value="{{ q.get('email', '') }}" required>
+        <div class="hint">Your booking confirmation and e-tickets are sent here.</div>
+      </div>
+      <div>
+        <label>Contact mobile number</label>
+        <input type="text" name="mobile" value="{{ q.get('mobile', '') }}" placeholder="+974 1234 5678" required>
+      </div>
+    </div>
+    <label>Privilege Club number <span style="font-weight:400;color:var(--qr-grey)">(optional — to earn Avios)</span></label>
+    <input type="text" name="pc_number" value="{{ q.get('pc_number', '') }}" placeholder="QRPC…">
+    <div class="hint">Enter your membership number to collect Avios and Qpoints on this trip.</div>
+
+    <div class="actions-bar">
+      <button class="btn btn-primary" type="submit">Continue to payment</button>
+      <a class="btn btn-outline" href="/en/search-results.html?from={{ q.get('from') }}&amp;to={{ q.get('to') }}&amp;depart={{ q.get('depart') }}{% if q.get('ret') %}&amp;return={{ q.get('ret') }}{% endif %}&amp;adults={{ q.get('adults') }}&amp;children={{ q.get('children') or 0 }}&amp;cabin={{ q.get('cabin') }}{% if q.get('promo') %}&amp;promo={{ q.get('promo') }}{% endif %}">Back to flight results</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

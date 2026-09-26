@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Boarding pass | Qatar Airways{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="boarding-pass">
+    <div class="bp-head">
+      <div>
+        <div style="font-size:12px;letter-spacing:.14em">QATAR AIRWAYS · BOARDING PASS</div>
+        <div style="font-size:13px">{{ booking.cabin }} Class · {{ booking.fare_type }}</div>
+      </div>
+      <div class="pnr">{{ booking.pnr }}</div>
+    </div>
+    <div class="bp-grid">
+      <div><div class="l">Passenger</div><div class="v">{{ booking.passengers[0].first_name }} {{ booking.passengers[0].last_name }}</div></div>
+      <div><div class="l">Flight</div><div class="v">{{ leg.flight_code }}</div></div>
+      <div><div class="l">From</div><div class="v">{{ leg.origin_code }}</div></div>
+      <div><div class="l">To</div><div class="v">{{ leg.dest_code }}</div></div>
+      <div><div class="l">Date</div><div class="v">{{ leg.leg_date }}</div></div>
+      <div><div class="l">Departs</div><div class="v">{{ leg.dep_time }}</div></div>
+      <div><div class="l">Arrives</div><div class="v">{{ leg.arr_time }}</div></div>
+      <div><div class="l">Gate</div><div class="v">{{ leg.gate }}</div></div>
+      <div><div class="l">Boarding</div><div class="v">{{ boarding_time }}</div></div>
+      <div><div class="l">Seat</div><div class="v">{{ booking.passengers[0].seat_out or '—' }}</div></div>
+      <div><div class="l">Aircraft</div><div class="v">{{ leg.equipment }}</div></div>
+      <div><div class="l">Status</div><div class="v">Checked in</div></div>
+    </div>
+    <div class="bp-barcode">|||| ||| ||||| || ||||| ||| || ||||| |||| |||</div>
+  </div>
+  {% if booking.passengers|length > 1 %}
+  <p class="hint" style="text-align:center">Additional passengers on this booking: {{ booking.passengers[1].first_name }} {{ booking.passengers[1].last_name }} — seat {{ booking.passengers[1].seat_out or '—' }}.</p>
+  {% endif %}
+  <div class="actions-bar" style="justify-content:center">
+    <a class="btn btn-outline" href="/en/check-in/{{ booking.pnr }}.html">Change seats</a>
+    <a class="btn btn-ghost" href="/en/manage-booking/{{ booking.pnr }}.html">Manage booking</a>
+  </div>
+</div>
+{% endblock %}

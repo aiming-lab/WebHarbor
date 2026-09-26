@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Booking {{ booking.pnr }} | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Manage booking › {{ booking.pnr }}</div>
+    <h1>Booking {{ booking.pnr }}</h1>
+    <p class="sub" style="margin:0">
+      {{ booking.summary_line() }} · {{ booking.cabin }} Class ·
+      {% if booking.status == 'cancelled' %}<span style="color:#8a1f1f;font-weight:700">Cancelled</span>{% else %}Confirmed{% endif %}
+    </p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <h3>Itinerary</h3>
+    <table class="data">
+      <tr><th>Flight</th><th>Route</th><th>Date</th><th>Departs</th><th>Arrives</th><th>Gate</th></tr>
+      {% for leg in booking.legs %}
+      <tr>
+        <td>{{ leg.flight_code }}</td>
+        <td>{{ leg.origin_code }} → {{ leg.dest_code }}</td>
+        <td>{{ leg.leg_date }}</td>
+        <td>{{ leg.dep_time }}</td>
+        <td>{{ leg.arr_time }}</td>
+        <td>{{ leg.gate }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <h3>Passengers</h3>
+    <table class="data">
+      <tr><th>Name</th><th>Seat</th><th>Ticket number</th></tr>
+      {% for p in booking.passengers %}
+      <tr><td>{{ p.title }} {{ p.first_name }} {{ p.last_name }}</td>
+          <td>{% if booking.legs|length > 1 %}{{ p.seat_out or '—' }} / {{ p.seat_ret or '—' }}{% else %}{{ p.seat_out or '—' }}{% endif %}</td>
+          <td>{{ p.ticket_number }}</td></tr>
+      {% endfor %}
+    </table>
+    <h3>Payment</h3>
+    <div class="kv">
+      <div class="k">Cabin / fare</div><div>{{ booking.cabin }} · {{ booking.fare_type }}</div>
+      <div class="k">Fare subtotal</div><div>{{ booking.fare_subtotal() | usd }}</div>
+      {% if booking.promo_discount() %}<div class="k">Promo {{ booking.promo_code }}</div><div>− {{ booking.promo_discount() | usd }}</div>{% endif %}
+      <div class="k">Seat fees</div><div>{{ booking.seat_fees() | usd }}</div>
+      <div class="k">Extra baggage ({{ booking.extra_bags }} piece(s))</div><div>{{ booking.bag_fees() | usd }}</div>
+      <div class="k">Total paid</div><div><strong>{{ booking.total_paid | usd }}</strong></div>
+    </div>
+  </div>
+  <aside>
+    <h3>Manage your trip</h3>
+    {% if booking.status != 'cancelled' %}
+    <form method="post" action="/en/manage-booking/{{ booking.pnr }}.html" style="border:1px solid var(--qr-line);border-radius:6px;padding:14px;margin-bottom:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add_bags">
+      <label>Add extra baggage</label>
+      <p class="hint">Each additional 23kg piece costs {{ bag_fee | usd }} on this route.</p>
+      <div class="form-row">
+        <div>
+          <select name="bags">
+            <option value="1">1 piece</option><option value="2">2 pieces</option>
+            <option value="3">3 pieces</option><option value="4">4 pieces</option>
+          </select>
+        </div>
+        <div style="align-self:end">
+          <button class="btn btn-outline btn-sm" type="submit">Add baggage</button>
+        </div>
+      </div>
+    </form>
+    <div style="border:1px solid var(--qr-line);border-radius:6px;padding:14px;margin-bottom:14px">
+      <strong>Select seats / check in</strong>
+      <p class="hint">Choose seats from the aircraft seat map and complete online check-in.</p>
+      <a class="btn btn-outline btn-sm" href="/en/check-in/{{ booking.pnr }}.html">Select seats</a>
+    </div>
+    {% if booking.cabin == 'Economy' %}
+    <form method="post" action="/en/manage-booking/{{ booking.pnr }}.html" style="border:1px solid var(--qr-line);border-radius:6px;padding:14px;margin-bottom:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="upgrade_avios">
+      <strong>Upgrade with Avios</strong>
+      <p class="hint">Move this booking up to Business Class on the same flight for <strong>{{ '{:,}'.format(upgrade_cost) }} Avios</strong>.</p>
+      {% if member and booking.pc_number == member.membership_no %}
+      <p class="hint">Your balance: {{ '{:,}'.format(member.avios) }} Avios.</p>
+      <button class="btn btn-outline btn-sm" type="submit">Upgrade to Business Class</button>
+      {% else %}
+      <p class="hint">Sign in with the Privilege Club account on this booking to upgrade with Avios.</p>
+      <a class="btn btn-ghost btn-sm" href="/en/Privilege-Club/login.html">Log in to Privilege Club</a>
+      {% endif %}
+    </form>
+    {% endif %}
+    <form method="post" action="/en/manage-booking/{{ booking.pnr }}.html" style="border:1px solid #e5b4b4;border-radius:6px;padding:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="cancel">
+      <strong style="color:#8a1f1f">Cancel booking</strong>
+      <p class="hint">Cancelling is final for this mirror. Refunds are processed to the original payment method.</p>
+      <button class="btn btn-outline btn-sm" style="border-color:#8a1f1f;color:#8a1f1f" type="submit">Cancel this booking</button>
+    </form>
+    {% else %}
+    <div class="form-errors"><p>This booking was cancelled. Any refund is processed to the original payment method.</p></div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

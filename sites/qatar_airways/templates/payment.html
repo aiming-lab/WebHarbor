@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Payment | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Book › Passenger details › Payment</div>
+    <h1>Payment</h1>
+    <p class="sub" style="margin:0">{{ flight.code }} {{ flight.origin_code }} → {{ flight.dest_code }} · {{ draft.depart }}
+    {% if ret_flight %} · return {{ ret_flight.code }} {{ ret_flight.dest_code }} → {{ ret_flight.origin_code }} · {{ draft.ret }}{% endif %}
+    · {{ fare_name }}</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    {% if errors %}
+    <div class="form-errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <form method="post" action="/en/booking/payment.html">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Card number</label>
+      <input type="text" name="card_number" placeholder="4000 1234 5678 9010" required>
+      <label>Cardholder name</label>
+      <input type="text" name="card_name" placeholder="Name on card" required>
+      <div class="form-row">
+        <div>
+          <label>Expiry (MM/YYYY)</label>
+          <input type="text" name="card_expiry" placeholder="12/2029" required>
+        </div>
+        <div>
+          <label>CVV</label>
+          <input type="text" name="card_cvv" placeholder="123" required>
+        </div>
+      </div>
+      <div class="actions-bar">
+        <button class="btn btn-primary" type="submit">Pay {{ total | usd }} and confirm booking</button>
+      </div>
+      <p class="hint">We accept Visa, Mastercard and American Express. Your booking is confirmed instantly with a 6-character reference (PNR).</p>
+    </form>
+  </div>
+  <aside>
+    <h3>Fare summary</h3>
+    <table class="data">
+      <tr><th>{{ flight.code }} {{ flight.origin_code }} → {{ flight.dest_code }}</th><td style="text-align:right">{{ draft.depart }}</td></tr>
+      {% if ret_flight %}
+      <tr><th>{{ ret_flight.code }} {{ ret_flight.origin_code }} → {{ ret_flight.dest_code }}</th><td style="text-align:right">{{ draft.ret }}</td></tr>
+      {% endif %}
+      <tr><th>Passengers</th><td style="text-align:right">{{ pax }}</td></tr>
+      <tr><th>Cabin / fare</th><td style="text-align:right">{{ fare_name }}</td></tr>
+      <tr><th>Fare subtotal</th><td style="text-align:right">{{ subtotal | usd }}</td></tr>
+      {% if discount %}
+      <tr><th>Promo {{ draft.promo }} discount</th><td style="text-align:right">− {{ discount | usd }}</td></tr>
+      {% endif %}
+      <tr><th>Taxes and fees</th><td style="text-align:right">{{ taxes | usd }}</td></tr>
+      <tr><th>Total</th><td style="text-align:right"><strong>{{ total | usd }}</strong></td></tr>
+    </table>
+    {% if promo_offer %}
+    <div class="notice">Promo code <strong>{{ draft.promo }}</strong> applied — {{ promo_offer.discount_line }}.</div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

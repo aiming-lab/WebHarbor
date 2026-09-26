@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Help | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Help</div>
+    <h1>How can we help?</h1>
+    <p class="sub" style="margin:0">Find everything that you need for your trip — manage your bookings, check baggage, request certificates and browse FAQs.</p>
+  </div>
+</div>
+<div class="wrap section">
+  <div class="two-col" style="margin-bottom:22px">
+    <form method="get" action="/en/help.html" class="form-row">
+      <div>
+        <label>Search help and FAQs</label>
+        <input type="text" name="q" placeholder="e.g. extra baggage, check-in, promo code" value="{{ q }}">
+      </div>
+      <div style="align-self:end;max-width:200px">
+        <button class="btn btn-primary" type="submit">Search</button>
+      </div>
+    </form>
+    <div class="pager" style="justify-content:flex-end">
+      <a href="/en/help.html" class="{{ 'current' if not cat else '' }}">All</a>
+      {% for c in categories %}
+      <a href="/en/help.html?cat={{ c }}" class="{{ 'current' if cat == c else '' }}">{{ c }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h2>My trips</h2>
+      <p class="hint">Take control of your upcoming trips.</p>
+      <div class="actions-bar">
+        <a class="btn btn-outline btn-sm" href="/en/manage-booking.html">Manage booking</a>
+        <a class="btn btn-outline btn-sm" href="/en/check-in.html">Check in online</a>
+        <a class="btn btn-outline btn-sm" href="/en/flight-status.html">Track a flight</a>
+        <a class="btn btn-outline btn-sm" href="/en/baggage.html">Check my baggage allowance</a>
+      </div>
+      <h2>Explore our special services</h2>
+      <ul class="hint">
+        <li>Carriage of Pets — request arrangements for travelling with your pet (booking reference + last name)</li>
+        <li>Young solo traveller — children flying alone are taken care of throughout the journey</li>
+        <li>Medical assistance — submit the form between 7 days and 48 hours before departure</li>
+        <li>Carriage of firearms — submit more than 24 hours before departure (Oman: 19 days; Bahrain: 9 days)</li>
+      </ul>
+      <h2>Get in touch with us</h2>
+      <p class="hint">Help for hard-of-hearing passengers: dedicated 24-hour support number <strong>+1 833 607 2675</strong>.</p>
+    </div>
+    <div>
+      <h2>Frequently asked questions</h2>
+      {% if items %}
+        {% for faq in items %}
+        <details class="faq-item">
+          <summary>{{ faq.question }}</summary>
+          <div class="faq-body">{{ faq.answer }}</div>
+        </details>
+        {% endfor %}
+      {% else %}
+        <div class="notice">No FAQs matched your search. Try different words or browse a category.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Baggage allowance for flights | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Experience › Baggage allowance</div>
+    <h1>Baggage allowance</h1>
+    <p class="sub" style="margin:0">Checked baggage is included on all Qatar Airways flights. The number and weight of baggage pieces you can carry varies according to the route and cabin class booked.</p>
+  </div>
+</div>
+<div class="wrap section">
+  <div class="two-col" style="margin-bottom:26px">
+    <div>
+      <h2>Check my baggage allowance</h2>
+      <form method="get" action="/en/baggage.html">
+        <label>Fare type</label>
+        <select name="fare">
+          {% for name, pieces, weight in table %}
+          <option value="{{ name }}" {{ 'selected' if fare == name }}>{{ name }}</option>
+          {% endfor %}
+        </select>
+        <label>Route type</label>
+        <select name="route">
+          <option value="americas" {{ 'selected' if route_type == 'americas' }}>To / from Africa or the Americas (piece concept)</option>
+          <option value="weight" {{ 'selected' if route_type == 'weight' }}>All other destinations (weight concept)</option>
+        </select>
+        <div class="actions-bar"><button class="btn btn-primary" type="submit">Check allowance</button></div>
+      </form>
+      {% if lookup %}
+      <div class="notice" style="font-size:16px"><strong>{{ lookup.fare }}</strong> includes <strong>{{ lookup.allowance }}</strong> of checked baggage on this route type.</div>
+      {% endif %}
+    </div>
+    <div>
+      <h2>Need to carry more?</h2>
+      <p>Save when you purchase extra baggage allowance on qatarairways.com or our mobile app before your trip. Open <a href="/en/manage-booking.html">Manage booking</a> and add extra 23kg pieces:</p>
+      <table class="data">
+        <tr><th>Route distance</th><th>Price per extra 23kg piece</th></tr>
+        <tr><td>Up to 3,000 km</td><td>USD 60</td></tr>
+        <tr><td>3,001 – 8,000 km</td><td>USD 100</td></tr>
+        <tr><td>Over 8,000 km</td><td>USD 140</td></tr>
+      </table>
+      <p class="hint">Bookings made with promo code BAG15 get 15% off extra baggage fees added in Manage booking.</p>
+      <img src="/static/images/brand/h2-paid-baggage.jpg" alt="Extra baggage" style="border-radius:6px;margin-top:12px;height:200px;width:100%;object-fit:cover">
+    </div>
+  </div>
+
+  <h2>Baggage allowance per fare type</h2>
+  <table class="data">
+    <tr><th>Fare</th><th>Checked baggage — to/from Africa or the Americas</th><th>Checked baggage — all other destinations</th></tr>
+    {% for name, pieces, weight in table %}
+    <tr><td>{{ name }}</td><td>{{ pieces }}</td><td>{{ weight }}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="hint">For flights departing the United States of America: to be in accordance with TSA travel regulations, passengers can only carry 1 piece of hand baggage and 1 personal item. For flights to or from Brazil, Economy customers can carry one piece of carry-on baggage up to 10 kg (22lb).</p>
+
+  <h2 style="margin-top:26px">Baggage guidelines</h2>
+  <div class="two-col">
+    <div>
+      <h3>Carry-on baggage</h3>
+      <p class="hint">Dimensions must not exceed 50cm (length) x 37cm (width) x 25cm (depth) — 20in x 15in x 10in. Economy: 1 piece up to 7kg. Business and First: 2 pieces up to 15kg total.</p>
+      <h3>Checked baggage</h3>
+      <p class="hint">A single piece cannot exceed 32kg (70lb). For piece-concept routes, dimensions per bag must not exceed 158cm total; for all other routes the total must not exceed 300cm.</p>
+    </div>
+    <div>
+      <h3>Infants</h3>
+      <p class="hint">Infants have their own checked baggage allowance, plus one baby stroller or collapsible carrycot at no additional cost. Infants travelling on a separate seat are also entitled to one car seat at no additional cost.</p>
+      <h3>Privilege Club members</h3>
+      <p class="hint">Silver, Gold and Platinum members are eligible for additional baggage allowance based on their membership tier and route: Silver 15kg or one piece, Gold 20kg or one piece, Platinum 25kg or two pieces.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

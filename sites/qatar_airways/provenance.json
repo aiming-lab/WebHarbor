@@ -1,0 +1,91 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-24",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the qatarairways.com mirror: the flight search (route + date + cabin + passenger parameters over the frozen DOH-hub schedule, with per-flight fare ladders for every fare family), the booking flow (search results -> optional return-leg picker -> passenger details with validation -> card payment validation -> confirmation with PNR), Manage booking (PNR + last name retrieval, extra baggage at distance-banded rates with the BAG15 promo, seat selection via check-in, Avios upgrades for the booking's Privilege Club member, cancellation), online check-in with per-aircraft seat maps, preferred-seat fees and boarding passes (deterministic gate + boarding time), flight status (by number and by route against the frozen 2026-09-24 status snapshot), the destination guide (253 cards with region filter, scored search, pagination; 172 full guides with the real Overview/Things to do/Activities/Food/Shopping copy), offers (10 real-copy offers, promo codes applied at search and honoured at payment), the Privilege Club domain (join, sign in, dashboard with balances and tier progress, profile edit, activities ledger, Avios calculator), baggage allowance tables + calculator, fleet pages with seat maps, the help hub with scored FAQ search, and the newsletter subscribe form. Route and URL shapes follow the live site (/en/homepage.html, /en/search-results.html, /en/manage-booking.html, /en/check-in.html, /en/flight-status.html, /en/destinations/<slug>.html, /en/Privilege-Club/...)."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time/boot-time seeder. All catalog rows come from the tracked source_data/ snapshots; the four benchmark members share one frozen PBKDF2 digest so the SQLite seed is byte-reproducible, and every seed function is gated as a whole for the byte-identical /reset invariant. Benchmark members carry pre-seeded bookings (QK17TP, QR92XN, QB55MD, QB31ZA, QC08BV, QD44RS, QD77LW) with legs, passengers, fares computed by the same fare engine the site uses, plus an activities ledger."
+  },
+  {
+   "path": "source_data/cityList_en.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen copy of the live site's city/airport picker feed (2,518 stations with IATA shorthand, airport name, city, country) as served by qatarairways.com on 2026-09-24."
+  },
+  {
+   "path": "source_data/destination_cards.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 253 destination cards from the live destinations page: city, country, region, card image path and 'flights to <city>' slug, exactly as served on 2026-09-24."
+  },
+  {
+   "path": "source_data/destination_repositories.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 172 full destination guide payloads behind the live site's /qr/qrweb/repository.<CC>.<IATA>.<locale>.json endpoints: destination title, page intro, Overview / Things to do / Activities / Food / Shopping tab copy, hero/h1/h2/h3/square image paths, coordinates and cross-links, captured 2026-09-24."
+  },
+  {
+   "path": "source_data/flight_catalog_2026-09-24.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen schedule snapshot: 500 real QR flights (number, origin, destination, equipment code, scheduled/estimated/actual departure and arrival times, ops status) as returned by the live flight-status API on 2026-09-24."
+  },
+  {
+   "path": "source_data/flight_status_raw_2026-09-24.json",
+   "classification": "captured-upstream-content",
+   "scope": "The raw flight-status API payload behind the 500-flight catalog: per-flight opsStatusCode, estimated/actual times and station details, captured 2026-09-24."
+  },
+  {
+   "path": "source_data/card_iata_map.json",
+   "classification": "derived-data",
+   "scope": "Frozen card-slug -> IATA resolution produced by scripts_dev/harvest_assets.py so the seeder, the destination image tree and the flight search agree on which station each destination card represents; curated entries cover multi-airport cities (e.g. London->LHR, Tokyo->HND with Tokyo Narita->NRT, Washington->IAD)."
+  },
+  {
+   "path": "source_data/image_source_urls.json",
+   "classification": "derived-data",
+   "scope": "Frozen per-path actual byte source map produced by scripts_dev/harvest_assets.py. Every harvested image file maps to the upstream qatarairways.com CDN URL that really produced its bytes: the file's own URL on the happy path, or the same-destination fallback URL whose Wayback capture the bytes came from when the main rendition has no capture. scripts_dev/build_asset_inventory.py consumes this map so asset_inventory.json's source_url is always the true origin, never a nominal one (review F-3 fix)."
+  },
+  {
+   "path": "scraped_data/*.html",
+   "classification": "captured-upstream-content",
+   "scope": "Wayback Machine captures of the live pages (homepage, destinations, a full destination guide, offers, fleet, baggage allowance, checking in, help hub, Privilege Club home and membership tiers) used as the editorial source for the marketing copy, FAQ content, tier tables, fleet facts and baggage rules; gitignored + dockerignored, build-time only."
+  },
+  {
+   "path": "static/images/destinations/<IATA>/*.jpg",
+   "classification": "captured-upstream-imagery",
+   "scope": "Real qatarairways.com destination imagery (hero, overview, attractions, activities, dining, shopping and h3 card renditions) fetched at the original /content/dam/ CDN paths via web.archive.org replays; per-file bytes, SHA-256 and the actual byte source URL (own URL, or the recorded same-destination fallback URL for renditions with no Wayback capture) in asset_inventory.json, derived from source_data/image_source_urls.json."
+  },
+  {
+   "path": "static/images/brand/*.jpg|png|svg",
+   "classification": "captured-upstream-imagery",
+   "scope": "Real qatarairways.com brand imagery referenced by the captured pages (Qsuite, Al Mourjan lounge, A350/A380/B777/B787 fleet, mobile check-in, paid baggage, Privilege Club, destination promos, newsletter background) fetched at the original /content/dam/ CDN paths via web.archive.org replays; per-file bytes, SHA-256 and actual byte source URL in asset_inventory.json."
+  },
+  {
+   "path": "static/icons/*",
+   "classification": "captured-upstream-imagery",
+   "scope": "The Qatar Airways logo, favicon, global-region flag and the mdd/post service icon set as served by the live site."
+  },
+  {
+   "path": "static/css/qr.css",
+   "classification": "mirror-code",
+   "scope": "Brand stylesheet reproducing the live site's burgundy palette (#5c0632 family, accent #8e2157, ink #1f212b, greys #757f8b/#6d6e71/#d1d8df) and Jotia-first typography with Verdana/Geneva fallbacks."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "20 goal-style tasks across nine functional domains (booking chains, manage booking, check-in, flight status, destinations, offers+promo, Privilege Club, baggage, fleet/help), each with the inline grading contract (verifier_path + judge_rubric) and no answer material."
+  },
+  {
+   "path": "verify/verify_lib.py, verify/verify_0.py .. verify_19.py",
+   "classification": "benchmark-verifiers",
+   "scope": "Deterministic per-task verifiers: trajectory identity + same-origin + screenshot checks, navigation gates per task domain, affirmative answer matching against frozen ground truth hardcoded in each verifier, and initial-vs-after SQLite delta checks (exact allowed row deltas for stateful tasks, full row-identity for read-only tasks)."
+  },
+  {
+   "path": "tests/",
+   "classification": "mirror-code",
+   "scope": "pytest suite: app robustness (all surfaces render, forms validate, booking/manage/check-in/upgrade flows persist, scored searches), seed determinism (seed matches the source snapshots; a re-boot against a seed copy is byte-identical) and the tasks contract (keys, word caps, goal-style wording, verifier paths exist, no answer material)."
+  }
+ ]
+}

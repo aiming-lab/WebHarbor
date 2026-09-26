@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Select seats | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Check in › {{ booking.pnr }}</div>
+    <h1>Select seats and check in</h1>
+    <p class="sub" style="margin:0">{{ booking.summary_line() }} · {{ booking.cabin }} Class ·
+      {% for leg in booking.legs %}{{ leg.flight_code }} {{ leg.leg_date }} {{ leg.dep_time }} · {% endfor %}
+      Aircraft: {{ aircraft.code }}</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <p class="seat-label">Grey seats are free · Gold-outlined rows are preferred seats ({{ seat_fee | usd }} each for Economy) · Crossed-out seats are taken.</p>
+    <form method="post" action="/en/check-in/{{ booking.pnr }}.html">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="seatmap">
+        {% for row in rows %}
+        <div class="seat-row">
+          <span class="row-label">{{ row.row }}</span>
+          {% for col in row.cols %}
+            {% set seat_id = row.row ~ col %}
+            {% set input_id = 'seat_' ~ seat_id %}
+            <span class="seat {{ 'preferred' if row.preferred }} {{ 'taken' if seat_id in taken }}" data-seat="{{ seat_id }}">{{ seat_id }}</span>
+          {% endfor %}
+          <span class="cabin-tag">{{ row.cabin }}{% if row.preferred %} · preferred row{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <h3>Assign seats</h3>
+      {% for p in booking.passengers %}
+      <div class="form-row">
+        <div>
+          <label>{{ p.first_name }} {{ p.last_name }} — outbound seat</label>
+          <input type="text" name="seat_{{ p.id }}" placeholder="e.g. 30C" value="{{ p.seat_out or '' }}" required>
+        </div>
+        {% if ret_leg %}
+        <div>
+          <label>{{ p.first_name }} {{ p.last_name }} — return seat</label>
+          <input type="text" name="seat_ret_{{ p.id }}" placeholder="e.g. 12A" value="{{ p.seat_ret or '' }}">
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <div class="actions-bar">
+        <button class="btn btn-primary" type="submit">Complete check-in</button>
+      </div>
+    </form>
+  </div>
+  <aside>
+    <h3>Your trip</h3>
+    <div class="kv">
+      <div class="k">Booking reference</div><div>{{ booking.pnr }}</div>
+      {% for leg in booking.legs %}
+      <div class="k">{{ leg.flight_code }} {{ leg.origin_code }}→{{ leg.dest_code }}</div><div>{{ leg.leg_date }} · {{ leg.dep_time }}–{{ leg.arr_time }} · gate {{ leg.gate }}</div>
+      {% endfor %}
+      <div class="k">Passengers</div><div>{{ booking.passengers|length }}</div>
+    </div>
+    <div class="notice">Preferred seats cost {{ seat_fee | usd }} each (free in Business Class). Your boarding pass opens right after check-in.</div>
+  </aside>
+</div>
+{% endblock %}

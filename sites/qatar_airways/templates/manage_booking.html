@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Manage booking | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Manage booking</div>
+    <h1>Manage booking</h1>
+    <p class="sub" style="margin:0">Retrieve your trip with your booking reference and last name.</p>
+  </div>
+</div>
+<div class="wrap section" style="max-width:640px">
+  {% if error %}<div class="form-errors"><p>{{ error }}</p></div>{% endif %}
+  <form method="post" action="/en/manage-booking.html">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Booking reference (PNR)</label>
+    <input type="text" name="pnr" placeholder="e.g. QK17TP" required>
+    <label>Last name</label>
+    <input type="text" name="last_name" placeholder="Last name on the booking" required>
+    <div class="actions-bar">
+      <button class="btn btn-primary" type="submit">Retrieve booking</button>
+    </div>
+  </form>
+  <div class="notice">With Manage booking you can view your itinerary, add extra baggage, select seats, upgrade with Avios and cancel your trip.</div>
+</div>
+{% endblock %}

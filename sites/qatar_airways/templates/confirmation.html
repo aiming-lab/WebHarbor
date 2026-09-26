@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Booking confirmed | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Book › Confirmation</div>
+    <h1>Your booking is confirmed</h1>
+    <p class="sub" style="margin:0">A confirmation has been sent to {{ booking.contact_email }}.</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <div class="notice">Booking reference: <strong style="font-size:20px;letter-spacing:.1em">{{ booking.pnr }}</strong></div>
+    <h3>Itinerary</h3>
+    <table class="data">
+      <tr><th>Flight</th><th>Route</th><th>Date</th><th>Departs</th><th>Arrives</th><th>Aircraft</th></tr>
+      {% for leg in booking.legs %}
+      <tr>
+        <td>{{ leg.flight_code }}</td>
+        <td>{{ leg.origin_code }} → {{ leg.dest_code }}</td>
+        <td>{{ leg.leg_date }}</td>
+        <td>{{ leg.dep_time }}</td>
+        <td>{{ leg.arr_time }}</td>
+        <td>{{ leg.equipment }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <h3>Passengers</h3>
+    <table class="data">
+      <tr><th>Name</th><th>Type</th><th>Ticket number</th></tr>
+      {% for p in booking.passengers %}
+      <tr><td>{{ p.title }} {{ p.first_name }} {{ p.last_name }}</td><td>{{ p.pax_type }}</td><td>{{ p.ticket_number }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  <aside>
+    <h3>Payment summary</h3>
+    <table class="data">
+      <tr><th>Cabin / fare</th><td style="text-align:right">{{ booking.cabin }} · {{ booking.fare_type }}</td></tr>
+      <tr><th>Fare subtotal</th><td style="text-align:right">{{ booking.fare_subtotal() | usd }}</td></tr>
+      {% if booking.promo_discount() %}
+      <tr><th>Promo {{ booking.promo_code }} discount</th><td style="text-align:right">− {{ booking.promo_discount() | usd }}</td></tr>
+      {% endif %}
+      <tr><th>Taxes and fees</th><td style="text-align:right">{{ (booking.total_paid - booking.fare_subtotal() + booking.promo_discount()) | usd }}</td></tr>
+      <tr><th>Total paid</th><td style="text-align:right"><strong>{{ booking.total_paid | usd }}</strong></td></tr>
+      <tr><th>Card</th><td style="text-align:right">•••• {{ booking.card_last4 }}</td></tr>
+    </table>
+    <div class="actions-bar" style="flex-direction:column;align-items:stretch">
+      <a class="btn btn-primary" href="/en/manage-booking/{{ booking.pnr }}.html">Manage this booking</a>
+      <a class="btn btn-outline" href="/en/check-in/{{ booking.pnr }}.html">Check in online</a>
+      <a class="btn btn-ghost" href="/en/homepage.html">Back to home</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

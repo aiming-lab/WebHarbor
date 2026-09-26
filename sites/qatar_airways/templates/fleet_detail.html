@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ a.code }} | Our fleet | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Our fleet › {{ a.code }}</div>
+    <h1>{{ a.code }}</h1>
+    <p class="sub" style="margin:0">{{ a.seat_capacity }}{% if a.qsuite %} · Features Qsuite{% endif %}{% if a.first_class %} · Features First Class{% endif %}</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <img src="{{ a.image }}" alt="{{ a.code }}" style="border-radius:6px;width:100%;height:320px;object-fit:cover">
+    <h2>About this aircraft</h2>
+    <p>{{ a.description }}</p>
+    <h3>Cabin configuration</h3>
+    <table class="data">
+      <tr><th>Cabin</th><th>Rows</th><th>Seats per row</th></tr>
+      {% set spec = a.seatmap_spec() %}
+      {% if spec.get('first') %}<tr><td>First</td><td>{{ spec.first.rows[0] }}–{{ spec.first.rows[1] }}</td><td>{{ spec.first.cols | length }}</td></tr>{% endif %}
+      {% if spec.get('business') %}<tr><td>Business</td><td>{{ spec.business.rows[0] }}–{{ spec.business.rows[1] }}</td><td>{{ spec.business.cols | length }}</td></tr>{% endif %}
+      {% if spec.get('economy') %}<tr><td>Economy</td><td>{{ spec.economy.rows[0] }}–{{ spec.economy.rows[1] }}</td><td>{{ spec.economy.cols | length }}</td></tr>{% endif %}
+    </table>
+  </div>
+  <div>
+    <h2>Seat map</h2>
+    <p class="hint">Gold-outlined rows are preferred seats. Seat maps are also shown during seat selection in check-in.</p>
+    <div class="seatmap">
+      {% for row in a.layout_rows() %}
+      <div class="seat-row">
+        <span class="row-label">{{ row.row }}</span>
+        {% for col in row.cols %}<span class="seat {{ 'preferred' if row.preferred }}">{{ row.row }}{{ col }}</span>{% endfor %}
+        <span class="cabin-tag">{{ row.cabin }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

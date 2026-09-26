@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Explore top destinations worldwide | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head" style="background:linear-gradient(rgba(28,6,18,.55),rgba(28,6,18,.35)), url('/static/images/brand/hn-doh-jfk-lon-collage-en.jpg') center 40%/cover;color:#fff;border-bottom:0">
+  <div class="wrap">
+    <div class="crumbs" style="color:#eee">Home › Destinations</div>
+    <h1 style="color:#fff">Where can Qatar Airways take you?</h1>
+    <p class="sub" style="color:#eee;margin:0">Qatar Airways Expands Global Network to over 160 Destinations — explore our network across six continents via our home in Doha.</p>
+  </div>
+</div>
+<div class="wrap section">
+  <div class="two-col" style="margin-bottom:18px">
+    <form method="get" action="/en/destinations.html" class="form-row">
+      <div>
+        <label>Search destinations</label>
+        <input type="text" name="q" placeholder="City, country or airport code" value="{{ q }}">
+      </div>
+      <div style="align-self:end;max-width:220px">
+        <button class="btn btn-primary" type="submit">Search</button>
+      </div>
+    </form>
+    <div class="pager" style="justify-content:flex-end">
+      <a href="/en/destinations.html" class="{{ 'current' if not region else '' }}">All</a>
+      {% for key, label in regions %}
+      <a href="/en/destinations.html?region={{ key }}" class="{{ 'current' if region == key else '' }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <p class="sub">{{ total }} destination{{ '' if total == 1 else 's' }}{% if region %} in {{ region }}{% endif %}{% if q %} matching “{{ q }}”{% endif %} · page {{ page }} of {{ pages }}</p>
+  <div class="card-grid">
+    {% for dest in items %}
+    <div class="card">
+      <img src="{{ dest.card_image }}" alt="{{ dest.city }}">
+      <div class="card-body">
+        <span class="badge">{{ dest.iata }}</span>
+        <h3>{{ dest.city }}</h3>
+        <p>{{ dest.country }}</p>
+        <a class="btn btn-outline btn-sm" href="{{ dest.detail_path() }}">Flights to {{ dest.city }}</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="pager">
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% else %}<a href="/en/destinations.html?{% if region %}region={{ region }}&amp;{% endif %}{% if q %}q={{ q }}&amp;{% endif %}page={{ p }}">{{ p }}</a>{% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
