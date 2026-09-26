@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile | REMAX{% endblock %}
+{% block content %}
+<div class="form-card" style="max-width:560px;">
+  <h1>Edit Profile</h1>
+  <p class="sub">Update the details REMAX agents use to reach you.</p>
+  <form method="post" action="{{ url_for('account_edit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="first_name">First Name</label><input id="first_name" type="text" name="first_name" value="{{ current_user.first_name }}" required></div>
+    <div class="field"><label for="last_name">Last Name</label><input id="last_name" type="text" name="last_name" value="{{ current_user.last_name }}" required></div>
+    <div class="field"><label for="phone">Phone</label><input id="phone" type="tel" name="phone" value="{{ current_user.phone or '' }}"></div>
+    <div class="field"><label for="buyer_type">Buyer Type</label>
+      <select id="buyer_type" name="buyer_type">
+        <option value="">Select one (optional)</option>
+        {% for t in ['First time home buyer', 'Move-up buyer', 'Downsizer', 'Luxury Buyer', 'Renter'] %}
+        <option {% if current_user.buyer_type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">SAVE CHANGES</button>
+  </form>
+  <p class="form-note"><a href="{{ url_for('account') }}">Back to account</a></p>
+</div>
+{% endblock %}

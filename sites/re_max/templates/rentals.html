@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% set header_mode = 'search' %}
+{% block title %}New Real Estate - Find Homes For Rent | REMAX{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="container-wide">
+    <h1>New Real Estate - Find Homes For Rent</h1>
+    <p class="sub">Find the newest rental homes and condos for rent with REMAX. Search through the newest rental homes below, or browse all rentals.</p>
+  </div>
+</div>
+<div class="container-wide">
+  <table class="data-table">
+    <thead>
+      <tr><th>Address</th><th>Price</th><th>Bed/Bath/Sqft</th><th>Date Added</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rentals %}
+      <tr>
+        <td><a href="{{ r.detail_url() }}">{{ r.street|title }}, {{ r.city }}, {{ r.state }} {{ r.zip }} For Rent</a></td>
+        <td>{{ r.price_str() }}</td>
+        <td>{{ r.beds }} beds, {{ r.baths }} baths, {{ '{:,}'.format(r.sqft) if r.sqft else '—' }} sqft</td>
+        <td>{{ r.date_added }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

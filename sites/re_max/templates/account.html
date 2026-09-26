@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}My Account | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="account-grid">
+    <aside class="account-nav">
+      <a class="active" href="{{ url_for('account') }}">Account Overview</a>
+      <a href="{{ url_for('favorites_page') }}">Favorites ({{ favorites|length }})</a>
+      <a href="{{ url_for('account') }}#searches">Saved Searches ({{ searches|length }})</a>
+      <a href="{{ url_for('account') }}#inquiries">Messages ({{ inquiries|length }})</a>
+      <a href="{{ url_for('account_edit') }}">Edit Profile</a>
+      <a href="{{ url_for('logout') }}">Log Out</a>
+    </aside>
+    <div>
+      <div class="panel">
+        <h2>Welcome back, {{ current_user.display_name }}</h2>
+        <div class="fact-list">
+          <div class="row"><b>Name</b> {{ current_user.display_name }}</div>
+          <div class="row"><b>Email</b> {{ current_user.email }}</div>
+          <div class="row"><b>Buyer Type</b> {{ current_user.buyer_type or '—' }}</div>
+          <div class="row"><b>Phone</b> {{ current_user.phone or '—' }}</div>
+          <div class="row"><b>Member since</b> {{ current_user.created_at }}</div>
+        </div>
+      </div>
+
+      <div class="panel" id="searches">
+        <h2>Saved Searches</h2>
+        {% if searches %}
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Criteria</th><th></th></tr></thead>
+          <tbody>
+            {% for s in searches %}
+            <tr>
+              <td><a href="{{ s.url() }}">{{ s.name }}</a></td>
+              <td>{{ s.city }}, {{ s.state }}{% if s.home_type %} · {{ s.home_type }}{% endif %}{% if s.beds %} · {{ s.beds }}+ beds{% endif %}{% if s.max_price %} · up to {{ '${:,.0f}'.format(s.max_price) }}{% endif %}</td>
+              <td>
+                <form method="post" action="{{ url_for('saved_search_delete', sid=s.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="action-chip" type="submit">REMOVE</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color:#555961;">You have no saved searches yet. Save one from any city results page.</p>
+        {% endif %}
+      </div>
+
+      <div class="panel" id="inquiries">
+        <h2>Messages &amp; Inquiries</h2>
+        {% if inquiries %}
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Property / Recipient</th><th>Sent</th></tr></thead>
+          <tbody>
+            {% for i in inquiries %}
+            <tr>
+              <td>{{ 'Tour request' if i.kind == 'tour' else 'Inquiry' }}</td>
+              <td>{% if i.listing %}<a href="{{ i.listing.detail_url() }}">{{ i.listing.street|title }}, {{ i.listing.city }}</a>{% elif i.rental %}<a href="{{ i.rental.detail_url() }}">{{ i.rental.street|title }}, {{ i.rental.city }}</a>{% elif i.agent %}<a href="{{ i.agent.detail_url() }}">{{ i.agent.name }}</a>{% elif i.office %}<a href="{{ i.office.detail_url() }}">{{ i.office.name }}</a>{% else %}General{% endif %}</td>
+              <td>{{ i.created_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color:#555961;">No messages yet. Contact an agent from any listing or agent page.</p>
+        {% endif %}
+      </div>
+
+      {% if alerts %}
+      <div class="panel">
+        <h2>Listing Alerts</h2>
+        <table class="data-table">
+          <thead><tr><th>Email</th><th>Area</th></tr></thead>
+          <tbody>
+            {% for al in alerts %}
+            <tr><td>{{ al.email }}</td><td>{{ al.city }}, {{ al.state }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

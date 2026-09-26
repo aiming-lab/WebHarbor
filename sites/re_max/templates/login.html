@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Log In | REMAX{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Log In</h1>
+  <p class="sub">Log in to your REMAX account to see your favorites, saved searches and messages.</p>
+  <form method="post" action="{{ url_for('login', next=request.args.get('next', '')) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="email">Email Address</label><input id="email" type="email" name="email" required></div>
+    <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" required></div>
+    <button class="btn btn-primary btn-block" type="submit">LOG IN</button>
+  </form>
+  <p class="form-note">New to REMAX? <a href="{{ url_for('register') }}">Create an account</a>.</p>
+</div>
+{% endblock %}

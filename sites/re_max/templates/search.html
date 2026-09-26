@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Search{% if query %} "{{ query }}"{% endif %} | REMAX{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="container-wide">
+    <h1>Search Results{% if query %} for "{{ query }}"{% endif %}</h1>
+    <form method="get" action="{{ url_for('global_search') }}" style="display:flex; gap:8px; margin-top:16px; max-width:640px;">
+      <input type="text" name="q" value="{{ query }}" placeholder="Address, City, ZIP, Agent, Office, and More" style="flex:1; min-width:0; padding:14px; border:1px solid #A9AEB8; font-family:inherit; font-size:15px;">
+      <button class="btn btn-primary" type="submit">SEARCH</button>
+    </form>
+  </div>
+</div>
+<div class="container-wide">
+  {% if not query %}
+  <div class="empty-state">Enter a search term above to find homes, agents, offices and advice.</div>
+  {% else %}
+  <div class="srp-meta"><div class="srp-count">{{ results.listings|length + results.agents|length + results.offices|length + results.posts|length }} Results</div></div>
+
+  {% if results.listings %}
+  <h2 class="section-heading" style="font-size:20px;">Homes For Sale ({{ results.listings|length }})</h2>
+  <div class="listing-grid" style="margin-bottom:32px;">
+    {% for l in results.listings %}{% include '_listing_card.html' %}{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if results.agents %}
+  <h2 class="section-heading" style="font-size:20px;">Agents ({{ results.agents|length }})</h2>
+  <div class="people-grid" style="margin-bottom:32px;">
+    {% for a in results.agents %}
+    <article class="person-card">
+      <div class="person-photo">{% if a.photo %}<img src="{{ url_for('static', filename='images/' + a.photo) }}" alt="{{ a.name }}" loading="lazy">{% endif %}</div>
+      <div class="person-body">
+        <div class="person-name"><a href="{{ a.detail_url() }}" style="color:inherit;">{{ a.name }}</a></div>
+        <div class="person-title">{{ a.title }}</div>
+        <div class="person-meta">{{ a.office_name }}</div>
+        <div class="person-actions"><a href="{{ a.detail_url() }}">DETAILS</a></div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if results.offices %}
+  <h2 class="section-heading" style="font-size:20px;">Offices ({{ results.offices|length }})</h2>
+  <div class="people-grid" style="margin-bottom:32px;">
+    {% for o in results.offices %}
+    <article class="person-card">
+      <div class="person-body">
+        <div class="person-name"><a href="{{ o.detail_url() }}" style="color:inherit;">{{ o.name }}</a></div>
+        <div class="person-meta">{{ o.address }}</div>
+        <div class="person-actions"><a href="{{ o.detail_url() }}">DETAILS</a></div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if results.posts %}
+  <h2 class="section-heading" style="font-size:20px;">Articles &amp; Advice ({{ results.posts|length }})</h2>
+  <ul style="list-style:none; margin-bottom:48px;">
+    {% for p in results.posts %}
+    <li style="padding:12px 0; border-bottom:1px solid #D9D9D9;"><a href="{{ url_for('advice_post', slug=p.slug) }}">{{ p.title }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if not (results.listings or results.agents or results.offices or results.posts) %}
+  <div class="empty-state">No results for "{{ query }}". Try a city, address, agent name, office or topic.</div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

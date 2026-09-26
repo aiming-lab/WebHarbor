@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}{{ l.street|title }}, {{ l.city }}, {{ l.state }} {{ l.zip }} For Sale | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="ldp-breadcrumb">Home &gt; <a href="{{ url_for('state_page', state=l.state.lower()) }}">{{ l.state }}</a> &gt; <a href="{{ url_for('city_srp', state=l.state.lower(), city=l.city_slug()) }}">{{ l.city }}</a> &gt; {{ l.zip }} &gt; {{ l.street }}</div>
+
+  {% set gallery = l.gallery_list() %}
+  <div class="ldp-hero">
+    <div class="main-photo">
+      <img src="{{ url_for('static', filename='images/' + gallery[0]) }}" alt="{{ l.street }}, {{ l.city }}">
+      <span class="gallery-count" data-gallery>GALLERY VIEW ({{ gallery|length }} PHOTOS)</span>
+    </div>
+    <div class="side">
+      {% for g in gallery[1:3] %}
+      <div class="cell"><img src="{{ url_for('static', filename='images/' + g) }}" alt="{{ l.street }} photo {{ loop.index + 1 }}" loading="lazy"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="ldp-main">
+    <div>
+      <div class="ldp-price">{{ l.price_str() }}</div>
+      <div class="ldp-addr">{{ l.street|title }}, {{ l.city }}, {{ l.state }} {{ l.zip }}</div>
+      <div class="ldp-specs">
+        <span class="spec"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>{{ l.beds or '—' }}</span>
+        <span class="spec"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16v8H4zM7 12V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6"/></svg>{{ l.baths or '—' }}</span>
+        <span class="spec"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V9l8-6 8 6v12H4z"/></svg>{{ '{:,}'.format(l.sqft) if l.sqft else '—' }} sq ft</span>
+      </div>
+      <div class="ldp-listed">Listed by {{ l.broker }}{% if l.listed_by_agent and l.listed_by_agent != l.agent %}, {{ l.listed_by_agent }}{% elif l.agent %}, {{ l.agent }}{% endif %}</div>
+      <div class="ldp-listed">Status: {{ l.status_label().title() }} &nbsp;·&nbsp; MLS® #{{ l.mls }}</div>
+
+      <div class="ldp-actions">
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('favorite_toggle', listing_id=l.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.url }}">
+          <button class="action-chip" type="submit">FAVORITE {{ '✓' if is_favorite else '' }}</button>
+        </form>
+        {% else %}
+        <a class="action-chip" href="{{ url_for('login', next=request.url) }}">FAVORITE</a>
+        {% endif %}
+        <a class="action-chip" href="javascript:window.print()">PRINT</a>
+      </div>
+
+      {% set pb = l.presented_by_dict() %}
+      {% if pb %}
+      <div class="presented-card">
+        <h3>Presented by {{ pb.name }}</h3>
+        <div class="office">{{ pb.address }}</div>
+        <div class="office">{{ pb.phone }} • {{ pb.email }}</div>
+      </div>
+      {% endif %}
+
+      {% set ohs = l.open_house_list() %}
+      {% if ohs %}
+      <div class="open-house-box">
+        <h3>Open house schedule</h3>
+        {% for oh in ohs %}
+        <div class="oh-row">
+          <span class="oh-date">{{ oh.label }}</span>
+          <span>{{ oh.time }}</span>
+          <a href="#tour-form">Add to Calendar</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="ldp-description">
+        {% if l.description %}
+        <h3>Property description for {{ l.street|title }}, {{ l.city }}, {{ l.state }} {{ l.zip }}</h3>
+        <p>{{ l.description }}</p>
+        {% else %}
+        <h3>Property description for {{ l.street|title }}, {{ l.city }}, {{ l.state }} {{ l.zip }}</h3>
+        <p>Contact the listing office for full property details, disclosure history and showing instructions for MLS® #{{ l.mls }}.</p>
+        {% endif %}
+
+        {% set overview = l.overview_list() %}
+        {% if overview %}
+        <h3>QUICK OVERVIEW</h3>
+        <ul class="overview-grid">
+          {% for item in overview %}
+          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0043FF" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>{{ item }}</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% set sections = l.sections_dict() %}
+        {% if sections %}
+          {% for key, title in [('interior', 'INTERIOR'), ('hoa-features', 'HOA FEATURES'), ('building-and-construction', 'BUILDING AND CONSTRUCTION'), ('exterior-and-lot', 'EXTERIOR AND LOT'), ('utilities', 'UTILITIES'), ('area-and-schools', 'AREA AND SCHOOLS'), ('financial-info', 'FINANCIAL INFO')] %}
+            {% if sections.get(key) %}
+            <details class="fact-section" {{ 'open' if loop.first }}>
+              <summary>{{ title }}</summary>
+              <div class="fact-groups">
+                {% for label, value in sections[key].items() %}
+                <div class="fact-group">
+                  <h4>{{ label }}</h4>
+                  {% if value is string %}<p>{{ value }}</p>
+                  {% else %}<ul>{% for li in value %}<li>{{ li }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </details>
+            {% endif %}
+          {% endfor %}
+          <p class="ldp-footer-meta">Price per square foot and days on website are not provided values and are calculated by REMAX.</p>
+        {% endif %}
+
+        <div class="ldp-footer-meta">
+          {% if l.listed_by_agent %}Listing Agent {{ l.listed_by_agent }}<br>{% endif %}
+          {% if l.listed_by_office %}Listing Office {{ l.listed_by_office }}<br>{% endif %}
+          {% if l.updated_label %}Updated {{ l.updated_label }}{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="contact-card" id="tour-form">
+        <h3>Contact a REMAX Agent</h3>
+        <form method="post" action="{{ url_for('contact_listing') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="listing_id" value="{{ l.id }}">
+          <input type="hidden" name="next" value="{{ request.url }}">
+          <input type="text" name="name" placeholder="Name" required>
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="tel" name="phone" placeholder="Phone (optional)">
+          <textarea name="message" placeholder="I'm interested in {{ l.street|title }}, {{ l.city }}, {{ l.state }} (MLS® #{{ l.mls }})."></textarea>
+          <button class="btn btn-primary btn-block" type="submit" name="kind" value="contact">CONTACT A REMAX AGENT</button>
+          <button class="btn btn-outline btn-block" type="submit" name="kind" value="tour">TOUR WITH A REMAX AGENT</button>
+        </form>
+      </div>
+
+      {% if similar %}
+      <div class="panel" style="margin-top:24px;">
+        <h2>Similar homes in {{ l.city }}</h2>
+        {% for s in similar %}
+        <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid #D9D9D9;">
+          <a href="{{ s.detail_url() }}"><img src="{{ url_for('static', filename='images/' + s.photo) }}" alt="{{ s.street }}" style="width:90px; height:60px; object-fit:cover;"></a>
+          <div>
+            <a href="{{ s.detail_url() }}" style="color:#000E35; font-weight:600;">{{ s.price_str() }}</a>
+            <div style="font-size:13px; color:rgba(0,0,0,0.87);">{{ s.street|title }}</div>
+            <div style="font-size:12px; color:#555961;">{{ s.beds }} bds · {{ s.baths }} ba · {{ '{:,}'.format(s.sqft) if s.sqft else '—' }} sqft</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+
+  <div class="disclaimer">
+    Listings courtesy of the local MLS as distributed by MLS GRID. Based on information submitted to the MLS GRID. All data is obtained from various sources and may not have been verified by broker or MLS GRID. Supplied Open House Information is subject to change without notice. All information should be independently reviewed and verified for accuracy. Properties may or may not be listed by the office/agent presenting the information. Listing information is provided for consumers' personal, non-commercial use, solely to identify prospective properties for potential purchase; all other use is strictly prohibited and may violate relevant federal and state law. Information deemed reliable but not guaranteed. Copyright © 2026 MLS GRID. All Rights Reserved. For DMCA information, please review Copyright Complaints at https://www.remax.com/terms-of-use.
+  </div>
+</div>
+{% endblock %}

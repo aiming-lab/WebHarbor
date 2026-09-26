@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  {% for p in content.personas %}
+  <img class="hero-bg {{ 'active' if loop.first }}" src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}">
+  {% endfor %}
+  <div class="hero-overlay">
+    {% for p in content.personas %}
+    <div class="hero-slide {{ 'active' if loop.first }}">
+      <h1>{{ p.title }}</h1>
+      <p>{{ p.subtitle }}</p>
+      <a class="btn btn-cream" href="{{ p.url }}">{{ p.button }}</a>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="hero-dots">
+    {% for p in content.personas %}<span class="{{ 'active' if loop.first }}" data-slide="{{ loop.index0 }}"></span>{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-wide">
+    <h2 class="section-heading">Homes for Sale Near Me</h2>
+    {% if featured_office %}<p class="section-sub">Presented by {{ featured_office.name }}</p>{% endif %}
+    <div class="listing-grid">
+      {% for l in near %}{% include '_listing_card.html' %}{% endfor %}
+    </div>
+    <div style="text-align:center; padding: 24px;">
+      <a class="btn btn-outline" href="{{ url_for('state_directory') }}">SEE ALL LISTINGS</a>
+    </div>
+    {% if featured_office %}
+    <div class="disclaimer">
+      Listing information provided by {{ featured_office.name }}
+      {{ featured_office.phone }} • {{ featured_office.address }}
+      Each office is independently owned and operated.
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="bg-cream section">
+  <div class="container-wide">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+      <h2 class="section-heading">Advice</h2>
+      <a class="btn btn-outline" href="{{ url_for('advice') }}">VISIT THE REMAX BLOG</a>
+    </div>
+    <div class="advice-grid">
+      {% for card in content.advice_cards %}
+      <article class="advice-card">
+        <div class="photo"><img src="{{ url_for('static', filename='images/homepage/' + card.image.split('/')[-1]) }}" alt="{{ card.title }}" loading="lazy"></div>
+        <div class="body">
+          <div class="cat">{{ card.category }}</div>
+          <h3><a href="{{ url_for('advice') }}">{{ card.title }}</a></h3>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    <div style="display:flex; gap: 24px; margin-top: 24px; flex-wrap: wrap;">
+      {% for g in content.guides %}
+      <a class="btn btn-ghost" href="{{ url_for('advice') }}">{{ g.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="newsletter-band">
+  <div class="container-wide">
+    <h2>Get Real Estate Advice</h2>
+    <p>Enter your email for REMAX's HomeHQ newsletter. Grab market updates, expert selling tips, and real estate advice.</p>
+    <form class="newsletter-form" method="post" action="{{ url_for('newsletter_subscribe') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ url_for('index') }}">
+      <input type="email" name="email" placeholder="Email Address" required aria-label="Email Address">
+      <select name="buyer_type" aria-label="Buyer Type">
+        <option value="">Buyer Type</option>
+        <option>First time home buyer</option>
+        <option>Move-up buyer</option>
+        <option>Downsizer</option>
+        <option>Luxury Buyer</option>
+        <option>Renter</option>
+      </select>
+      <button type="submit">SIGN UP</button>
+    </form>
+    <p class="form-note" style="opacity:0.75;">By clicking "Sign Up" below, you agree to receive marketing calls, texts, or emails placed by or on behalf of RE/MAX, LLC and/or your local REMAX franchised office, even if your phone number is on a Do Not Call List. You may unsubscribe at any time.</p>
+  </div>
+</section>
+
+<section class="bg-cream section">
+  <div class="container-wide">
+    <div class="value-grid">
+      <div><h3>Proven Expertise</h3><p>We have years of experience guiding buyers and sellers with confidence.</p></div>
+      <div><h3>Market Intelligence</h3><p>We stay on top of data and trends so you can make decisions with clarity.</p></div>
+      <div><h3>Trusted Locally</h3><p>We know the neighborhoods because we also live there too.</p></div>
+    </div>
+    <div class="trusted-band">
+      <div class="star">★★★★★</div>
+      <h2>Voted the Most Trusted Agents in Real Estate*</h2>
+      <a class="btn btn-primary" href="{{ url_for('agents_page') }}">FIND A REMAX AGENT</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

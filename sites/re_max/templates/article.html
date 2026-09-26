@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ p.title }} | REMAX Blog{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="article-body">
+    <div class="breadcrumb" style="padding-left:0;">Home &gt; <a href="{{ url_for('advice') }}">Advice</a> &gt; {{ p.title }}</div>
+    <h1>{{ p.title }}</h1>
+    {% if p.image %}
+    <div class="hero-img"><img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}"></div>
+    {% endif %}
+    <pre class="body-text">{{ p.text }}</pre>
+    <div style="margin-top:32px;">
+      <h3 style="font-size:18px; color:#000E35; margin-bottom:12px;">More from the REMAX Blog</h3>
+      <ul style="list-style:none;">
+        {% for o in others %}
+        <li style="padding:8px 0; border-bottom:1px solid #D9D9D9;"><a href="{{ url_for('advice_post', slug=o.slug) }}">{{ o.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

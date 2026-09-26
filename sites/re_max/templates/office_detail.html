@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}{{ o.name }} | REMAX{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="breadcrumb">Home &gt; {{ o.city }} &gt; {{ o.name }}</div>
+
+  <div class="agent-detail-head">
+    <div>
+      <div class="agent-photo-lg">
+        {% if o.photo %}<img src="{{ url_for('static', filename='images/' + o.photo) }}" alt="{{ o.name }}">
+        {% else %}<div class="person-photo fallback" style="width:100%; height:100%;">no photo</div>{% endif %}
+      </div>
+      <div style="margin-top:16px;">
+        <a class="btn btn-primary btn-block" href="#contact">CONTACT US</a>
+        {% if o.website %}<p style="margin-top:10px; font-size:13px;">Website: <a href="{{ o.website }}" rel="noopener">{{ o.website }}</a></p>{% endif %}
+        {% if o.phone %}<p style="font-size:13px;">Phone: {{ o.phone }}</p>{% endif %}
+        <p style="font-size:13px;">Social Media</p>
+      </div>
+    </div>
+    <div>
+      <h1 style="font-size:32px; font-weight:600; color:#000E35; margin-bottom:4px;">{{ o.name }}</h1>
+      <div class="person-title" style="font-size:16px;">Brokerage</div>
+      <p style="margin-top:12px; font-size:14px;"><b>Office Address</b><br>{{ o.address }}</p>
+      <div class="agent-tabs">
+        <a class="active" href="#about">About</a>
+        <a href="#agents">Our Agents</a>
+        <a href="#listings">Our Listings</a>
+      </div>
+      <div id="about">
+        {% if o.about %}<p style="white-space:pre-wrap; font-size:15px; line-height:1.7;">{{ o.about }}</p>{% endif %}
+        {% if o.service_areas_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Service Areas</h3>
+        <p style="font-size:14px;">{{ o.service_areas_list()|join(', ') }}</p>
+        {% endif %}
+        {% if o.languages_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Languages</h3>
+        <p style="font-size:14px;">{{ o.languages_list()|join(', ') }}</p>
+        {% endif %}
+        {% if o.specialties_list() %}
+        <h3 style="margin-top:20px; font-size:15px; color:#000E35;">Specialties</h3>
+        <div class="chips">{% for s in o.specialties_list() %}<span class="chip">{{ s }}</span>{% endfor %}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if agents %}
+  <div id="agents" class="section">
+    <h2 class="section-heading">Our Agents</h2>
+    <div class="people-grid">
+      {% for a in agents %}
+      <article class="person-card">
+        <div class="person-photo">
+          {% if a.photo %}<img src="{{ url_for('static', filename='images/' + a.photo) }}" alt="{{ a.name }}" loading="lazy">{% endif %}
+        </div>
+        <div class="person-body">
+          <div class="person-name"><a href="{{ a.detail_url() }}" style="color:inherit;">{{ a.name }}</a></div>
+          <div class="person-title">{{ a.title }}</div>
+          <div class="person-actions"><a href="{{ a.detail_url() }}">DETAILS</a></div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if listings %}
+  <div id="listings" class="section">
+    <h2 class="section-heading">Our Listings</h2>
+    <div class="listing-grid">
+      {% for l in listings %}{% include '_listing_card.html' %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="contact-card" id="contact" style="max-width:520px; margin: 0 auto 48px;">
+    <h3>Contact {{ o.name }}</h3>
+    <form method="post" action="{{ url_for('contact_office') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="office_id" value="{{ o.id }}">
+      <input type="hidden" name="next" value="{{ request.url }}">
+      <input type="text" name="name" placeholder="Name" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="tel" name="phone" placeholder="Phone (optional)">
+      <textarea name="message" placeholder="I'd like help buying or selling a home."></textarea>
+      <button class="btn btn-primary btn-block" type="submit">CONTACT US</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

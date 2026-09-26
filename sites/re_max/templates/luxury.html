@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Search Luxury Properties | The REMAX Collection | REMAX{% endblock %}
+{% block content %}
+<div class="hero" style="height:480px;">
+  <img class="hero-bg" src="{{ url_for('static', filename='images/homepage/golf_lifestyle.jpg') }}" alt="Luxury home">
+  <div class="hero-overlay">
+    <h2 class="hero-headline">Global Reach. Local Gems.</h2>
+    <p>The REMAX Collection® brings extraordinary properties to the world's most discerning buyers. Every market has its hidden masterpieces. The REMAX Collection luxury agents give them a stage, pairing refined local insight with worldwide visibility.</p>
+    <a class="btn btn-cream" href="{{ url_for('agents_page') }}">FIND A REMAX AGENT</a>
+  </div>
+</div>
+<section class="section">
+  <div class="container-wide">
+    <h1 class="section-heading">Search Luxury Properties</h1>
+    <p class="section-sub">{{ listings|length }} luxury properties</p>
+    <div class="listing-grid">
+      {% for l in listings %}{% include '_listing_card.html' %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

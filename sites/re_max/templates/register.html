@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up | REMAX{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Sign Up</h1>
+  <p class="sub">Create your free REMAX account to save favorites, get listing alerts and more.</p>
+  <form method="post" action="{{ url_for('register') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="first_name">First Name</label><input id="first_name" type="text" name="first_name" required></div>
+    <div class="field"><label for="last_name">Last Name</label><input id="last_name" type="text" name="last_name" required></div>
+    <div class="field"><label for="email">Email Address</label><input id="email" type="email" name="email" required></div>
+    <div class="field"><label for="buyer_type">Buyer Type</label>
+      <select id="buyer_type" name="buyer_type">
+        <option value="">Select one (optional)</option>
+        <option>First time home buyer</option>
+        <option>Move-up buyer</option>
+        <option>Downsizer</option>
+        <option>Luxury Buyer</option>
+        <option>Renter</option>
+      </select>
+    </div>
+    <div class="field"><label for="password">Password (min 8 characters)</label><input id="password" type="password" name="password" required></div>
+    <div class="field"><label for="confirm">Confirm Password</label><input id="confirm" type="password" name="confirm" required></div>
+    <button class="btn btn-primary btn-block" type="submit">SIGN UP</button>
+  </form>
+  <p class="form-note">By signing up you agree to the REMAX Terms of Use and Privacy Policy. You may unsubscribe at any time.</p>
+  <p class="form-note">Already have an account? <a href="{{ url_for('login') }}">Log in</a>.</p>
+</div>
+{% endblock %}
