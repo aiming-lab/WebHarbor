@@ -58,14 +58,16 @@ SEED_COUNTS = {"activity_events": 15, "bookmarks": 5, "business_products": 24,
                "country_stats": 12, "download_stats": 20, "forum_threads": 50,
                "forums": 2, "news_posts": 2, "os_stats": 6, "project_facets": 5201,
                "project_files": 34, "projects": 411, "reviews": 218,
-               "screenshots": 703, "site_content": 7, "thread_posts": 8,
+               "screenshots": 703, "site_content": 11, "thread_posts": 8,
                "ticket_posts": 5, "tickets": 35, "users": 1994, "wiki_pages": 1}
 # sha256 over sqlite_master (type, name, tbl_name, sql) of instance_seed/sourceforge.db.
 SCHEMA_SHA256 = "aa61b172cfdf1d690836fd7618d98e9ae9735feb72e420c7a238a5d57549ecbd"
 # sha256 over every seed row (table-canonical, ORDER BY all columns). The seed is
 # built deterministically at image build time (PYTHONHASHSEED=0 + fixed index
-# creation order) and reproduces byte-for-byte on every build (md5 bfb58247…).
-SEED_ROWS_SHA256 = "05fdb69de854a6117b7c2821d06c54cf7ac986ac6c396535878b4c773455fe99"
+# creation order) and reproduces byte-for-byte on every build (md5 523b5904…).
+# r2 sync (c67fb235): 7-Zip/26.03 + 26.02 folder weekly counts seeded (29,589 /
+# 21,750) and four new site_content rows (podcast/articles/case-studies/blog).
+SEED_ROWS_SHA256 = "520501acb77f8ce6104960ea69f6fafca7e9977c6f9ae937c657c0a70d57f5f4"
 SEED_USERS = {  # email -> (id, display); identity columns never change
     "alice.j@test.com": (1991, "Alice Johnson"),
     "bob.c@test.com": (1992, "Bob Chen"),
@@ -291,12 +293,12 @@ def fetch_db(container, src, dest):
     return dest
 
 
-def acquire_seed(cache=None):
+def acquire_seed(cache=None, container=None):
     cache = Path(cache or os.environ.get("SOURCEFORGE_TEST_SEED_DB")
                  or Path("/tmp/sourceforge_verify_seed.db"))
     if cache.is_file():
         return cache
-    return fetch_db(DEFAULT_CONTAINER,
+    return fetch_db(container or DEFAULT_CONTAINER,
                     f"/opt/WebSyn/{SITE}/instance_seed/{SITE}.db", cache)
 
 
@@ -402,7 +404,7 @@ def run_verifier(task_id, verify_module_main, argv=None):
     after = Path(args.after_db) if args.after_db else None
     if initial is None:
         cand = Path(args.run_dir) / "initial.db"
-        initial = cand if cand.is_file() else acquire_seed(args.seed_cache)
+        initial = cand if cand.is_file() else acquire_seed(args.seed_cache, args.container)
     if after is None:
         cand = Path(args.run_dir) / "after.db"
         after = cand if cand.is_file() else acquire_instance(args.container)

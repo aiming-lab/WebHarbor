@@ -1,12 +1,12 @@
 """Shared fixtures for the sourceforge verifier tests.
 
 Snapshots are copies of the real deterministic seed (instance_seed/sourceforge.db,
-built at image time with PYTHONHASHSEED=0, md5 bfb58247…) with the per-task
+built at image time with PYTHONHASHSEED=0, md5 523b5904…) with the per-task
 stateful mutations applied through sqlite, and trajectories are written in the
 agent_demo/agent.py shape from the frozen SPECS (extracted from the reviewer's
 honest live runs). No LLM.
 
-The seed DB resolves from the review container (wh-sf-review); the
+The seed DB resolves from the review container (wh-sf-rereview); the
 SOURCEFORGE_TEST_SEED_DB env var overrides the location. Run with plain
 python3 + pytest:
 
@@ -27,7 +27,7 @@ from fixtures_data import BASE, SPECS  # noqa: E402  (same directory)
 
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
-CONTAINER = os.environ.get("WH_CONTAINER", "wh-sf-review")
+CONTAINER = os.environ.get("WH_CONTAINER", "wh-sf-rereview")
 CACHE = Path(os.environ.get("SOURCEFORGE_TEST_SEED_DB") or
              str(Path("/tmp") / "sourceforge_verify_tests_seed.db"))
 TASKS_FILE = SITE_DIR / "tasks.jsonl"
