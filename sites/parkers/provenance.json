@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-09-24",
+  "records": [
+    {
+      "path": "app.py",
+      "classification": "mirror-code",
+      "scope": "Flask application implementing the parkers.co.uk mirror: the expert review pages (headline, verdict likes/dislikes, five rated sections, rivals, gallery), the free valuation flow (make \u2192 model \u2192 purpose \u2192 year plate \u2192 CAP derivative \u2192 private/dealer/part-ex/trade ranges), the registration-number valuation lookup, the cars-for-sale search with filters (make, body, fuel, transmission, budget, monthly price) and sorts, listing detail pages, the news section, the best-cars guides, owner reviews with the write-a-review form, insurance-group pages, the car tax guide, site search, and the account domain (sign in, shortlist, saved valuations). Route and URL shapes follow the live site (/{make}/{model}/, /{make}/{model}/{gen}/, /{make}/{model}/{gen}/used-prices/, /valuation/{make}/{model}/{gen}/{purpose}/{year}/{derivative}/, /cars-for-sale/search/, /news/, /best-cars/, /{make}/{model}/{gen}/owner-reviews/, /insurance/\u2026, /car-tax/\u2026, /search/)."
+    },
+    {
+      "path": "seed_data.py",
+      "classification": "mirror-code",
+      "scope": "Deterministic seeder (PYTHONHASHSEED=0, BENCHMARK_TODAY=2026-09-24). All content rows are loaded from the captured upstream snapshots in scraped_data/ (gitignored; the built seed ships as instance_seed/parkers.db in the asset archive). Valuation grids are anchored on ranges captured from the live site's own valuation pages/API and extended with the documented depreciation curve; benchmark users share one frozen bcrypt digest so the SQLite seed is byte-reproducible."
+    },
+    {
+      "path": "scraped_data/reviews.json",
+      "classification": "captured-upstream-content",
+      "scope": "Frozen snapshot of the live site's expert review pages (https://www.parkers.co.uk/{make}/{model}/) as served on 2026-09-24: per model the schema.org JSON-LD review blob (headline, star rating, pros/cons, section prose and sub-ratings, verdict-box ratings), the hero image URL, gallery thumbnail URLs and the rival-model panels. Captured via the live site's own server-rendered HTML. The Smart #1 / #3 review records are captured from the live site's /smart/1/ and /smart/3/ review pages (upstream URL slugs, no '#' fragment)."
+    },
+    {
+      "path": "scraped_data/specs.json",
+      "classification": "captured-upstream-content",
+      "scope": "Per-generation spec tables captured from the live site's /{make}/{model}/{gen}/specifications/ pages: every derivative's price when new, engine, fuel, transmission, MPG, insurance group, boot space and dimensions, matched to the CAP derivative taxonomy via the live site's own taxonomy-search API display names. Includes the Mazda CX-5 SUV (2017 - 2026) and Smart #1 / #3 spec generations captured from the same live pages."
+    },
+    {
+      "path": "scraped_data/listings.json",
+      "classification": "captured-upstream-content",
+      "scope": "The cars-for-sale inventory (1,161 cards) captured from the live site's own search result pages (parkers.co.uk/cars-for-sale/): each card's title, derivative text, price, monthly price, mileage, year plate, transmission, fuel, body, seller badge and real listing image URL."
+    },
+    {
+      "path": "scraped_data/news.json",
+      "classification": "captured-upstream-content",
+      "scope": "News articles captured from the live site's /news/ section on 2026-09-24: title, standfirst, hero image URL, publication date and the full article body as served."
+    },
+    {
+      "path": "scraped_data/guides.json",
+      "classification": "captured-upstream-content",
+      "scope": "Best-cars guides captured from the live site's /best-cars/ pages: title, guide body copy and the ranked recommendation lists as published (headers and non-car entries filtered by clean_guide_ranked in seed_data.py)."
+    },
+    {
+      "path": "scraped_data/owners.json",
+      "classification": "captured-upstream-content",
+      "scope": "Owner-review content captured from the live site's /{make}/{model}/{gen}/owner-reviews/ pages and per-review pages: owner totals, average owner rating, star distribution and the individual owner reviews (author, rating, publication date, year/plate, bought-from and the full 'in their own words' review text), for the 16 generations the live site had owner reviews for."
+    },
+    {
+      "path": "scraped_data/insgroups.json",
+      "classification": "captured-upstream-content",
+      "scope": "Insurance-group rows captured from the live site's insurance pages for the shipped derivatives (1,327 rows)."
+    },
+    {
+      "path": "scraped_data/valanchors.json",
+      "classification": "captured-upstream-content",
+      "scope": "Valuation anchors captured from the live site's own used-prices pages and taxonomy-search API responses: the year-plate lists per generation and the CAP derivative groupings, plus the price ranges captured from the live valuation pages (e.g. Fiesta Zetec 1.0T EcoBoost 100PS 3d 2019/19: private \u00a33,210-\u00a34,250, dealer \u00a34,520-\u00a34,790, part-ex \u00a33,470-\u00a33,800)."
+    },
+    {
+      "path": "scraped_data/make_logos.json",
+      "classification": "captured-upstream-content",
+      "scope": "Make logo URLs captured from the live site's own header/footer and make index pages (parkers-images.bauersecure.com logo renditions)."
+    },
+    {
+      "path": "scraped_data/image_map.json",
+      "classification": "asset-manifest-input",
+      "scope": "Upstream URL \u2192 local path mapping for every downloaded image; feeds the per-file source_url column of asset_inventory.json."
+    },
+    {
+      "path": "asset_inventory.json",
+      "classification": "asset-manifest",
+      "scope": "Per-file inventory (bytes, SHA-256, upstream source URL) for every managed image under static/images/ (2,394 real parkers-images.bauersecure.com renditions; zero placeholders); enforced by the image build's check_asset_inventory.py gate."
+    },
+    {
+      "path": "instance_seed/parkers.db",
+      "classification": "seed-database",
+      "scope": "Frozen SQLite seed built deterministically from the captured snapshots (PYTHONHASHSEED=0): 37 makes, 169 models, 205 generations, 1,079 derivatives, 10,517 valuation rows, 1,161 listings, 104 news articles, 30 guides, 126 owner reviews (full text + author/date/year-plate/bought metadata) + 14 owner stat rows, 12 registration lookups, insurance groups and the 2026/27 tax rates, benchmark user accounts."
+    },
+    {
+      "path": "static/images/",
+      "classification": "captured-upstream-imagery",
+      "scope": "2,394 real images downloaded from the live site's own image CDN (parkers-images.bauersecure.com): 130 make logos, 169 review heroes plus ~700 gallery frames, ~1,100 cars-for-sale listing photos and ~250 news/guide heroes. No placeholder or synthetic imagery; every file's source URL is recorded in asset_inventory.json."
+    },
+    {
+      "path": "templates/",
+      "classification": "mirror-code",
+      "scope": "Jinja2 templates rendering the parkers.co.uk mirror pages (upstream URL shapes and page structure for reviews, specs, valuations, cars-for-sale, news, guides, insurance, tax, owner reviews and the account area). Layout and copy follow the 2026-09-24 upstream capture; template chrome (nav, footer) reproduces the upstream site navigation labels and section names."
+    },
+    {
+      "path": "static/css/parkers.css",
+      "classification": "mirror-code",
+      "scope": "Site stylesheet reproducing the upstream parkers.co.uk look (fonts, colours, card grid, review star styling) for the benchmark mirror."
+    },
+    {
+      "path": "static/js/parkers.js",
+      "classification": "mirror-code",
+      "scope": "Small vanilla-JS enhancements (gallery lightbox, valuation form chaining) mirroring upstream interactive behaviour; no external network calls."
+    },
+    {
+      "path": "tests/",
+      "classification": "mirror-test",
+      "scope": "Deterministic pytest suite for the mirror (23 tests): health probe, core pages, review/spec/valuation chains, cars-for-sale filters, scored search, news/guides, insurance/tax, owner reviews, auth+shortlist, saved valuations, registration/profile, seed idempotence shape. Runs against a scratch copy of the shipped seed."
+    },
+    {
+      "path": "tasks.jsonl",
+      "classification": "benchmark-tasks",
+      "scope": "20 benchmark tasks (Parkers--0..--19) over the mirror: free valuations and part-exchange numbers, specs comparisons, insurance-group lookups, review reading, cars-for-sale filtering and shortlist management, owner-review reading and submission, news and best-cars guides, car-tax rates, search. Each row: web_name, id, ques, web (http://localhost:40087/), upstream_url."
+    },
+    {
+      "path": "requirements.txt",
+      "classification": "mirror-code",
+      "scope": "Pinned Flask extension dependencies for the mirror app (Flask, Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-Bcrypt)."
+    },
+    {
+      "path": "NOTICE.md",
+      "classification": "mirror-doc",
+      "scope": "Provenance and scope notice for the parkers.co.uk benchmark mirror: what is mirrored, the benchmark-fixture user accounts, and the 2026-09-24 capture source."
+    },
+    {
+      "path": "_health.py",
+      "classification": "mirror-code",
+      "scope": "Per-site health probe called by the control plane via /_health; reports live DB counts (makes, models, generations, derivatives, valuations, listings, news, guides, owner reviews)."
+    },
+    {
+      "path": "provenance.json",
+      "classification": "provenance-manifest",
+      "scope": "This manifest: per-artifact provenance classification for every tracked file group in the parkers site directory."
+    },
+    {
+      "path": "static/icons/",
+      "classification": "mirror-code",
+      "scope": "Reserved icon directory (currently only .gitkeep placeholder); mirror ships no favicon or icon assets beyond the managed imagery."
+    },
+    {
+      "path": "static/.gitkeep markers",
+      "classification": "mirror-code",
+      "scope": "Zero-byte .gitkeep placeholders keeping the empty static/css, static/js, static/icons and static/external_cache directories present in git."
+    }
+  ]
+}

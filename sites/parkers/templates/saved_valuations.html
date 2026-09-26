@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Saved valuations{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading"><h1>Saved valuations</h1></div>
+  <div class="account-nav">
+    <a href="/my-parkers/">Overview</a>
+    <a href="/my-parkers/shortlist/">My shortlist</a>
+    <a class="active" href="/my-parkers/saved-valuations/">Saved valuations</a>
+    <a href="/my-parkers/profile/">Profile</a>
+  </div>
+  {% for row in decorated %}
+  <div class="sidebar-box">
+    <h3>{{ row.m.make.name }} {{ row.g.name }} {{ row.d.name }} {{ row.sv.valuation.year_plate }}</h3>
+    <p class="small muted">Saved {{ row.sv.saved_at.strftime('%d %B %Y') }}</p>
+    <table class="data-table">
+      <tr><th>Buying privately</th><td>{{ money(row.sv.valuation.private_low) }} - {{ money(row.sv.valuation.private_high) }}</td></tr>
+      <tr><th>Buying from a dealer</th><td>{{ money(row.sv.valuation.dealer_low) }} - {{ money(row.sv.valuation.dealer_high) }}</td></tr>
+    </table>
+    <p><a class="btn btn--outline btn--sm" href="/{{ row.m.make.slug }}/{{ row.m.slug }}/{{ row.g.slug }}/{{ row.d.slug }}/{{ row.sv.valuation_id }}/free-valuation/">Open valuation</a></p>
+  </div>
+  {% else %}
+  <div class="callout">No saved valuations yet — complete a free valuation while logged in and it will appear here.</div>
+  {% endfor %}
+</div>
+{% endblock %}

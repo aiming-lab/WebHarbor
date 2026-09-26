@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="two-col">
+    <div class="sidebar-box">
+      <div class="page-heading"><h1>Create your Parkers account</h1></div>
+      <form method="post" action="/my-parkers/register/">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="re-name">Your name</label>
+          <input type="text" id="re-name" name="name" required>
+        </div>
+        <div class="field">
+          <label for="re-email">Email address</label>
+          <input type="email" id="re-email" name="email" required>
+        </div>
+        <div class="field">
+          <label for="re-pw">Password (at least 8 characters)</label>
+          <input type="password" id="re-pw" name="password" required>
+        </div>
+        <button class="btn btn--primary" type="submit">Register</button>
+      </form>
+      <p class="small">Already have an account? <a href="/my-parkers/login/">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

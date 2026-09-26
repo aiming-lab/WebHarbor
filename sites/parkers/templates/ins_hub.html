@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Car insurance groups, costs &amp; advice{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Car insurance groups, costs &amp; advice</h1>
+    <div class="page-heading__sub">Every car in the UK is assigned an insurance group from 1 to 50</div>
+  </div>
+  <div class="search-card" style="box-shadow:none;border:1px solid #e6e6e6">
+    <h2>Find a car's insurance group</h2>
+    <p class="small">You can find the insurance group information for a specific car by selecting from the lists below:</p>
+    <form method="get" action="/car-insurance/insurance-groups/" class="form-row" data-cascade>
+      <div class="field">
+        <label for="ins-make">Make</label>
+        <select id="ins-make" name="make" data-auto-submit data-make-select>
+          <option value="">Select a make</option>
+          {% for mk in makes %}<option value="{{ mk.slug }}" {{ 'selected' if request.args.get('make') == mk.slug }}>{{ mk.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="ins-model">Model</label>
+        <select id="ins-model" name="model" data-model-select>
+          <option value="">Select a model</option>
+          {% for m in make_models %}<option value="{{ m.slug }}" {{ 'selected' if request.args.get('model') == m.slug }}>{{ m.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn btn--primary" type="submit">Choose a model</button>
+    </form>
+    {% if request.args.get('make') and request.args.get('model') %}
+    {% set sel_mk = makes | selectattr('slug', 'equalto', request.args.get('make')) | list %}
+    {% set sel_m = make_models | selectattr('slug', 'equalto', request.args.get('model')) | list %}
+    {% if sel_m %}
+    <p>Insurance group pages for {{ sel_m[0].name }}:</p>
+    <p>{% for g in sel_m[0].generations %}<a class="btn btn--cta" href="/{{ request.args.get('make') }}/{{ request.args.get('model') }}/{{ g.slug }}/insurance-groups/">{{ g.name }}</a> {% endfor %}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+  <h2>What are car insurance groups for?</h2>
+  <div class="review-prose">
+    <p>Insurance groups are used by insurers to help set premiums. Cars in group 1 are the cheapest to insure and those in group 50 the most expensive. The group rating is based on the car's value, performance, repair costs, safety features and security.</p>
+    <p>When choosing a car it's worth checking its insurance group — a difference of just a few groups can add hundreds of pounds to a young driver's premium.</p>
+  </div>
+  <h2>Find cars in cheap insurance groups</h2>
+  <p class="small">Cars in insurance groups 1-5 are among the cheapest to insure. Popular choices on Parkers:</p>
+  <p>
+    {% for c in cheap_models %}
+    <a class="btn btn--outline btn--sm" href="/{{ c.m.make.slug }}/{{ c.m.slug }}/{{ c.g.slug }}/insurance-groups/" style="margin:0 .3rem .4rem 0">{{ c.m.make.name }} {{ c.m.name }} — group {{ c.group }}</a>
+    {% endfor %}
+  </p>
+</div>
+{% endblock %}

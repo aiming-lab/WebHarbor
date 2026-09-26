@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Write an owner review{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Write an owner review</h1>
+    <div class="page-heading__sub">Tell other buyers what your car is really like to live with</div>
+  </div>
+  <div class="sidebar-box">
+    <h3>Step 1 — pick your car</h3>
+    <p class="small">Choose a make to see the models with owner reviews, then open your car's generation page and use the review form there.</p>
+    <div class="brand-grid">
+      {% for mk in makes %}
+      <a class="brand-cell" href="/{{ mk.slug }}/reviews/">
+        {% if mk.logo_path %}<img src="{{ mk.logo_path }}" alt="{{ mk.name }}">{% endif %}
+        <div class="name">{{ mk.name }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="sidebar-box">
+    <h3>Popular owner reviews</h3>
+    <ul>
+      <li><a href="/mercedes-benz/c-class/saloon-2021/owner-reviews/">Mercedes-Benz C-Class</a></li>
+      <li><a href="/fiat/500/hatchback-2007/owner-reviews/">Fiat 500</a></li>
+      <li><a href="/ford/fiesta/hatchback-2017/owner-reviews/">Ford Fiesta</a></li>
+      <li><a href="/nissan/qashqai/suv-2021/owner-reviews/">Nissan Qashqai</a></li>
+      <li><a href="/kia/sportage/suv-2021/owner-reviews/">Kia Sportage</a></li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} cars for sale{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/cars-for-sale/">Cars for sale</a> › <a href="/{{ m.make.slug }}/for-sale/">{{ m.make.name }}</a> › {{ m.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} cars for sale</h1>
+    <div class="page-heading__sub">{{ '{:,}'.format(total) }} {{ m.make.name }} {{ m.name }} cars available</div>
+  </div>
+  <p class="small">
+    {% if m.has_review %}<a href="/{{ m.make.slug }}/{{ m.slug }}/review/">Read the {{ m.make.name }} {{ m.name }} review</a> ·{% endif %}
+    <a href="/{{ m.make.slug }}/{{ m.slug }}/used-prices/">Used prices</a> ·
+    <a href="/{{ m.make.slug }}/{{ m.slug }}/specs/">Specs</a>
+  </p>
+  <div class="cards-grid">
+    {% for l in listings %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__meta">{{ l.derivative_text }}</div>
+        <div class="card__meta">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ 'New' if condition == 'New' else 'Used' }} cars for sale{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>{{ 'New' if condition == 'New' else 'Used' }} cars for sale</h1>
+    <div class="page-heading__sub">Choose from {{ '{:,}'.format(total) }} {{ condition|lower }} cars for sale</div>
+  </div>
+  <div class="cards-grid">
+    {% for l in listings %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__meta">{{ l.derivative_text }}</div>
+        <div class="card__meta">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <p><a class="btn btn--primary" href="/cars-for-sale/search-results/?condition={{ condition }}">Search all {{ condition|lower }} cars</a></p>
+</div>
+{% endblock %}

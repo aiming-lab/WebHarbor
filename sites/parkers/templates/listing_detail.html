@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ l.title }} {{ l.derivative_text }} for sale{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/cars-for-sale/">Cars for sale</a> › {% if l.make_slug %}<a href="/{{ l.make_slug }}/for-sale/">{{ l.make_slug|replace('-',' ')|title }}</a> › {% endif %}{{ l.title }}</div>
+  <div class="detail-cols">
+    <div>
+      <div class="listing-hero">
+        {% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }} {{ l.derivative_text }}">{% endif %}
+      </div>
+      <div class="listing-thumbs">
+        {% for img in l.images_list %}<img src="{{ img }}" data-full="{{ img }}" alt="{{ l.title }} photo {{ loop.index }}">{% endfor %}
+      </div>
+      <div class="page-heading">
+        <h1>{{ l.title }} {{ l.derivative_text }}</h1>
+        <div class="page-heading__sub">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles | {{ l.colour }}</div>
+      </div>
+      <p class="card__price" style="font-size:1.6rem">{{ money(l.price) }}</p>
+      <h2>Key specifications</h2>
+      <table class="data-table">
+        <tr><th>Year / plate</th><td>{{ l.year_plate }}</td></tr>
+        <tr><th>Mileage</th><td>{{ '{:,}'.format(l.mileage) }} miles</td></tr>
+        <tr><th>Transmission</th><td>{{ l.transmission }}</td></tr>
+        <tr><th>Fuel type</th><td>{{ l.fuel }}</td></tr>
+        <tr><th>Body type</th><td>{{ l.body }}</td></tr>
+        <tr><th>Doors</th><td>{{ l.doors or '—' }}</td></tr>
+        <tr><th>Colour</th><td>{{ l.colour }}</td></tr>
+      </table>
+      {% if l.features %}
+      <h2>Features</h2>
+      <ul class="plan-list">
+        {% for f in l.features %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if l.description %}
+      <h2>Seller's description</h2>
+      <div class="review-prose"><p>{{ l.description }}</p></div>
+      {% endif %}
+      {% if similar %}
+      <h2>Similar cars for sale</h2>
+      <div class="cards-grid">
+        {% for s in similar %}
+        <a class="card" href="/cars-for-sale/listing/{{ s.id }}/">
+          <div class="card__image">{% if s.image %}<img src="{{ s.image }}" alt="{{ s.title }}">{% endif %}</div>
+          <div class="card__body">
+            <div class="card__title">{{ s.title }}</div>
+            <div class="card__meta">{{ s.derivative_text }}</div>
+            <div class="card__price">{{ money(s.price) }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <aside>
+      <div class="seller-card">
+        <h3>{{ money(l.price) }}</h3>
+        <p class="small"><strong>{{ l.seller_name }}</strong><br>{{ l.seller_type }} · {{ l.location }}</p>
+        <p class="small muted">{{ l.added_label }}</p>
+        <form method="post" action="/cars-for-sale/listing/{{ l.id }}/save/">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="/cars-for-sale/listing/{{ l.id }}/">
+          <button class="btn btn--primary btn--block" type="submit">{{ 'Remove from shortlist' if in_shortlist else 'Save to shortlist' }}</button>
+        </form>
+        <p class="small muted">Sign in to sync your shortlist across devices.</p>
+        {% if l.model_slug %}
+        <p><a class="btn btn--outline btn--block" href="/{{ l.make_slug }}/{{ l.model_slug }}/review/">Read the review</a></p>
+        <p><a class="btn btn--outline btn--block" href="/{{ l.make_slug }}/{{ l.model_slug }}/used-prices/">Check used prices</a></p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

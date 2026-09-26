@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ g.title }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/best-cars/">Best cars</a> › {{ g.title }}</div>
+  <div class="page-heading">
+    <h1>{{ g.title }}</h1>
+  </div>
+  {% if g.ranked %}
+  <div class="ranked-list">
+    {% for item in g.ranked %}
+    <div class="ranked-item"><h3>{{ item }}</h3></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if g.body %}
+  <div class="review-prose">
+    {% for p in g.body %}<p>{{ p }}</p>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

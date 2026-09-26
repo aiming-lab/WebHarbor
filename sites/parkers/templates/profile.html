@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading"><h1>Your profile</h1></div>
+  <div class="account-nav">
+    <a href="/my-parkers/">Overview</a>
+    <a href="/my-parkers/shortlist/">My shortlist</a>
+    <a href="/my-parkers/saved-valuations/">Saved valuations</a>
+    <a class="active" href="/my-parkers/profile/">Profile</a>
+  </div>
+  <div class="sidebar-box">
+    <form method="post" action="/my-parkers/profile/">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="pr-name">Your name</label>
+        <input type="text" id="pr-name" name="name" value="{{ user.display_name }}" required>
+      </div>
+      <div class="field">
+        <label for="pr-postcode">Postcode</label>
+        <input type="text" id="pr-postcode" name="postcode" value="{{ user.postcode }}" maxlength="10">
+      </div>
+      <div class="field">
+        <label for="pr-email">Email address</label>
+        <input type="email" id="pr-email" value="{{ user.email }}" disabled>
+      </div>
+      <button class="btn btn--primary" type="submit">Save changes</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

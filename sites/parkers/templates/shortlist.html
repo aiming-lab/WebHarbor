@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My shortlist{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading"><h1>My shortlist</h1></div>
+  <div class="account-nav">
+    <a href="/my-parkers/">Overview</a>
+    <a class="active" href="/my-parkers/shortlist/">My shortlist</a>
+    <a href="/my-parkers/saved-valuations/">Saved valuations</a>
+    <a href="/my-parkers/profile/">Profile</a>
+  </div>
+  {% for s in items %}
+  <div class="listing-card">
+    <a class="listing-card__image" href="/cars-for-sale/listing/{{ s.listing_id }}/">
+      {% if s.listing.image %}<img src="{{ s.listing.image }}" alt="{{ s.listing.title }}">{% endif %}
+    </a>
+    <div class="listing-card__body">
+      <a class="listing-card__title" href="/cars-for-sale/listing/{{ s.listing_id }}/">{{ s.listing.title }}</a>
+      <div class="listing-card__derivative">{{ s.listing.derivative_text }}</div>
+      <div class="listing-card__details">{{ s.listing.transmission }} | {{ s.listing.year_plate }} | {{ '{:,}'.format(s.listing.mileage) }} miles</div>
+      <div class="listing-card__price">{{ money(s.listing.price) }}</div>
+      <form method="post" action="/cars-for-sale/listing/{{ s.listing_id }}/save/?next=/my-parkers/shortlist/">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="/my-parkers/shortlist/">
+        <button class="btn btn--danger btn--sm" type="submit">Remove</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="callout">Your shortlist is empty — save cars from any listing page.</div>
+  {% endfor %}
+</div>
+{% endblock %}

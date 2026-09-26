@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ sec.title or (m.make.name ~ ' ' ~ m.name ~ ' ' ~ section) }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-reviews/">Car reviews</a> › <a href="/{{ m.make.slug }}/{{ m.slug }}/review/">{{ m.make.name }} {{ m.name }}</a> › {{ section }}</div>
+  <div class="page-heading">
+    <h1>{{ sec.title or (m.make.name ~ ' ' ~ m.name ~ ' ' ~ section) }}</h1>
+    <div class="page-heading__sub">{{ m.headline }}</div>
+  </div>
+  <div class="review-contents-nav">
+    <strong>Review contents</strong>
+    <ul>
+      {% for key, label, note in REVIEW_SECTIONS if key in m.sections|map(attribute='section_key')|list %}
+      <li><a class="{{ 'current' if key == section }}" href="/{{ m.make.slug }}/{{ m.slug }}/review/{{ key if key != 'overview' else '' }}">{{ label|safe }}{% if key == section %} <span class="muted small">— Currently reading</span>{% endif %}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% if section == 'verdict' and m.verdict_ratings %}
+  <h2>Parkers ratings</h2>
+  <div class="ratings-grid">
+    {% for label, val in [('Performance', m.verdict_ratings.performance), ('Handling', m.verdict_ratings.handling), ('Behind the wheel', m.verdict_ratings.behind_wheel), ('Comfort', m.verdict_ratings.comfort), ('Running costs', m.verdict_ratings.running_costs), ('Green credentials', m.verdict_ratings.green), ('Reliability', m.verdict_ratings.reliability), ('Equipment', m.verdict_ratings.equipment), ('Safety', m.verdict_ratings.safety), ('Practicality', m.verdict_ratings.practicality)] %}
+    <div class="rating-cell"><h3>{{ label }}</h3><span class="star-rating"><span class="star-pips">{% if val %}{% for _ in range(star_count(val)) %}★{% endfor %}{% endif %}</span><span class="star-rating__text">{{ val or '—' }}</span></span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="review-prose">
+    {% for p in sec.paragraphs %}<p>{{ p }}</p>{% endfor %}
+  </div>
+  <p><a class="btn btn--outline" href="/{{ m.make.slug }}/{{ m.slug }}/review/">Back to overview</a></p>
+</div>
+{% endblock %}

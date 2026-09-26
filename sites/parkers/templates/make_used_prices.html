@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ make.name }} used prices{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-valuation/">Car valuations</a> › {{ make.name }}</div>
+  <div class="page-heading">
+    <h1>{{ make.name }} used prices: how much is my {{ make.name }} worth?</h1>
+    <div class="page-heading__sub">{{ models|length }} {{ make.name }} ranges with free valuations</div>
+  </div>
+  <div class="cards-grid">
+    {% for m in models %}
+    <a class="card" href="/{{ make.slug }}/{{ m.slug }}/used-prices/">
+      <div class="card__image">{% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ make.name }} {{ m.name }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ make.name }} {{ m.name }} used prices</div>
+        <div class="card__meta">{{ m.used_prices_text or 'Free valuation' }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

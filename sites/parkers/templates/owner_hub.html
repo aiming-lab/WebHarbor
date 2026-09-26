@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Car owner reviews{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Owner Reviews</h1>
+    <div class="page-heading__sub">Real owners rate the cars they live with every day</div>
+  </div>
+  <p><a class="btn btn--primary" href="/owner-reviews/submit/">Write an owner review</a></p>
+  <div class="cards-grid">
+    {% for s in stats %}
+    {% set m = s.model_slug|replace('-',' ')|title %}
+    <a class="card" href="/{{ s.make_slug }}/{{ s.model_slug }}/{{ s.gen_slug }}/owner-reviews/">
+      <div class="card__body">
+        <div class="card__title">{{ s.make_slug|replace('-',' ')|title }} {{ m }} owner reviews</div>
+        <div class="card__meta">{{ s.total }} owners have reviewed their car</div>
+        <div class="star-rating"><span class="star-pips">{% if s.average %}{% for _ in range(star_count(s.average)) %}★{% endfor %}{% endif %}</span><span class="star-rating__text">{{ s.average or '—' }}</span></div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="section-heading"><h2>Owners reviews elsewhere on Parkers</h2></div>
+  <div class="sidebar-box">
+    <ul>
+      <li><a href="/car-advice/">Car advice on Parkers</a></li>
+      <li><a href="/car-reviews/">Car reviews on Parkers</a></li>
+      <li><a href="/best-cars/">Best cars</a></li>
+      <li><a href="/car-reviews/">Parkers star ratings</a></li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

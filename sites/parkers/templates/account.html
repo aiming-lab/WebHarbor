@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}My Parkers{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>My Parkers</h1>
+    <div class="page-heading__sub">Welcome back, {{ user.display_name }}</div>
+  </div>
+  <div class="account-nav">
+    <a class="active" href="/my-parkers/">Overview</a>
+    <a href="/my-parkers/shortlist/">My shortlist</a>
+    <a href="/my-parkers/saved-valuations/">Saved valuations</a>
+    <a href="/my-parkers/profile/">Profile</a>
+  </div>
+  <div class="cards-grid">
+    <div class="card"><div class="card__body">
+      <div class="card__title">Shortlist</div>
+      <div class="card__meta">{{ user.shortlist|length }} cars saved</div>
+      <a class="btn btn--outline btn--sm" href="/my-parkers/shortlist/">View shortlist</a>
+    </div></div>
+    <div class="card"><div class="card__body">
+      <div class="card__title">Saved valuations</div>
+      <div class="card__meta">{{ user.saved_valuations|length }} valuations saved</div>
+      <a class="btn btn--outline btn--sm" href="/my-parkers/saved-valuations/">View valuations</a>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel">
+  <div class="wrap">
+    <h1>Find expert advice from Parkers to help you find your next car</h1>
+    <p class="muted" style="color:#bdd8fd">Independent reviews, valuations and data you can trust</p>
+    <div class="search-card">
+      <h2>Search by make &amp; model</h2>
+      <form method="get" action="/car-reviews/" class="form-row">
+        <div class="field">
+          <label for="home-make">Make</label>
+          <select id="home-make" name="make">
+            <option value="">Select a make</option>
+            {% for mk in makes %}<option value="{{ mk.slug }}">{{ mk.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="home-model">Model</label>
+          <select id="home-model" name="model"><option value="">Select a model</option></select>
+        </div>
+        <button class="btn btn--primary" type="submit">Search</button>
+      </form>
+      <hr>
+      <h2>Get a free Parkers car valuation</h2>
+      <form method="post" action="/car-valuation/lookup/" class="form-row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="home-reg">Search by registration</label>
+          <input type="text" id="home-reg" name="reg" placeholder="Enter reg" maxlength="10">
+        </div>
+        <button class="btn btn--primary" type="submit">Go</button>
+        <a class="btn btn--outline" href="/car-valuation/">or search by make / model</a>
+      </form>
+      <hr>
+      <h2>Search {{ total_listings }} cars for sale</h2>
+      <form method="get" action="/cars-for-sale/search-results/" class="form-row">
+        <div class="field">
+          <label for="cfs-make">Make</label>
+          <select id="cfs-make" name="make">
+            <option value="">Any make</option>
+            {% for mk in makes %}<option value="{{ mk.slug }}">{{ mk.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="cfs-maxprice">Max price</label>
+          <select id="cfs-maxprice" name="price_max">
+            <option value="">Any price</option>
+            <option value="5000">£5,000</option><option value="10000">£10,000</option>
+            <option value="15000">£15,000</option><option value="20000">£20,000</option>
+            <option value="25000">£25,000</option><option value="30000">£30,000</option>
+          </select>
+        </div>
+        <input type="hidden" name="condition" value="Used">
+        <button class="btn btn--primary" type="submit">Search {{ total_used }} cars for sale</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="section-heading">
+    <h2>Latest car reviews</h2>
+    <a class="view-more" href="/car-reviews/">View more reviews</a>
+  </div>
+  <div class="cards-grid">
+    {% for m in latest %}
+    <a class="card" href="/{{ m.make.slug }}/{{ m.slug }}/review/">
+      <div class="card__image">{% if m.hero_image %}<img src="{{ m.hero_image }}" alt="{{ m.make.name }} {{ m.name }} review">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ m.make.name }} {{ m.name }}</div>
+        <div class="card__meta">{{ m.headline or (m.make.name ~ ' ' ~ m.name ~ ' review') }}</div>
+        <div class="star-rating"><span class="star-pips">{% if m.rating %}{% for _ in range(star_count(m.rating)) %}★{% endfor %}{% endif %}</span><span class="star-rating__text">{{ m.rating or '—' }}</span></div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <hr class="section-rule">
+  <div class="section-heading"><h2>Browse by brand</h2><a class="view-more" href="/car-reviews/">All makes</a></div>
+  <div class="brand-grid">
+    {% for mk in makes %}
+    <a class="brand-cell" href="/{{ mk.slug }}/reviews/">
+      {% if mk.logo_path %}<img src="{{ mk.logo_path }}" alt="{{ mk.name }}">{% endif %}
+      <div class="name">{{ mk.name }}</div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <hr class="section-rule">
+  <div class="section-heading"><h2>Discover Parkers' essential car buying tools</h2></div>
+  <div class="home-tools">
+    <div class="tool-cell"><h3><a href="/car-specs/">Car specs</a></h3><p class="small muted">Full specifications, dimensions and equipment for every model.</p></div>
+    <div class="tool-cell"><h3><a href="/car-valuation/">Free car valuations</a></h3><p class="small muted">How much is your car worth? Free private and dealer valuations.</p></div>
+    <div class="tool-cell"><h3><a href="/car-insurance/insurance-groups/">Car insurance groups</a></h3><p class="small muted">Check the insurance group of any car from 1-50.</p></div>
+    <div class="tool-cell"><h3><a href="/car-tax/">Car tax calculator</a></h3><p class="small muted">Check what you'll pay in road tax before you buy.</p></div>
+    <div class="tool-cell"><h3><a href="/cars-for-sale/used/">Used cars for sale</a></h3><p class="small muted">Browse {{ total_used }} used cars from UK dealers.</p></div>
+    <div class="tool-cell"><h3><a href="/owner-reviews/">Owner reviews</a></h3><p class="small muted">Real owners rate the cars they live with every day.</p></div>
+  </div>
+
+  <hr class="section-rule">
+  <div class="section-heading"><h2>Recently added cars for sale</h2><a class="view-more" href="/cars-for-sale/used/">View more</a></div>
+  <div class="cards-grid">
+    {% for l in listings %}
+    <a class="card" href="/cars-for-sale/listing/{{ l.id }}/">
+      <div class="card__image">{% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ l.title }}</div>
+        <div class="card__meta">{{ l.derivative_text }}</div>
+        <div class="card__meta">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+        <div class="card__price">{{ money(l.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <hr class="section-rule">
+  <div class="section-heading"><h2>Latest news &amp; advice</h2><a class="view-more" href="/car-news/">View more articles</a></div>
+  <div class="news-rail">
+    {% for a in news %}
+    <a class="card" href="/car-news/{{ a.slug }}/">
+      <div class="card__image">{% if a.image %}<img src="{{ a.image }}" alt="{{ a.title }}">{% endif %}</div>
+      <div class="card__body">
+        <div class="card__title">{{ a.title }}</div>
+        <div class="card__meta">{{ a.published }} · {{ a.author }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} {{ g.name }} car tax{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-tax/">Car tax</a> › {{ m.make.name }} {{ m.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} {{ g.name }} car tax</h1>
+    <div class="page-heading__sub">Road tax cost for every version of the {{ m.make.name }} {{ m.name }} {{ g.name }}</div>
+    <div class="page-heading__sub">
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/specs/">Specs</a> ·
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/used-prices/">Used prices</a> ·
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/insurance-groups/">Insurance groups</a> ·
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/owner-reviews/">Owner reviews</a> ·
+      <a href="/car-tax/">All car tax rates</a>
+    </div>
+  </div>
+  <table class="data-table">
+    <tr><th>Version</th><th>Fuel type</th><th>Road tax (annual)</th></tr>
+    {% for d in derivs %}
+    <tr>
+      <td>{{ d.name }}</td>
+      <td>{{ d.fuel }}</td>
+      <td>{{ money(d.tax_cost) if d.tax_cost else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

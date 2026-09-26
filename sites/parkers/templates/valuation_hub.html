@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Free Car Valuation | How much is my car worth?{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>Free car valuation — how much is my car worth?</h1>
+    <div class="page-heading__sub">Smart valuations you can trust — fast, fair and free</div>
+  </div>
+  {% if vrm_error %}
+  <div class="flash flash--error">{{ vrm_error }}{% if vrm_reg %} ({{ vrm_reg }}){% endif %}</div>
+  {% endif %}
+  <div class="search-card" style="box-shadow:none;border:1px solid #e6e6e6">
+    <h2>Get a free Parkers car valuation</h2>
+    <form method="post" action="/car-valuation/lookup/" class="form-row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="val-reg">Search by registration</label>
+        <input type="text" id="val-reg" name="reg" placeholder="Enter reg" maxlength="10">
+      </div>
+      <button class="btn btn--primary" type="submit">Go</button>
+    </form>
+    <hr>
+    <h3>or search by make / model</h3>
+    <form method="get" action="/car-valuation/" class="form-row" data-cascade>
+      <div class="field">
+        <label for="val-make">Make</label>
+        <select id="val-make" name="make" data-auto-submit data-make-select>
+          <option value="">Select a make</option>
+          {% for mk in makes %}<option value="{{ mk.slug }}" {{ 'selected' if request.args.get('make') == mk.slug }}>{{ mk.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="val-model">Model</label>
+        <select id="val-model" name="model" data-model-select>
+          <option value="">Select a range</option>
+          {% if make_models %}
+          {% for m in make_models %}
+          <option value="{{ m.slug }}">{{ m.name }}</option>
+          {% endfor %}
+          {% else %}
+          {% for m in popular_models %}
+          <option value="{{ m.slug }}">{{ m.name }}</option>
+          {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <button class="btn btn--primary" type="submit">Search</button>
+    </form>
+    {% if request.args.get('make') and request.args.get('model') %}
+    <p><a class="btn btn--cta" href="/{{ request.args.get('make') }}/{{ request.args.get('model') }}/used-prices/">View {{ request.args.get('model')|replace('-',' ')|title }} used prices</a></p>
+    {% endif %}
+  </div>
+
+  <h2>Frequently asked questions</h2>
+  <div class="sidebar-box">
+    <h3>When you get a free valuation from Parkers, you get two ranges of values based on a standard mileage and equipment tally. You are presented with the private value, which is the typical price you'd expect to sell the car for privately, and the dealer value — what a dealer would retail the car at.</h3>
+    <p class="small muted">* Estimated values based on a typical mileage for a car of this age with no optional extras.</p>
+  </div>
+
+  <h2>Popular car prices</h2>
+  <div class="cards-grid">
+    {% for m in popular_models[:12] %}
+    <a class="card" href="/{{ m.make.slug }}/{{ m.slug }}/used-prices/">
+      <div class="card__body">
+        <div class="card__title">{{ m.make.name }} {{ m.name }} prices</div>
+        <div class="card__meta">{{ m.used_prices_text or 'View used prices' }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <h2>Used car prices by manufacturer</h2>
+  <div class="brand-grid">
+    {% for mk in makes %}
+    <a class="brand-cell" href="/{{ mk.slug }}/used-prices/">
+      {% if mk.logo_path %}<img src="{{ mk.logo_path }}" alt="{{ mk.name }}">{% endif %}
+      <div class="name">{{ mk.name }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

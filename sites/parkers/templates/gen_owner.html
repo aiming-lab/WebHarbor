@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ g.name }} owner reviews{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/owner-reviews/">Owner reviews</a> › {{ m.make.name }} {{ m.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ g.name }} ({{ g.years_label }}) Owner Reviews</h1>
+    <div class="page-heading__sub">
+      {% if m.has_review %}<a href="/{{ m.make.slug }}/{{ m.slug }}/review/">Review</a> ·{% endif %}
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/owner-reviews/">Owner Reviews</a> ·
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/specs/">Specs</a> ·
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/for-sale/">For Sale</a> ·
+      <a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/used-prices/">Used Prices</a>
+    </div>
+  </div>
+  {% if stat %}
+  <div class="sidebar-box">
+    <h3>{{ stat.total }} owners have reviewed their car and noted advice on any problems they have experienced.</h3>
+    <p class="star-rating">Average owner rating: <span class="star-pips">{% for _ in range(star_count(stat.average)) %}★{% endfor %}</span> <span class="star-rating__text">{{ stat.average }}</span> out of 5</p>
+    <ul>
+      {% for d in stat.dist %}
+      <li>{{ d.stars }} stars — {{ d.pct }}% of reviews ({{ d.count }})</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  <div class="section-heading"><h2>Write an owner review</h2></div>
+  <div class="sidebar-box" id="write">
+    <form method="post" action="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/owner-reviews/#reviews">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div class="field">
+          <label for="or-rating">Your rating (1-5)</label>
+          <select id="or-rating" name="rating" required>
+            <option value="">Select a rating</option>
+            <option value="5">5 — Excellent</option><option value="4">4 — Good</option>
+            <option value="3">3 — Average</option><option value="2">2 — Poor</option>
+            <option value="1">1 — Very poor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="or-deriv">Your car version</label>
+          <input type="text" id="or-deriv" name="derivative" placeholder="e.g. Zetec 1.0T EcoBoost 100PS 5d" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="or-yp">Year / plate</label>
+          <input type="text" id="or-yp" name="year_plate" placeholder="e.g. 2019/19">
+        </div>
+        <div class="field">
+          <label for="or-bought">Bought</label>
+          <input type="text" id="or-bought" name="bought" placeholder="e.g. Used in February 2021">
+        </div>
+        <div class="field">
+          <label for="or-author">Your name</label>
+          <input type="text" id="or-author" name="author" placeholder="Your name">
+        </div>
+      </div>
+      <div class="field">
+        <label for="or-body">Your review</label>
+        <textarea id="or-body" name="body" placeholder="Tell other buyers what it's like to live with..." required></textarea>
+      </div>
+      <button class="btn btn--primary" type="submit">Publish your review</button>
+    </form>
+  </div>
+  <div class="section-heading" id="reviews"><h2>Owner reviews</h2></div>
+  {% for r in reviews %}
+  <div class="sidebar-box">
+    <h3>{{ r.derivative_text }} — Owner Review</h3>
+    <p class="star-rating"><span class="star-pips">{% if r.rating %}{% for _ in range(star_count(r.rating)) %}★{% endfor %}{% endif %}</span> <span class="star-rating__text">{{ r.rating }}.0</span> out of 5</p>
+    <p class="small muted">By {{ r.author }} on {{ r.published }} · Year/plate: {{ r.year_plate }} · Bought: {{ r.bought }}</p>
+    <div class="review-prose">
+      {% for p in r.body %}<p>{{ p }}</p>{% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="callout">No owner reviews yet — be the first to review this car.</div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Cars for sale — search results{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-heading">
+    <h1>{{ 'New' if params.get('condition') == 'New' else 'Cars for sale' }}</h1>
+    <div class="page-heading__sub">{{ '{:,}'.format(total) }} cars match your search</div>
+  </div>
+  <div class="cfs-layout">
+    <aside class="filters-panel">
+      <h2 style="margin-top:0">Filters</h2>
+      <form method="get" action="/cars-for-sale/search-results/">
+        <h3>Car details</h3>
+        <div class="field">
+          <label for="f-make">Make</label>
+          <select id="f-make" name="make" data-auto-submit>
+            <option value="">Any make</option>
+            {% for mk in makes %}<option value="{{ mk.slug }}" {{ 'selected' if params.get('make') == mk.slug }}>{{ mk.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-model">Model</label>
+          <select id="f-model" name="model" data-auto-submit>
+            <option value="">Any model</option>
+            {% for m in models %}<option value="{{ m.slug }}" {{ 'selected' if params.get('model') == m.slug }}>{{ m.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <h3>Budget</h3>
+        <div class="field">
+          <label for="f-pmin">Minimum price</label>
+          <select id="f-pmin" name="price_min" data-auto-submit>
+            <option value="">No minimum</option>
+            {% for v in [1000,2000,3000,5000,8000,10000,15000,20000,25000] %}
+            <option value="{{ v }}" {{ 'selected' if params.get('price_min')|int(-1) == v }}>{{ money(v) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-pmax">Maximum price</label>
+          <select id="f-pmax" name="price_max" data-auto-submit>
+            <option value="">No maximum</option>
+            {% for v in [2000,5000,8000,10000,15000,20000,25000,30000,40000,50000] %}
+            <option value="{{ v }}" {{ 'selected' if params.get('price_max')|int(-1) == v }}>{{ money(v) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <h3>Car specifications</h3>
+        <div class="field">
+          <label for="f-fuel">Fuel type</label>
+          <select id="f-fuel" name="fuel" data-auto-submit>
+            <option value="">Any fuel</option>
+            {% for f in fuels %}<option value="{{ f }}" {{ 'selected' if params.get('fuel') == f }}>{{ f }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-trans">Transmission</label>
+          <select id="f-trans" name="transmission" data-auto-submit>
+            <option value="">Any transmission</option>
+            <option value="Manual" {{ 'selected' if params.get('transmission') == 'Manual' }}>Manual</option>
+            <option value="Automatic" {{ 'selected' if params.get('transmission') == 'Automatic' }}>Automatic</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-body">Body type</label>
+          <select id="f-body" name="body" data-auto-submit>
+            <option value="">Any body</option>
+            {% for b in ['Hatchback','SUV','Estate','Saloon','Coupe','Convertible','MPV'] %}
+            <option value="{{ b }}" {{ 'selected' if params.get('body') == b }}>{{ b }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-mileage">Maximum mileage</label>
+          <select id="f-mileage" name="mileage_max" data-auto-submit>
+            <option value="">Any mileage</option>
+            {% for v in [5000,10000,20000,30000,40000,60000,80000,100000] %}
+            <option value="{{ v }}" {{ 'selected' if params.get('mileage_max')|int(-1) == v }}>{{ '{:,}'.format(v) }} miles</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-year">Minimum year</label>
+          <select id="f-year" name="year_min" data-auto-submit>
+            <option value="">Any year</option>
+            {% for v in [2010,2012,2014,2016,2018,2019,2020,2021,2022,2023,2024,2025] %}
+            <option value="{{ v }}" {{ 'selected' if params.get('year_min')|int(-1) == v }}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-cond">Condition</label>
+          <select id="f-cond" name="condition" data-auto-submit>
+            <option value="">New or used</option>
+            <option value="Used" {{ 'selected' if params.get('condition') == 'Used' }}>Used</option>
+            <option value="New" {{ 'selected' if params.get('condition') == 'New' }}>New</option>
+          </select>
+        </div>
+        <div class="filters-actions">
+          <button class="btn btn--primary btn--sm" type="submit">Apply filters</button>
+          <a class="btn btn--outline btn--sm" href="/cars-for-sale/search-results/">Reset filters</a>
+        </div>
+      </form>
+    </aside>
+    <div>
+      <div class="result-head">
+        <div class="small muted">Showing {{ listings|length }} of {{ '{:,}'.format(total) }} cars</div>
+        <form method="get" action="/cars-for-sale/search-results/" class="form-row">
+          {% for k, v in params.items() %}{% if k != 'sort' and k != 'page' %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+          <label for="f-sort" class="small" style="margin:0">Sort by</label>
+          <select id="f-sort" name="sort" data-auto-submit>
+            {% for k, v in SORT_OPTIONS.items() %}<option value="{{ k }}" {{ 'selected' if sort == k }}>{{ v }}</option>{% endfor %}
+          </select>
+        </form>
+      </div>
+      {% for l in listings %}
+      <div class="listing-card">
+        <a class="listing-card__image" href="/cars-for-sale/listing/{{ l.id }}/">
+          {% if l.image %}<img src="{{ l.image }}" alt="{{ l.title }}">{% endif %}
+          <span class="listing-card__added">{{ l.added_label }}</span>
+        </a>
+        <div class="listing-card__body">
+          <a class="listing-card__title" href="/cars-for-sale/listing/{{ l.id }}/">{{ l.title }}</a>
+          <div class="listing-card__derivative">{{ l.derivative_text }}</div>
+          <div class="listing-card__details">{{ l.transmission }} | {{ l.year_plate }} | {{ l.fuel }} | {{ '{:,}'.format(l.mileage) }} miles</div>
+          <div class="listing-card__details muted small">{{ l.seller_name }} · {{ l.location }}</div>
+          <div class="listing-card__price">{{ money(l.price) }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="callout">No cars matched those filters — try widening your search.</div>
+      {% endfor %}
+      {% if total > per_page %}
+      <div class="pagination">
+        {% set pages = ((total + per_page - 1) // per_page) %}
+        {% for p in range(1, pages + 1) %}
+          {% if p == page %}<span class="current">{{ p }}</span>
+          {% else %}<a href="/cars-for-sale/search-results/?{% for k, v in params.items() %}{% if k != 'page' %}{{ k }}={{ v }}&amp;{% endif %}{% endfor %}page={{ p }}">{{ p }}</a>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

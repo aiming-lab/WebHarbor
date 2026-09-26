@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} {{ g.name }} specs &amp; dimensions{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/{{ m.make.slug }}/{{ m.slug }}/specs/">{{ m.make.name }} {{ m.name }} specs</a> › {{ g.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} {{ g.name }} specs &amp; dimensions</h1>
+    <div class="page-heading__sub">{{ g.years_label }} · {{ derivs|length }} versions listed by trim</div>
+  </div>
+  <div class="two-col">
+    <div>
+      {% if sel %}
+      <h2>{{ sel.name }} specs</h2>
+      <p class="small muted">Price when new: {{ money(sel.price_new) }} · Insurance group: {{ sel.insurance_group or '—' }} · Road tax: {{ money(sel.tax_cost) if sel.tax_cost else '—' }}</p>
+      <table class="data-table">
+        {% if sel.engine_text %}<tr><th>Engine</th><td>{{ sel.engine_text }}</td></tr>{% endif %}
+        {% if sel.fuel %}<tr><th>Fuel type</th><td>{{ sel.fuel }}</td></tr>{% endif %}
+        {% if sel.transmission %}<tr><th>Transmission</th><td>{{ sel.transmission }}</td></tr>{% endif %}
+        {% if sel.doors %}<tr><th>Doors</th><td>{{ sel.doors }}</td></tr>{% endif %}
+        {% if sel.ps %}<tr><th>Horsepower</th><td>{{ sel.ps }} bhp</td></tr>{% endif %}
+        {% if sel.zero_sixty %}<tr><th>Acceleration 0-60mph</th><td>{{ sel.zero_sixty }}</td></tr>{% endif %}
+        {% if sel.top_speed %}<tr><th>Top speed</th><td>{{ sel.top_speed }}</td></tr>{% endif %}
+        {% if sel.mpg %}<tr><th>Miles per gallon</th><td>{{ sel.mpg }}</td></tr>{% endif %}
+        {% if sel.co2 %}<tr><th>CO2</th><td>{{ sel.co2 }}</td></tr>{% endif %}
+        {% if sel.boot_litres %}<tr><th>Luggage space</th><td>{{ sel.boot_litres }} litres</td></tr>{% endif %}
+        {% if sel.length_mm %}<tr><th>Length</th><td>{{ sel.length_mm }} mm</td></tr>{% endif %}
+        {% if sel.width_mm %}<tr><th>Width</th><td>{{ sel.width_mm }} mm</td></tr>{% endif %}
+        {% if sel.height_mm %}<tr><th>Height</th><td>{{ sel.height_mm }} mm</td></tr>{% endif %}
+        {% if sel.seats %}<tr><th>Seats</th><td>{{ sel.seats }}</td></tr>{% endif %}
+        {% if sel.used_low %}<tr><th>Used price range</th><td>{{ money(sel.used_low) }} - {{ money(sel.used_high) }}</td></tr>{% endif %}
+      </table>
+      <p><a class="btn btn--outline" href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/{{ sel.urlslug }}/specs/">View full specifications &amp; equipment list</a></p>
+      {% endif %}
+    </div>
+    <aside>
+      {% for trim, dlist in trims.items() %}
+      <div class="sidebar-box">
+        <h3>{{ trim }}</h3>
+        <ul>
+          {% for d in dlist %}
+          <li><a href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/specs/?deriv={{ d.urlslug }}">{{ d.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

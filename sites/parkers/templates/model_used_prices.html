@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ m.make.name }} {{ m.name }} used prices{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="breadcrumbs"><a href="/">Home</a> › <a href="/car-valuation/">Car valuations</a> › <a href="/{{ m.make.slug }}/used-prices/">{{ m.make.name }}</a> › {{ m.name }}</div>
+  <div class="page-heading">
+    <h1>{{ m.make.name }} {{ m.name }} used prices</h1>
+    <div class="page-heading__sub">Select a model from the {{ m.make.name }} {{ m.name }} range</div>
+  </div>
+  {% for g in gens %}
+  <div class="sidebar-box">
+    <h3>{{ g.name }} ({{ g.years_label }})</h3>
+    <p><a class="btn btn--primary" href="/{{ m.make.slug }}/{{ m.slug }}/{{ g.slug }}/used-prices/">{{ g.name }} used prices</a></p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
