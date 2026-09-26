@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Explore our offers | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Offers</div>
+    <h1>Explore the world with our offers</h1>
+    <p class="sub" style="margin:0">Always be part of the action — never miss out on the big events with our exclusive offers and promo codes.</p>
+  </div>
+</div>
+<div class="wrap section">
+  <div class="card-grid">
+    {% for offer in items %}
+    <div class="card">
+      <img src="{{ offer.image }}" alt="{{ offer.title }}">
+      <div class="card-body">
+        <span class="badge">{{ offer.category }}</span>
+        <h3>{{ offer.title }}</h3>
+        <p>{{ offer.summary }}</p>
+        {% if offer.promo_code %}
+        <p class="hint" style="color:var(--qr-burgundy);font-weight:700">Promo code: {{ offer.promo_code }} · {{ offer.discount_line }}</p>
+        {% endif %}
+        <a class="btn btn-primary btn-sm" href="{{ offer.detail_path() }}">View offer</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="notice" style="margin-top:24px">Enter a promo code in the booking widget before you search — the discount appears on the payment page. One promo code per booking; codes cannot be combined.</div>
+</div>
+{% endblock %}

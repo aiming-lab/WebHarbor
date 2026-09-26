@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <h1>Start planning your next adventure</h1>
+    <p class="lead">Fly with the World's Best Airline to over 170 destinations across six continents via our home in Doha.</p>
+
+    <div class="booking-widget">
+      <div class="widget-tabs">
+        <span class="active">Book</span>
+        <a href="/en/manage-booking.html">Manage booking</a>
+        <a href="/en/check-in.html">Check in</a>
+        <a href="/en/flight-status.html">Flight status</a>
+      </div>
+      <form method="get" action="/en/search-results.html" class="widget-grid">
+        <div>
+          <label for="from">From</label>
+          <input type="text" id="from" name="from" placeholder="Doha (DOH)" value="DOH" list="airport-picker" required>
+        </div>
+        <div>
+          <label for="to">To</label>
+          <input type="text" id="to" name="to" placeholder="Start typing to choose a city or airport" list="airport-picker" required>
+          <datalist id="airport-picker">
+            {% for ap in airport_options %}
+            <option value="{{ ap.code }}">{{ ap.airport_name }}</option>
+            {% endfor %}
+          </datalist>
+        </div>
+        <div>
+          <label for="depart">Depart</label>
+          <input type="date" id="depart" name="depart" value="{{ (reference_date + timedelta(days=14)).isoformat() }}">
+        </div>
+        <div>
+          <label for="return">Return</label>
+          <input type="date" id="return" name="return">
+        </div>
+        <div>
+          <label for="cabin">Class</label>
+          <select id="cabin" name="cabin">
+            <option>Economy</option>
+            <option>Business</option>
+            <option>First</option>
+          </select>
+        </div>
+        <div>
+          <label for="adults">Passengers</label>
+          <select id="adults" name="adults">
+            {% for n in range(1, 5) %}<option value="{{ n }}" {% if n == 1 %}selected{% endif %}>{{ n }} adult{{ '' if n == 1 else 's' }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-primary btn-block" type="submit" style="margin-top:10px">Search flights</button>
+        </div>
+        <div>
+          <label for="promo">Promo code</label>
+          <input type="text" id="promo" name="promo" placeholder="Promo code (optional)" maxlength="20">
+          <div class="hint">Offer codes from the <a href="/en/offers.html">Offers page</a> are applied at payment.</div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Unlock exclusive rewards</h2>
+    <p class="sub">Earn Avios on every booking · Enjoy award flights &amp; upgrades · Pay with Cash + Avios &amp; save · Access Starlink Wi-Fi on board</p>
+    <div class="two-col">
+      <div>
+        <h3>Join Privilege Club now</h3>
+        <p>Amplify your balance when flying with Qatar Airways, oneworld<sup>®</sup> airlines and partner airlines. Spend Avios on trips across the globe or an upgrade to Business Class on your next flight.</p>
+        <p>Collect Avios with our hotel, car rental, financial, retail and lifestyle partners, shop &amp; pay at Qatar Duty Free, and access member-only offers.</p>
+        <div class="actions-bar">
+          <a class="btn btn-primary" href="/en/Privilege-Club/join.html">Join now</a>
+          <a class="btn btn-outline" href="/en/Privilege-Club/login.html">Already a member? Log in</a>
+        </div>
+      </div>
+      <div>
+        <img src="/static/images/brand/avios-every-journey.jpg" alt="Privilege Club" style="border-radius:6px;height:280px;object-fit:cover;width:100%">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>Go where it's happening</h2>
+    <p class="sub">Qatar trip, made flexible · Get ready for MotoGP™ · Discover African safaris</p>
+    <div class="promo-strip">
+      {% for offer in offers %}
+      <div class="promo">
+        <img src="{{ offer.image }}" alt="{{ offer.title }}">
+        <div class="promo-body">
+          <h3>{{ offer.title }}</h3>
+          <p>{{ offer.summary }}</p>
+          <a class="btn btn-sm" href="{{ offer.detail_path() }}">Explore offer</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Places we think you'll love</h2>
+    <p class="sub">Explore our destinations and start planning your journey.</p>
+    <div class="card-grid">
+      {% for dest in strip %}
+      <div class="card">
+        <img src="{{ dest.card_image }}" alt="{{ dest.city }}">
+        <div class="card-body">
+          <span class="badge">{{ dest.iata }}</span>
+          <h3>{{ dest.city }}</h3>
+          <p>{{ dest.country }}</p>
+          <a class="btn btn-outline btn-sm" href="{{ dest.detail_path() }}">Explore {{ dest.city }}</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="actions-bar">
+      <a class="btn btn-primary" href="/en/destinations.html">Explore destinations</a>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap two-col">
+    <div>
+      <h2>Private. Luxurious. Qsuite.</h2>
+      <p>Begin an unforgettable journey where luxury is reimagined. Relax, dine, and unwind with generous space and the privacy you deserve.</p>
+      <a class="btn btn-outline" href="/en/offers/qsuite-experience.html">Explore Qsuite</a>
+    </div>
+    <div>
+      <h2>Looking for a travel package?</h2>
+      <p>Save more and earn greater rewards when you book your flight plus hotel package with Qatar Airways Holidays. Stopover in Qatar and turn one holiday into two.</p>
+      <a class="btn btn-outline" href="/en/offers/qatar-stopover.html">Explore packages</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Never miss an offer</h2>
+    <p class="sub">Subscribe and be the first to receive our exclusive offers.</p>
+    <form method="post" action="/subscribe" class="form-row" style="max-width:760px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="/en/homepage.html">
+      <div>
+        <label for="nl-email">Email address</label>
+        <input type="email" id="nl-email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div>
+        <label for="nl-city">Preferred city of departure</label>
+        <input type="text" id="nl-city" name="departure_city" placeholder="Doha (DOH)">
+      </div>
+      <div style="align-self:end">
+        <button class="btn btn-primary" type="submit">Subscribe</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

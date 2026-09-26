@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}My dashboard | Privilege Club{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Privilege Club › My dashboard</div>
+    <h1>Welcome, {{ user.first_name }}</h1>
+    <p class="sub" style="margin:0">{{ user.title }} {{ user.first_name }} {{ user.last_name }} · Member {{ user.membership_no }} · Joined {{ user.joined }}</p>
+  </div>
+</div>
+<div class="wrap section">
+  <div class="balances">
+    <div class="balance"><div class="n">{{ '{:,}'.format(user.avios) }}</div><div class="l">Avios</div></div>
+    <div class="balance"><div class="n">{{ '{:,}'.format(user.qpoints) }}</div><div class="l">Qpoints</div></div>
+    <div class="balance"><div class="n">{{ '{:,}'.format(user.qcredits) }}</div><div class="l">Qcredits</div></div>
+    <div class="balance" style="background:var(--qr-accent)"><div class="n">{{ user.tier }}</div><div class="l">Current tier</div></div>
+  </div>
+
+  {% if user.next_tier() %}
+  <div class="notice">You are <strong>{{ '{:,}'.format(user.qpoints_to_next()) }} Qpoints</strong> away from {{ user.next_tier() }}. Earn {{ tier_qpoints[user.next_tier()] }} Qpoints within any 12-month period to upgrade.</div>
+  {% else %}
+  <div class="notice">You have reached the highest tier. To retain Platinum: {{ tier_retain['Platinum'] }}.</div>
+  {% endif %}
+
+  <div class="two-col">
+    <div>
+      <h2>My trips</h2>
+      {% if bookings %}
+      <table class="data">
+        <tr><th>Reference</th><th>Trip</th><th>Date</th><th>Cabin</th><th>Status</th><th></th></tr>
+        {% for b in bookings %}
+        <tr>
+          <td><strong>{{ b.pnr }}</strong></td>
+          <td>{{ b.summary_line() }}</td>
+          <td>{{ b.legs[0].leg_date }}</td>
+          <td>{{ b.cabin }}</td>
+          <td>{% if b.status == 'cancelled' %}Cancelled{% elif b.checked_in %}Checked in{% else %}Confirmed{% endif %}</td>
+          <td><a href="/en/manage-booking/{{ b.pnr }}.html">Manage</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="hint">No trips on your account yet. <a href="/en/homepage.html">Book a flight</a> with your Privilege Club number {{ user.membership_no }} to start earning.</p>
+      {% endif %}
+      <h2 style="margin-top:24px">Quick links</h2>
+      <div class="actions-bar">
+        <a class="btn btn-outline btn-sm" href="/en/Privilege-Club/dashboard/my-profile.html">My profile</a>
+        <a class="btn btn-outline btn-sm" href="/en/Privilege-Club/dashboard/my-activities.html">My activities</a>
+        <a class="btn btn-outline btn-sm" href="/en/Privilege-Club/avios-calculator.html">Avios calculator</a>
+        <a class="btn btn-outline btn-sm" href="/en/Privilege-Club/membership-tiers.html">Tier benefits</a>
+      </div>
+    </div>
+    <div>
+      <h2>Recent activity</h2>
+      {% if activities %}
+      <table class="data">
+        <tr><th>Date</th><th>Description</th><th>Avios</th><th>Qpoints</th></tr>
+        {% for a in activities %}
+        <tr>
+          <td>{{ a.occurred_at }}</td>
+          <td>{{ a.description }}</td>
+          <td>{% if a.avios %}{{ '+' if a.avios > 0 else '' }}{{ '{:,}'.format(a.avios) }}{% else %}—{% endif %}</td>
+          <td>{% if a.qpoints %}{{ '+' if a.qpoints > 0 else '' }}{{ '{:,}'.format(a.qpoints) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="hint">No activity yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

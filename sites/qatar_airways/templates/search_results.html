@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Flight search results | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Book › Search results</div>
+    <h1>{% if origin_ap %}{{ origin_ap.city | city_display }} ({{ origin }}) → {{ dest_ap.city | city_display }} ({{ dest }}){% else %}Search flights{% endif %}</h1>
+    <p class="sub" style="margin:0">
+      {% if origin_ap %}
+      {{ depart.strftime('%a, %d %b %Y') }}{% if ret %} — return {{ ret.strftime('%a, %d %b %Y') }}{% endif %}
+      · {{ pax }} passenger{{ '' if pax == 1 else 's' }} · {{ cabin }} Class
+      {% if promo %} · Promo code {{ promo }}{% if not promo_offer %} (not recognised){% endif %}{% endif %}
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="wrap section">
+  {% if error == "route" %}
+    <div class="form-errors"><p>We couldn't find that route. Please check the origin and destination airport codes and search again.</p></div>
+    <a class="btn btn-outline" href="/en/homepage.html">Back to booking</a>
+  {% else %}
+    {% if not outbound %}
+      <div class="notice">No Qatar Airways flights operate {{ origin }} → {{ dest }} in our schedule. Try another nearby airport or explore all <a href="/en/destinations.html">destinations</a>.</div>
+    {% else %}
+      <h2>Outbound: {{ origin_ap.city | city_display }} ({{ origin }}) → {{ dest_ap.city | city_display }} ({{ dest }})</h2>
+      <p class="sub">Fares below are per passenger for {{ cabin }} Class and include the whole party's total. All times are local.</p>
+      {% for view in outbound %}
+      <div class="flight-card">
+        <div class="flight-head">
+          <div>
+            <div class="route">{{ view.flight.code }} · {{ view.flight.origin_code }} → {{ view.flight.dest_code }}</div>
+            <div class="meta">{{ view.flight.equipment_name }} · {{ view.day.strftime('%a, %d %b %Y') }}</div>
+          </div>
+          {% if view.flight.equipment == '388' %}<span class="badge">A380</span>{% endif %}
+        </div>
+        <div class="flight-times">
+          <div class="time-box"><div class="t">{{ view.flight.dep_time }}</div><div class="c">{{ view.flight.origin_code }}</div></div>
+          <div class="duration"><div class="line"><span class="dot"></span></div>{{ view.flight.duration_min // 60 }}h {{ '%02d' % (view.flight.duration_min % 60) }}m</div>
+          <div class="time-box"><div class="t">{{ view.flight.arr_time }}</div><div class="c">{{ view.flight.dest_code }}</div></div>
+        </div>
+        {% if view.fares %}
+        <div class="fare-grid">
+          {% for code, fare in view.fares.items() %}
+          <div class="fare-option">
+            <div class="name">{{ fare_types[code][1] }}</div>
+            <div class="price">{{ fare.per_pax | usd }}</div>
+            <div class="per">per passenger · total {{ fare.total | usd }}</div>
+            <a class="btn btn-primary btn-sm btn-block" style="margin-top:8px"
+               href="{% if ret %}/en/booking/select-return.html?from={{ origin }}&amp;to={{ dest }}&amp;depart={{ view.day.isoformat() }}&amp;ret={{ ret.isoformat() }}&amp;adults={{ adults }}&amp;children={{ children }}&amp;cabin={{ cabin }}&amp;fare={{ code }}&amp;flight={{ view.flight.id }}{% if promo %}&amp;promo={{ promo }}{% endif %}{% else %}/en/booking/passenger-details.html?from={{ origin }}&amp;to={{ dest }}&amp;depart={{ view.day.isoformat() }}&amp;adults={{ adults }}&amp;children={{ children }}&amp;cabin={{ cabin }}&amp;fare={{ code }}&amp;flight={{ view.flight.id }}{% if promo %}&amp;promo={{ promo }}{% endif %}{% endif %}">Select</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="notice" style="margin:0 18px 16px">{{ cabin }} Class is not available on this flight.</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if ret %}
+      <h2 style="margin-top:30px">Return: {{ dest_ap.city | city_display }} ({{ dest }}) → {{ origin_ap.city | city_display }} ({{ origin }})</h2>
+      {% if not inbound %}
+        <div class="notice">No Qatar Airways flights operate {{ dest }} → {{ origin }} in our schedule.</div>
+      {% else %}
+      <p class="sub">Pick your outbound flight above; you will choose the return leg next.</p>
+      {% for view in inbound %}
+      <div class="flight-card">
+        <div class="flight-head">
+          <div>
+            <div class="route">{{ view.flight.code }} · {{ view.flight.origin_code }} → {{ view.flight.dest_code }}</div>
+            <div class="meta">{{ view.flight.equipment_name }} · {{ view.day.strftime('%a, %d %b %Y') }}</div>
+          </div>
+        </div>
+        <div class="flight-times">
+          <div class="time-box"><div class="t">{{ view.flight.dep_time }}</div><div class="c">{{ view.flight.origin_code }}</div></div>
+          <div class="duration"><div class="line"><span class="dot"></span></div>{{ view.flight.duration_min // 60 }}h {{ '%02d' % (view.flight.duration_min % 60) }}m</div>
+          <div class="time-box"><div class="t">{{ view.flight.arr_time }}</div><div class="c">{{ view.flight.dest_code }}</div></div>
+        </div>
+        {% if view.fares %}
+        <div class="fare-grid">
+          {% for code, fare in view.fares.items() %}
+          <div class="fare-option">
+            <div class="name">{{ fare_types[code][1] }}</div>
+            <div class="price">{{ fare.per_pax | usd }}</div>
+            <div class="per">per passenger · total {{ fare.total | usd }}</div>
+            <span class="hint">Return fares mirror the outbound fare selection.</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

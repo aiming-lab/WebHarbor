@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Avios calculator | Privilege Club{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Privilege Club › Avios calculator</div>
+    <h1>Avios calculator</h1>
+    <p class="sub" style="margin:0">Work out how many Avios and Qpoints a flight earns before you book. Higher tiers earn a tier bonus on top of base Avios.</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <form method="post" action="/en/Privilege-Club/avios-calculator.html">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div><label>From</label><input type="text" name="from" placeholder="DOH" value="{{ origin or '' }}" required></div>
+        <div><label>To</label><input type="text" name="to" placeholder="JFK" value="{{ dest or '' }}" required></div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Cabin</label>
+          <select name="cabin">
+            <option {{ 'selected' if cabin == 'Economy' or not cabin }}>Economy</option>
+            <option {{ 'selected' if cabin == 'Business' }}>Business</option>
+            <option {{ 'selected' if cabin == 'First' }}>First</option>
+          </select>
+        </div>
+        <div>
+          <label>Your tier</label>
+          <select name="tier">
+            {% for t in tiers %}
+            <option {{ 'selected' if tier == t }}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="actions-bar"><button class="btn btn-primary" type="submit">Calculate</button></div>
+    </form>
+    {% if error == 'route' %}
+    <div class="form-errors"><p>We couldn't find a Qatar Airways flight {{ origin }} → {{ dest }}. Try a route from our network, e.g. DOH → LHR.</p></div>
+    {% endif %}
+    <div class="notice">Base Avios scale with distance and cabin (Economy ×1, Business ×2, First ×3). Tier bonuses: Silver +25%, Gold +75%, Platinum +100%. Qpoints also depend on cabin: Economy 1 per 50km, Business 1 per 25km, First 1 per 15km.</div>
+  </div>
+  <aside>
+    {% if result %}
+    <div class="tier-card" style="border-color:var(--qr-burgundy)">
+      <div class="tier-name">{{ result.flight.code }} {{ result.flight.origin_code }} → {{ result.flight.dest_code }}</div>
+      <p class="hint">{{ result.flight.equipment_name }} · departs {{ result.flight.dep_time }}</p>
+      <table class="data">
+        <tr><th>Cabin</th><td>{{ cabin }}</td></tr>
+        <tr><th>Tier</th><td>{{ tier }} (+{{ result.bonus_pct }}% bonus)</td></tr>
+        <tr><th>Avios earned (one-way)</th><td><strong>{{ '{:,}'.format(result.avios) }}</strong></td></tr>
+        <tr><th>Qpoints earned (one-way)</th><td><strong>{{ '{:,}'.format(result.qpoints) }}</strong></td></tr>
+      </table>
+      <p class="hint">Avios and Qpoints are credited to your account after your Privilege Club number is added to the booking.</p>
+    </div>
+    {% else %}
+    <div class="tier-card">
+      <div class="tier-name">How earning works</div>
+      <p class="hint">Every eligible flight earns Avios you can spend on award trips and upgrades, plus Qpoints that move you up the membership tiers.</p>
+      <a class="btn btn-outline btn-sm" href="/en/Privilege-Club/membership-tiers.html">See tier benefits</a>
+    </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

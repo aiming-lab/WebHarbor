@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My activities | Privilege Club{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Privilege Club › My activities</div>
+    <h1>My activities</h1>
+    <p class="sub" style="margin:0">Every Avios and Qpoint movement on your account, newest first.</p>
+  </div>
+</div>
+<div class="wrap section">
+  {% if activities %}
+  <table class="data">
+    <tr><th>Date</th><th>Type</th><th>Description</th><th>Avios</th><th>Qpoints</th></tr>
+    {% for a in activities %}
+    <tr>
+      <td>{{ a.occurred_at }}</td>
+      <td>{{ a.kind }}</td>
+      <td>{{ a.description }}</td>
+      <td>{% if a.avios %}{{ '+' if a.avios > 0 else '' }}{{ '{:,}'.format(a.avios) }}{% else %}—{% endif %}</td>
+      <td>{% if a.qpoints %}{{ '+' if a.qpoints > 0 else '' }}{{ '{:,}'.format(a.qpoints) }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="hint">No activities yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

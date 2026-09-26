@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Check in online | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Check in</div>
+    <h1>Skip the queue, check in online</h1>
+    <p class="sub" style="margin:0">Be ready to fly — enhance your experience and save time at the airport by checking in through qatarairways.com.</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div style="max-width:560px">
+    {% if error %}<div class="form-errors"><p>{{ error }}</p></div>{% endif %}
+    <form method="post" action="/en/check-in.html">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Booking reference (PNR)</label>
+      <input type="text" name="pnr" placeholder="e.g. QC08BV" required>
+      <label>Last name</label>
+      <input type="text" name="last_name" placeholder="Last name on the booking" required>
+      <div class="actions-bar">
+        <button class="btn btn-primary" type="submit">Check in now</button>
+      </div>
+    </form>
+    <div class="notice">Travel hassle-free with fast-bag-drop counters · Stay up to date with trip notifications · Shop, dine or relax with more time at the airport.</div>
+  </div>
+  <div>
+    <img src="/static/images/brand/h1-mobile-check-in-hn.jpg" alt="Check in on our app" style="border-radius:6px;height:300px;width:100%;object-fit:cover">
+    <h3>Breeze through check in on our app</h3>
+    <p class="hint">Add your booking to 'My Trips', check in, and add your digital boarding pass to your Wallet.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}My profile | Privilege Club{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Privilege Club › My profile</div>
+    <h1>My profile</h1>
+    <p class="sub" style="margin:0">Keep your Privilege Club details up to date.</p>
+  </div>
+</div>
+<div class="wrap section two-col">
+  <div>
+    <h3>Membership</h3>
+    <div class="kv">
+      <div class="k">Membership number</div><div>{{ user.membership_no }}</div>
+      <div class="k">Tier</div><div>{{ user.tier }}</div>
+      <div class="k">Avios balance</div><div>{{ '{:,}'.format(user.avios) }}</div>
+      <div class="k">Qpoints</div><div>{{ '{:,}'.format(user.qpoints) }}</div>
+      <div class="k">Qcredits</div><div>{{ '{:,}'.format(user.qcredits) }}</div>
+      <div class="k">Member since</div><div>{{ user.joined }}</div>
+    </div>
+    <div class="actions-bar">
+      <a class="btn btn-outline btn-sm" href="/en/Privilege-Club/dashboard.html">Back to dashboard</a>
+    </div>
+  </div>
+  <div>
+    <h3>Edit details</h3>
+    <form method="post" action="/en/Privilege-Club/dashboard/my-profile.html">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div style="flex:0 0 110px">
+          <label>Title</label>
+          <select name="title">
+            <option {{ 'selected' if user.title == 'Mr' }}>Mr</option>
+            <option {{ 'selected' if user.title == 'Mrs' }}>Mrs</option>
+            <option {{ 'selected' if user.title == 'Ms' }}>Ms</option>
+          </select>
+        </div>
+        <div><label>First name</label><input type="text" name="first_name" value="{{ user.first_name }}" required></div>
+        <div><label>Last name</label><input type="text" name="last_name" value="{{ user.last_name }}" required></div>
+      </div>
+      <label>Email address</label>
+      <input type="email" name="email" value="{{ user.email }}" required>
+      <label>Country/Region of residence</label>
+      <input type="text" name="country" value="{{ user.country or '' }}">
+      <label>Mobile number</label>
+      <input type="text" name="mobile" value="{{ user.mobile or '' }}">
+      <div class="actions-bar">
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

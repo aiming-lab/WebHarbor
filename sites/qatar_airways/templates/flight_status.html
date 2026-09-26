@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Flight status | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Flight status</div>
+    <h1>Track your flight status</h1>
+    <p class="sub" style="margin:0">Stay up to date and set alerts for an upcoming flight. Schedule snapshot: {{ now_str }}.</p>
+  </div>
+</div>
+<div class="wrap section">
+  <div class="two-col">
+    <div>
+      <h3>Search by flight number</h3>
+      <form method="get" action="/en/flight-status.html">
+        <input type="hidden" name="mode" value="number">
+        <label>Flight number</label>
+        <input type="text" name="number" placeholder="e.g. QR001" value="{{ query.number or '' }}" required>
+        <label>Date</label>
+        <input type="date" name="date" value="{{ query.date.isoformat() if query.date else reference_date.isoformat() }}">
+        <div class="actions-bar"><button class="btn btn-primary" type="submit">Track flight</button></div>
+      </form>
+    </div>
+    <div>
+      <h3>Search by route</h3>
+      <form method="get" action="/en/flight-status.html">
+        <input type="hidden" name="mode" value="route">
+        <div class="form-row">
+          <div><label>From</label><input type="text" name="from" placeholder="DOH" value="{{ query.from or '' }}" required></div>
+          <div><label>To</label><input type="text" name="to" placeholder="LHR" value="{{ query.to or '' }}" required></div>
+        </div>
+        <label>Date</label>
+        <input type="date" name="date" value="{{ query.date.isoformat() if query.date else reference_date.isoformat() }}">
+        <div class="actions-bar"><button class="btn btn-primary" type="submit">Track route</button></div>
+      </form>
+    </div>
+  </div>
+
+  {% if results %}
+  <h2 style="margin-top:26px">Results</h2>
+  {% for row in results %}
+  <div class="flight-card">
+    <div class="flight-head">
+      <div>
+        <div class="route">{{ row.flight.code }} · {{ row.flight.origin_code }} → {{ row.flight.dest_code }}</div>
+        <div class="meta">{{ row.flight.equipment_name }} · {{ row.date.strftime('%a, %d %b %Y') }}</div>
+      </div>
+      <div>
+        <span class="badge">{{ row.status_text }}</span>
+      </div>
+    </div>
+    <div class="flight-times">
+      <div class="time-box"><div class="t">{{ row.flight.dep_time }}</div><div class="c">scheduled · {{ row.flight.origin_code }}</div></div>
+      <div class="duration">
+        {% if row.status %}
+          <div class="line"><span class="dot"></span></div>
+          {% if row.status.dep_est %}Estimated departure {{ row.status.dep_est }} · {% endif %}
+          {% if row.status.dep_act %}Actual departure {{ row.status.dep_act }} · {% endif %}
+          {% if row.status.arr_est %}Estimated arrival {{ row.status.arr_est }}{% endif %}
+          {% if row.status.arr_act %}Actual arrival {{ row.status.arr_act }}{% endif %}
+        {% else %}
+          <div class="line"><span class="dot"></span></div>Scheduled — no operational updates for this date
+        {% endif %}
+      </div>
+      <div class="time-box"><div class="t">{{ row.flight.arr_time }}</div><div class="c">scheduled · {{ row.flight.dest_code }}</div></div>
+    </div>
+  </div>
+  {% endfor %}
+  {% elif mode %}
+  <div class="notice" style="margin-top:20px">No flights found for that search. Try a route like DOH → LHR or a flight number such as QR001.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Our fleet | Qatar Airways{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="wrap">
+    <div class="crumbs">Home › Plan your trip › Our fleet</div>
+    <h1>Explore our fleet</h1>
+    <p class="sub" style="margin:0">Qatar Airways maintains a versatile fleet, encompassing a wide range of models that perfectly meet the varied demands of global markets. With our expanding state-of-the-art fleet, including the A350, A380, B777 and B787s, we strive to provide our passengers with a comfortable travel experience.</p>
+  </div>
+</div>
+<div class="wrap section">
+  {% for family in ['Airbus', 'Boeing'] %}
+  <h2>{{ family }}</h2>
+  <div class="card-grid" style="margin-bottom:26px">
+    {% for a in aircraft if a.family == family %}
+    <div class="card">
+      <img src="{{ a.image }}" alt="{{ a.code }}">
+      <div class="card-body">
+        <h3>{{ a.code }}</h3>
+        <p>{{ a.description[:110] }}…</p>
+        <p class="hint">Seating capacity: {{ a.seat_capacity }}{% if a.qsuite %} · Qsuite{% endif %}{% if a.first_class %} · First Class{% endif %}</p>
+        <a class="btn btn-outline btn-sm" href="/en/our-fleet/{{ a.code | replace(' ', '-') }}.html">View aircraft</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <h2>{{ 'Airbus' if aircraft[0].family == 'Airbus' else 'Airbus' }} passenger fleet count and seating capacity</h2>
+  <table class="data">
+    <tr><th>Aircraft</th><th>Seating capacity</th><th>Seat map</th></tr>
+    {% for a in aircraft %}
+    <tr>
+      <td>{{ a.code }}</td>
+      <td>{{ a.seat_capacity }}</td>
+      <td><a href="/en/our-fleet/{{ a.code | replace(' ', '-') }}.html">View{% if a.qsuite %}*{% endif %}{% if a.first_class %}***{% endif %}</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="hint">*Features Qsuite · ***Features First Class</p>
+</div>
+{% endblock %}
