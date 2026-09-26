@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify SourceForge--3.
 
-A coworker filed a 7-Zip bug about the progress bar reaching 100% while archiving was still running. Find that ticket in the Bugs tracker and report its number, summary, status, creator, and priority, and summarize the project owner's reply. Also search the tracker for "CVE" and report how many tickets that search returns and the ticket numbers and summaries of the two newest, with each one's status. Open the lowest-numbered CVE ticket and report who owns it and its creation date. Finally, report the tracker's open ticket count from the sidebar.
+A coworker filed a 7-Zip bug about the progress bar reaching 100% while archiving was still running. Find that ticket in the Bugs tracker and report its number, summary, status, creator, and priority, and summarize the project owner's reply. Also search the tracker for "CVE" and report how many tickets that search returns and the ticket numbers, summaries, and priorities of the two newest. Open the lowest-numbered CVE ticket and report who owns it and its creation date. Finally, report the tracker's open ticket count from the sidebar.
 """
 from verify_lib import (check_answer_number, check_answer_phrase, check_read_only,
                         check_only_tables_changed, check_trajectory_identity,
@@ -23,6 +23,8 @@ def run_checks(judge, traj, initial_db, after_db):
     check_visited_path(judge, traj, "visited_progress_search", r"/p/sevenzip/bugs/search/.*progress")
     check_visited_path(judge, traj, "visited_ticket_2701", r"/p/sevenzip/bugs/2701/")
     check_visited_path(judge, traj, "visited_cve_search", r"/p/sevenzip/bugs/search/.*CVE")
+    check_visited_path(judge, traj, "visited_ticket_2681", r"/p/sevenzip/bugs/2681/")
+    check_visited_path(judge, traj, "visited_ticket_2670", r"/p/sevenzip/bugs/2670/")
     check_visited_path(judge, traj, "visited_ticket_2669", r"/p/sevenzip/bugs/2669/")
     check_answer_phrase(judge, answer, "ticket_summary", 'user interface misleading')
     check_answer_phrase(judge, answer, "ticket_status_open", 'open')
@@ -32,8 +34,10 @@ def run_checks(judge, traj, initial_db, after_db):
     check_answer_number(judge, answer, "cve_ticket_count", 3, 'CVE search results')
     check_answer_phrase(judge, answer, "cve_newest_1", '2681')
     check_answer_phrase(judge, answer, "cve_newest_1_summary", 'CVE-2026-58052')
+    check_answer_number(judge, answer, "cve_newest_1_priority", 7, 'ticket 2681 priority')
     check_answer_phrase(judge, answer, "cve_newest_2", '2670')
     check_answer_phrase(judge, answer, "cve_newest_2_summary", 'CVE-2026-48102')
+    check_answer_number(judge, answer, "cve_newest_2_priority", 7, 'ticket 2670 priority')
     check_answer_phrase(judge, answer, "cve_lowest", '2669')
     check_answer_phrase(judge, answer, "cve_lowest_owner", 'Igor Pavlov')
     check_answer_phrase(judge, answer, "cve_lowest_created", '2026-06-10')

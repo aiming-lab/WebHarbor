@@ -6,7 +6,7 @@ stateful mutations applied through sqlite, and trajectories are written in the
 agent_demo/agent.py shape from the frozen SPECS (extracted from the reviewer's
 honest live runs). No LLM.
 
-The seed DB resolves from the review container (wh-sf-rereview); the
+The seed DB resolves from the review container (wh-sf-r3); the
 SOURCEFORGE_TEST_SEED_DB env var overrides the location. Run with plain
 python3 + pytest:
 
@@ -27,7 +27,7 @@ from fixtures_data import BASE, SPECS  # noqa: E402  (same directory)
 
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
-CONTAINER = os.environ.get("WH_CONTAINER", "wh-sf-rereview")
+CONTAINER = os.environ.get("WH_CONTAINER", "wh-sf-r3")
 CACHE = Path(os.environ.get("SOURCEFORGE_TEST_SEED_DB") or
              str(Path("/tmp") / "sourceforge_verify_tests_seed.db"))
 TASKS_FILE = SITE_DIR / "tasks.jsonl"
@@ -144,7 +144,7 @@ def honest_run(tmp_path: Path, task_no: int) -> Path:
     spec = SPECS[task_no]
     run = tmp_path / f"honest_{task_no}"
     run.mkdir(parents=True)
-    b = RunBuilder(run, f"SourceForge--{task_no}")
+    b = RunBuilder(run, f"SourceForge--{task_no}", start_path=spec["urls"][0])
     urls = spec["urls"]
     for i, u in enumerate(urls):
         action = "navigate" if i == 0 else "click"
@@ -173,8 +173,8 @@ def shortcut_run(tmp_path: Path, task_no: int) -> Path:
     spec = SPECS[task_no]
     run = tmp_path / f"shortcut_{task_no}"
     run.mkdir(parents=True)
-    b = RunBuilder(run, f"SourceForge--{task_no}")
-    b.add_step("navigate", BASE)
+    b = RunBuilder(run, f"SourceForge--{task_no}", start_path=spec["urls"][0])
+    b.add_step("navigate", spec["urls"][0])
     b.finish(spec["answer"])
     after = copy_db(run)
     if spec.get("sql"):
@@ -187,7 +187,7 @@ def wrong_answer_run(tmp_path: Path, task_no: int, wrong: str) -> Path:
     spec = SPECS[task_no]
     run = tmp_path / f"wrong_{task_no}"
     run.mkdir(parents=True)
-    b = RunBuilder(run, f"SourceForge--{task_no}")
+    b = RunBuilder(run, f"SourceForge--{task_no}", start_path=spec["urls"][0])
     for i, u in enumerate(spec["urls"]):
         b.add_step("navigate" if i == 0 else "click", u)
     b.finish(wrong)
@@ -203,7 +203,7 @@ def state_mismatch_run(tmp_path: Path, task_no: int) -> Path:
     spec = SPECS[task_no]
     run = tmp_path / f"mismatch_{task_no}"
     run.mkdir(parents=True)
-    b = RunBuilder(run, f"SourceForge--{task_no}")
+    b = RunBuilder(run, f"SourceForge--{task_no}", start_path=spec["urls"][0])
     for i, u in enumerate(spec["urls"]):
         b.add_step("navigate" if i == 0 else "click", u)
     b.finish(spec["answer"])

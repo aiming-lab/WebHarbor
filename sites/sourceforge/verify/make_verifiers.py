@@ -5,10 +5,9 @@ Ground truth is frozen from the seed database + live re-review walks and is
 HARDCODED here (never in tasks.jsonl). Run from sites/sourceforge/verify/:
     python3 make_verifiers.py
 
-r2 sync (c67fb235): Q texts + TASKS check specs updated for the 19 redesigned
-tasks (T7/T18 specs unchanged); T13's stateful delta extended (fleet-admin +
-display name + CrystalDiskInfo bookmark). Expected values re-frozen from the
-re-review container (wh-sf-rereview) walks + seed DB.
+r3 sync (fb4ff5bf): TASKS check specs updated for the 5 deepened tasks
+(T3/T4/T5/T12/T19); the other 16 specs unchanged. Expected values re-frozen
+from the r3 review container (wh-sf-r3) honest walks + seed DB.
 """
 from pathlib import Path
 
@@ -142,6 +141,8 @@ TASKS[3] = [
     ("path", "visited_progress_search", r"/p/sevenzip/bugs/search/.*progress"),
     ("path", "visited_ticket_2701", r"/p/sevenzip/bugs/2701/"),
     ("path", "visited_cve_search", r"/p/sevenzip/bugs/search/.*CVE"),
+    ("path", "visited_ticket_2681", r"/p/sevenzip/bugs/2681/"),
+    ("path", "visited_ticket_2670", r"/p/sevenzip/bugs/2670/"),
     ("path", "visited_ticket_2669", r"/p/sevenzip/bugs/2669/"),
     ("p", "ticket_summary", "user interface misleading"),
     ("p", "ticket_status_open", "open"),
@@ -151,8 +152,10 @@ TASKS[3] = [
     ("n", "cve_ticket_count", 3, "CVE search results"),
     ("p", "cve_newest_1", "2681"),
     ("p", "cve_newest_1_summary", "CVE-2026-58052"),
+    ("n", "cve_newest_1_priority", 7, "ticket 2681 priority"),
     ("p", "cve_newest_2", "2670"),
     ("p", "cve_newest_2_summary", "CVE-2026-48102"),
+    ("n", "cve_newest_2_priority", 7, "ticket 2670 priority"),
     ("p", "cve_lowest", "2669"),
     ("p", "cve_lowest_owner", "Igor Pavlov"),
     ("p", "cve_lowest_created", "2026-06-10"),
@@ -162,16 +165,20 @@ TASKS[3] = [
 TASKS[4] = [
     ("path", "visited_forum", r"/p/sevenzip/discussion/45797/"),
     ("path", "visited_darkmode_thread", r"/thread/0f17be73d3/"),
+    ("path", "visited_darktheme_thread", r"/thread/768a550c16/"),
     ("path", "visited_highview_thread", r"/thread/b8d64839d0/"),
     ("path", "visited_help_forum", r"/p/sevenzip/discussion/45798/"),
+    ("path", "visited_help_hv_thread", r"/thread/be65c1f094/"),
     ("p", "thread_subject", "Dark Mode"),
     ("p", "thread_creator", "Carlos Nunes"),
     ("p", "thread_created", "Tue Jul 08, 2025"),
     ("n", "thread_posts", 4, "Dark Mode posts"),
     ("n", "thread_views", "3,206", "Dark Mode views"),
+    ("p", "darkmode_health_reason", "greatly facilitates eye comfort"),
     ("p", "darktheme_creator", "kb0000001"),
     ("n", "darktheme_posts", 18, "Dark Theme posts"),
     ("n", "darktheme_views", "9,620", "Dark Theme views"),
+    ("p", "darktheme_opening_post", "Dark Theme"),
     ("p", "max_views_thread", "7-Zip 26.02"),
     ("p", "max_views_creator", "Igor Pavlov"),
     ("n", "max_views", "297,148", "highest-view thread view count"),
@@ -179,6 +186,7 @@ TASKS[4] = [
     ("any", "help_topic_count", ["25", "8,276", "8276"], "topics the Help forum lists"),
     ("p", "help_hv_subject", "Compress multiple files to individual ZIP archives with fixed size"),
     ("p", "help_hv_creator", "rtm"),
+    ("n", "help_hv_views", "3,161", "Help forum highest-viewed thread views"),
 ]
 
 TASKS[5] = [
@@ -188,12 +196,15 @@ TASKS[5] = [
     ("path", "visited_npp", r"/projects/npppluginmgr/"),
     ("path", "visited_corefonts_reviews", r"/projects/corefonts/reviews/"),
     ("path", "visited_mingw_reviews", r"/projects/mingw/reviews/"),
+    ("path", "visited_npp_reviews", r"/projects/npppluginmgr/reviews/"),
     ("path", "visited_7zip", r"/projects/sevenzip/"),
+    ("path", "visited_7zip_reviews", r"/projects/sevenzip/reviews/"),
     ("p", "alltime_no1", "TrueType core fonts"),
     ("p", "alltime_no1_downloads", "3.3B"),
     ("p", "weekly_no1", "MinGW"),
     ("p", "weekly_no1_downloads", "3.6M"),
-    ("p", "sz_alltime", "430.1M"),
+    ("p", "sz_alltime_rank", "10"),
+    ("any", "sz_alltime_total", ["430M", "430.1M", "430,100,000"], "7-Zip all-time total as displayed"),
     ("p", "corefonts_reg", "2001-08-22"),
     ("p", "mingw_reg", "2000-02-09"),
     ("p", "npp_reg", "2011-11-29"),
@@ -206,7 +217,11 @@ TASKS[5] = [
     ("n", "corefonts_reviews", 46, "corefonts review count"),
     ("n", "mingw_rating", "4.6", "MinGW rating"),
     ("n", "mingw_reviews", 171, "MinGW review count"),
+    ("n", "npp_rating", "4.4", "Notepad++ Plugin Manager rating"),
+    ("n", "npp_reviews", 64, "Notepad++ Plugin Manager review count"),
     ("p", "sz_updated", "2026-09-04"),
+    ("n", "sz_total_reviews", 831, "7-Zip total review count on its project page"),
+    ("n", "sz_rating", "4.8", "7-Zip rating from its Reviews page"),
 ]
 
 TASKS[6] = [
@@ -357,7 +372,10 @@ TASKS[12] = [
     ("path", "visited_profile", r"/u/ipavlov/profile/"),
     ("path", "visited_p7zip", r"/projects/p7zip/"),
     ("path", "visited_7max", r"/projects/sevenmax/"),
+    ("path", "visited_7far", r"/projects/sevenfar/"),
     ("path", "visited_sz_reviews", r"/projects/sevenzip/reviews/"),
+    ("path", "visited_1star_filter", r"/projects/sevenzip/reviews/.*filter-stars=1"),
+    ("path", "visited_4star_filter", r"/projects/sevenzip/reviews/.*filter-stars=4"),
     ("p", "username", "ipavlov"),
     ("p", "display_name", "Igor Pavlov"),
     ("p", "join_date", "2000-08-17"),
@@ -365,13 +383,19 @@ TASKS[12] = [
     ("p", "project_p7zip", "p7zip"),
     ("p", "project_7far", "7-Far"),
     ("p", "project_7max", "7-max"),
-    ("p", "recent_other_summary", "Command-line port of the 7-Zip file archiver"),
-    ("p", "recent_other_license", "GNU Library or Lesser General Public License version 2.0"),
-    ("p", "recent_other_reg", "2004-06-12"),
-    ("p", "oldest_other_summary", "speeds up Windows applications by optimising memory allocation"),
-    ("p", "oldest_other_reg", "2004-08-12"),
+    ("p", "p7zip_summary", "Command-line port of the 7-Zip file archiver"),
+    ("p", "p7zip_license", "GNU Library or Lesser General Public License version 2.0"),
+    ("p", "p7zip_reg", "2004-06-12"),
+    ("p", "max_summary", "speeds up Windows applications by optimising memory allocation"),
+    ("p", "max_license", "GNU Library or Lesser General Public License version 2.0"),
+    ("p", "max_reg", "2004-08-12"),
+    ("p", "far_summary", "7-Zip archiver plugin for the FAR Manager file manager"),
+    ("p", "far_license", "GNU Library or Lesser General Public License version 2.0"),
+    ("p", "far_reg", "2009-12-28"),
     ("n", "sz_rating", "4.8", "7-Zip rating"),
-    ("n", "sz_reviews", 831, "7-Zip total review count"),
+    ("n", "one_star_view", 3, "reviews in the 1-star filter view"),
+    ("n", "four_star_view", 6, "reviews in the 4-star filter view"),
+    ("n", "sz_total_reviews", 831, "7-Zip total review count on its project page"),
 ]
 
 TASKS[13] = [
@@ -508,9 +532,13 @@ TASKS[19] = [
     ("path", "visited_podcast", r"/podcast/"),
     ("path", "visited_articles", r"/articles/"),
     ("path", "visited_case_studies", r"/software/case-studies/"),
+    ("path", "visited_ninjaone", r"/software/product/NinjaOne/"),
+    ("path", "visited_gcp", r"/software/product/Google-Cloud-Platform/"),
     ("path", "visited_blog", r"/blog/"),
+    ("path", "visited_vendors", r"/software/vendors/"),
     ("path", "visited_create", r"/create"),
     ("path", "visited_support", r"/support"),
+    ("path", "visited_file_compression_search", r"/directory/.*file.compression"),
     ("p", "founded_1999", "1999"),
     ("p", "software_titles", "123,200"),
     ("p", "leader_1", "Logan Abbott"),
@@ -525,10 +553,16 @@ TASKS[19] = [
     ("p", "vendor_1", "Gemini Enterprise Agent Platform"),
     ("p", "vendor_2", "Google Cloud Platform"),
     ("p", "vendor_3", "NinjaOne"),
-    ("p", "create_invite", "Create A SourceForge Project"),
+    ("n", "ninjaone_ratings", "6,035", "NinjaOne ratings count"),
+    ("n", "gcp_ratings", "61,049", "Google Cloud Platform ratings count"),
+    ("p", "newest_blog_post", "Trend Analysis and Capacity Planning"),
+    ("p", "blog_date", "2026-09-03"),
+    ("p", "vendors_offer", "list your product in the Business Software directory"),
+    ("p", "create_invite", "Find, Create & Publish Open Source software for free"),
     ("p", "support_fastest", "fastest way to get help"),
     ("p", "hq_address", "1320 Columbia Street Suite 310"),
     ("p", "hq_city", "San Diego"),
+    ("n", "file_compression_count", 96, "projects returned by the 'file compression' directory search"),
 ]
 
 TASKS[20] = [
