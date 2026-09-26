@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Raising Cane’s | Chicken Fingers | Order Now{% endblock %}
+{% block content %}
+<div class="hero">
+  <img class="hero-img" src="{{ url_for('static', filename='images/home/hero_football.jpg') }}" alt="Raising Cane’s Saucey Slider — football season">
+  <div class="hero-caption">
+    <span class="hero-badge">One Love®</span>
+    <h1>Craveable Chicken Finger Meals</h1>
+    <p>Quality chicken finger meals, served with a great Crew, cool Culture and active Community involvement. It’s our ONE LOVE®.</p>
+    <a class="btn btn-primary" href="{{ url_for('order_start') }}">Order Now</a>
+    <a class="btn btn-yellow" href="{{ url_for('menu_page') }}" style="margin-left:10px">Our Menu</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="section">
+    <div class="section-head">
+      <h2>The Combos</h2>
+      <a class="more-link" href="{{ url_for('menu_page') }}">See the full menu →</a>
+    </div>
+    <div class="card-grid">
+      {% for item in combos %}
+      <a class="card" href="{{ url_for('menu_item', slug=item.slug) }}">
+        <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}">
+        <div class="card-body">
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.description.split('\n')[0] }}</p>
+          <div class="card-meta">
+            <span>{{ item.calorie_label() }}</span>
+            {% if item.base_price %}<span class="price">{{ item.base_price | money }}</span>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Tailgates™</h2>
+      <a class="more-link" href="{{ url_for('menu_page') }}#tailgates">Feeding the whole Crew →</a>
+    </div>
+    <div class="card-grid">
+      {% for item in tailgates %}
+      <a class="card" href="{{ url_for('menu_item', slug=item.slug) }}">
+        <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}">
+        <div class="card-body">
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.description.split('\n')[0] }}</p>
+          <div class="card-meta">
+            <span>{{ item.calorie_label() }}</span>
+            {% if item.base_price %}<span class="price">{{ item.base_price | money }}</span>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>What’s Happening</h2>
+      <a class="more-link" href="{{ url_for('news') }}">All news →</a>
+    </div>
+    <div class="card-grid">
+      {% for article in featured %}
+      <a class="card" href="{{ url_for('news_article', slug=article.slug) }}">
+        {% if article.image %}
+        <img src="{{ url_for('static', filename='images/' + article.image) }}" alt="{{ article.title }}">
+        {% endif %}
+        <div class="card-body">
+          <span class="tag">{{ article.category }}</span>
+          <h3>{{ article.title }}</h3>
+          <div class="card-meta"><span>{{ article.published }}</span></div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="two-col">
+      <div>
+        <h2>Our Crew Makes It Happen</h2>
+        <p>Raising Cane’s was founded by Todd Graves in 1996 in Baton Rouge, LA. From ONE Restaurant in the shadow of LSU to more than 900 Restaurants across the country — it’s our great Crew, cool Culture and active Community involvement that makes it all worthwhile.</p>
+        <a class="btn btn-ghost" href="{{ url_for('careers') }}">Join the Crew</a>
+      </div>
+      <img src="{{ url_for('static', filename='images/home/crew_home.jpg') }}" alt="Raising Cane’s Crew" style="border-radius:14px">
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Active Community Involvement</h2>
+    <div class="card-grid">
+      <a class="card" href="{{ url_for('who_we_are') }}">
+        <img src="{{ url_for('static', filename='images/home/community_education.jpg') }}" alt="Education partnerships">
+        <div class="card-body"><span class="tag">Local Schools</span><h3>Everything from reading programs to supply drives</h3></div>
+      </a>
+      <a class="card" href="{{ url_for('who_we_are') }}">
+        <img src="{{ url_for('static', filename='images/home/community_feed_hungry.jpg') }}" alt="Feeding the hungry">
+        <div class="card-body"><span class="tag">Feeding the Hungry</span><h3>Partnering with local food banks in every community we serve</h3></div>
+      </a>
+      <a class="card" href="{{ url_for('who_we_are') }}">
+        <img src="{{ url_for('static', filename='images/home/community_pets.jpg') }}" alt="Pet welfare">
+        <div class="card-body"><span class="tag">Pet Welfare</span><h3>Supporting the K9 units and shelters that care for our four-legged friends</h3></div>
+      </a>
+      <a class="card" href="{{ url_for('who_we_are') }}">
+        <img src="{{ url_for('static', filename='images/home/community_entrepreneurship.jpg') }}" alt="Entrepreneurship">
+        <div class="card-body"><span class="tag">Entrepreneurship</span><h3>Business scholarships and programs for future restaurant leaders</h3></div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

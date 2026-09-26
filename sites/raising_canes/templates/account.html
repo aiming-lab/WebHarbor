@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}My Account | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>MY ACCOUNT</h1>
+  <p class="muted">Signed in as {{ current_user.name }} ({{ current_user.email }})</p>
+
+  <div class="two-col section">
+    <div>
+      <h2>Profile</h2>
+      <p>Name: {{ current_user.name }}<br>Phone: {{ current_user.phone or '—' }}</p>
+      <p><a class="btn btn-sm btn-ghost" href="{{ url_for('account_edit') }}">Edit profile</a>
+         <a class="btn btn-sm btn-ghost" href="{{ url_for('account_favorites') }}">Favorite restaurants</a></p>
+
+      <h2>Addresses</h2>
+      {% for address in addresses %}
+      <p>{{ address.label }}: {{ address.line1 }}, {{ address.city }}, {{ address.state }} {{ address.zip_code }}</p>
+      {% endfor %}
+      <form method="post" action="{{ url_for('account_address_add') }}" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field"><label>Label</label><input type="text" name="label" placeholder="Home"></div>
+        <div class="field"><label>Street</label><input type="text" name="line1"></div>
+        <div class="field"><label>City</label><input type="text" name="city"></div>
+        <div class="field"><label>State</label><input type="text" name="state" maxlength="2"></div>
+        <div class="field"><label>ZIP</label><input type="text" name="zip_code"></div>
+        <div class="field" style="align-self:end"><button class="btn btn-sm btn-primary" type="submit">Add address</button></div>
+      </form>
+
+      <h2>Payment Cards</h2>
+      {% for card in cards %}
+      <p>{{ card.label }}: {{ card.brand }} ending {{ card.last4 }} (exp {{ '%02d/%s' | format(card.exp_month, card.exp_year) }})</p>
+      {% endfor %}
+
+      <h2>Gift Cards</h2>
+      {% for gc in gift_cards %}
+      <p>{{ gc.card_number }} — balance {{ gc.balance | money }}</p>
+      {% else %}
+      <p class="muted">No gift cards on file. <a href="{{ url_for('gift_card_check') }}">Check a balance</a>.</p>
+      {% endfor %}
+    </div>
+    <div>
+      {% if caniac %}
+      <div class="summary-box">
+        <h2 style="margin-top:0">Caniac Club</h2>
+        <div class="summary-line"><span>Card</span><strong>{{ caniac.card_number }}</strong></div>
+        <div class="summary-line"><span>Points</span><strong>{{ caniac.points }}</strong></div>
+      </div>
+      <p><a class="btn btn-sm btn-ghost" href="{{ url_for('caniac_club') }}">View offers</a></p>
+      {% endif %}
+      <h2>Order History</h2>
+      {% for order in orders %}
+      <p><a href="{{ url_for('order_detail', order_number=order.order_number) }}">{{ order.order_number }}</a> —
+        {{ order.location.city }} · {{ order.total | money }} · {{ order.status }}</p>
+      {% else %}
+      <p class="muted">No food orders yet.</p>
+      {% endfor %}
+      <h2>Gear Orders</h2>
+      {% for order in gear_orders %}
+      <p>{{ order.order_number }} — {{ order.total | money }}</p>
+      {% else %}
+      <p class="muted">No gear orders yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

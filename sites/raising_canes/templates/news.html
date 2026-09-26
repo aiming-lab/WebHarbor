@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}News | The World of Cane’s{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>THE WORLD OF CANE’S</h1>
+  <p class="muted">What’s Happening — Community, Crew, In the News, Location, Pop Culture.</p>
+  <div class="section">
+    <div class="card-grid">
+      {% for article in articles %}
+      <a class="card" href="{{ url_for('news_article', slug=article.slug) }}">
+        {% if article.image %}
+        <img src="{{ url_for('static', filename='images/' + article.image) }}" alt="{{ article.title }}">
+        {% endif %}
+        <div class="card-body">
+          <span class="tag">{{ article.category }}</span>
+          <h3>{{ article.title }}</h3>
+          <div class="card-meta"><span>{{ article.published }}</span></div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

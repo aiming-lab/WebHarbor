@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}CANE’S GEAR — Raising Cane’s{% endblock %}
+{% block content %}
+<div class="hero">
+  <img class="hero-img" src="{{ url_for('static', filename='images/home/hero_30th_birthday.jpg') }}" alt="Celebrate 30 years of Raising Cane’s">
+  <div class="hero-caption">
+    <span class="hero-badge">FREE Ground Shipping on all orders $50+</span>
+    <h1>CANE’S HAS YOU COVERED</h1>
+    <p>Shop our assortment of Apparel, Headwear, and Accessories perfect for you and your favorite Caniac.</p>
+  </div>
+</div>
+
+<div class="page">
+  <div class="cat-strip">
+    {% for coll in collections %}
+    <a class="cat-chip" href="{{ url_for('gear_collection', name=coll) }}">{{ coll }} ({{ counts[coll] }})</a>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Trending Now</h2>
+      <a class="more-link" href="{{ url_for('gear_collection', name='Apparel') }}">Shop all apparel →</a>
+    </div>
+    <div class="card-grid">
+      {% for product in products %}
+      <a class="card" href="{{ url_for('gear_product', handle=product.handle) }}">
+        <img src="{{ url_for('static', filename='images/' + product.image_main) }}" alt="{{ product.title }}">
+        <div class="card-body">
+          {% if product.new_item %}<span class="tag tag-new">New Item!</span>{% endif %}
+          <h3>{{ product.title }}</h3>
+          <div class="card-meta">
+            <span>{{ product.collection }}</span>
+            <span class="price">{{ product.price | money }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

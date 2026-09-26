@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Raising Cane’s Chicken Fingers{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/raising_canes.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand/logo_square.png') }}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="{{ url_for('index') }}" class="logo" aria-label="Raising Cane’s home">
+      <img src="{{ url_for('static', filename='images/brand/logo_square.png') }}" alt="Raising Cane’s Logo" width="56" height="56">
+    </a>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="{{ url_for('menu_page') }}">Our Menu</a>
+      <a href="{{ url_for('locations_page') }}">Locations</a>
+      <a href="{{ url_for('careers') }}">Careers</a>
+      <a href="{{ url_for('who_we_are') }}">Who We Are</a>
+      <a href="{{ url_for('caniac_club') }}">Caniac Club</a>
+      <a href="{{ url_for('gift_cards') }}">Gift Cards</a>
+      <a href="{{ url_for('gear_home') }}">Cane’s Gear</a>
+    </nav>
+    <div class="header-actions">
+      <form class="header-search" action="{{ url_for('search') }}" method="get" role="search">
+        <input type="search" name="q" placeholder="Search Cane’s…" aria-label="Search" value="{{ request.args.get('q','') }}">
+        <button type="submit" aria-label="Search">🔍</button>
+      </form>
+      {% if current_user.is_authenticated %}
+        <a class="btn btn-ghost" href="{{ url_for('account') }}">{{ current_user.name.split()[0] }}’s Account</a>
+      {% else %}
+        <a class="btn btn-ghost" href="{{ url_for('login') }}">Log In</a>
+      {% endif %}
+      <a class="btn btn-primary" href="{{ url_for('order_start') }}">Order Now</a>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes" role="status">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main-content">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-cols">
+    <div class="footer-col">
+      <h3>Food &amp; Locations</h3>
+      <a href="{{ url_for('menu_page') }}">Our Menu</a>
+      <a href="{{ url_for('locations_page') }}">Locations</a>
+      <a href="{{ url_for('food_preparation') }}">Food Preparation</a>
+      <a href="{{ url_for('allergens') }}">Allergen &amp; Nutritional Information</a>
+      <a href="{{ url_for('order_start') }}">Order Ahead</a>
+    </div>
+    <div class="footer-col">
+      <h3>Who We Are</h3>
+      <a href="{{ url_for('who_we_are') }}">Who We Are</a>
+      <a href="{{ url_for('why_the_dog') }}">Why The Dog?</a>
+      <a href="{{ url_for('caniac_club') }}">Caniac Club</a>
+      <a href="{{ url_for('news') }}">News</a>
+      <a href="{{ url_for('promotions') }}">Promotions</a>
+    </div>
+    <div class="footer-col">
+      <h3>Cane’s Gear</h3>
+      <a href="{{ url_for('gear_home') }}">Gift Cards &amp; Gear</a>
+      <a href="{{ url_for('gear_collection', name='Apparel') }}">Apparel</a>
+      <a href="{{ url_for('gear_collection', name='Headwear') }}">Headwear</a>
+      <a href="{{ url_for('gear_collection', name='Accessories') }}">Accessories</a>
+      <a href="{{ url_for('gift_card_check') }}">Check My Gift Card Balance</a>
+    </div>
+    <div class="footer-col">
+      <h3>Careers</h3>
+      <a href="{{ url_for('careers') }}">Search Jobs</a>
+      <a href="{{ url_for('faq') }}">FAQ</a>
+      <a href="{{ url_for('contact_us') }}">Contact Us</a>
+    </div>
+  </div>
+  <div class="footer-legal">
+    <p>One Love®, The Box Combo®, The 3 Finger Combo®, Caniac® and Cane’s Sauce® are federally registered trademarks of Raising Cane’s USA, LLC. © 2026 Raising Cane’s Restaurants, LLC. All trademarks are owned by Raising Cane’s USA, LLC.</p>
+    <div class="social-icons">
+      <img src="{{ url_for('static', filename='images/brand/icon_instagram.svg') }}" alt="Instagram" width="20" height="20">
+      <img src="{{ url_for('static', filename='images/brand/icon_tiktok.svg') }}" alt="TikTok" width="20" height="20">
+      <img src="{{ url_for('static', filename='images/brand/icon_facebook.svg') }}" alt="Facebook" width="20" height="20">
+      <img src="{{ url_for('static', filename='images/brand/icon_x.svg') }}" alt="X" width="20" height="20">
+    </div>
+  </div>
+</footer>
+</body>
+</html>

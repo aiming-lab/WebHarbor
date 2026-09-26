@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Locations | Raising Cane’s Chicken Fingers{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>LOOKIN’ FOR CHICKEN?</h1>
+  <p class="muted">Find a Raising Cane’s® Location near you — search by city, state or ZIP code.</p>
+
+  <form class="form-card" method="get" action="{{ url_for('locations_page') }}">
+    <div class="form-grid">
+      <div class="field">
+        <label for="q">Search</label>
+        <input type="text" id="q" name="q" value="{{ q }}" placeholder="City, state or ZIP (e.g. Baton Rouge, LA or 70809)">
+      </div>
+      <div class="field">
+        <label for="state">State</label>
+        <select id="state" name="state">
+          <option value="">All states</option>
+          {% for s in states %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="service">Service</label>
+        <select id="service" name="service">
+          <option value="">All services</option>
+          <option value="Drive-thru" {% if service == 'Drive-thru' %}selected{% endif %}>Drive-thru</option>
+          <option value="Curbside Pickup" {% if service == 'Curbside Pickup' %}selected{% endif %}>Curbside Pickup</option>
+          <option value="Catering Pickup" {% if service == 'Catering Pickup' %}selected{% endif %}>Catering Pickup</option>
+          <option value="Catering Delivery" {% if service == 'Catering Delivery' %}selected{% endif %}>Catering Delivery</option>
+        </select>
+      </div>
+    </div>
+    <p style="margin:14px 0 0"><button class="btn btn-primary" type="submit">FIND A RAISING CANE’S!</button></p>
+  </form>
+
+  <div class="section">
+    {% if q or state or service %}
+    <h2>{{ total }} Restaurant{{ '' if total == 1 else 's' }} Found</h2>
+    {% else %}
+    <h2>All Restaurants ({{ total }} nationwide)</h2>
+    {% endif %}
+    {% if locations %}
+    <div class="loc-list">
+      {% for loc in locations %}
+      <div class="loc-row">
+        <img class="loc-thumb" src="{{ url_for('static', filename='images/locations/restaurant_' + (loop.index0 % 6) ~ '.png') }}" alt="Raising Cane’s restaurant">
+        <div class="loc-main">
+          <h3><a href="{{ url_for('location_detail', slug=loc.slug) }}">Raising Cane’s — {{ loc.city }}, {{ loc.state }}</a></h3>
+          <p>{{ loc.address_line() }}</p>
+          <div class="loc-services">
+            {% for a in loc.amenity_list() %}<span class="service-chip">{{ a }}</span>{% endfor %}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <form method="post" action="{{ url_for('toggle_favorite', slug=loc.slug) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ url_for('locations_page', q=q, state=state, service=service) }}">
+            <button class="fav-star" type="submit" aria-label="Toggle favorite">{{ '♥' if loc.id in fav_ids else '♡' }}</button>
+          </form>
+          <a class="btn btn-sm btn-primary" href="{{ url_for('order_location_menu', slug=loc.slug) }}">Order Here</a>
+        </div>
+      </div>
+      {% endfor %}
+      {% if total > 60 %}
+      <p class="muted">Showing the first 60 of {{ total }} matching restaurants — narrow your search to see more.</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <p>No restaurants matched your search. Use the search bar to find a Raising Cane’s near you or enable location services to use your current location!</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

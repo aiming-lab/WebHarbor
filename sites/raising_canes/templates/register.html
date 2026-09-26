@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>SIGN UP</h1>
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+  <form class="form-card" method="post" action="{{ url_for('register') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label>Full name</label><input type="text" name="name"></div>
+    <div class="field"><label>Email</label><input type="email" name="email"></div>
+    <div class="field"><label>Password (8+ characters)</label><input type="password" name="password"></div>
+    <p style="margin-top:14px"><button class="btn btn-primary" type="submit">Create Account</button></p>
+  </form>
+</div>
+{% endblock %}

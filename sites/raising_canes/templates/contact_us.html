@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>CONTACT US</h1>
+  <p class="muted">Questions, feedback or a story to share? A Cane’s Crewmember will follow up.</p>
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+  <form class="form-card" method="post" action="{{ url_for('contact_us') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+      <div class="field"><label>Name</label><input type="text" name="name" value="{{ form.get('name','') }}"></div>
+      <div class="field"><label>Email</label><input type="email" name="email" value="{{ form.get('email','') }}"></div>
+      <div class="field full"><label>Topic</label>
+        <select name="topic">
+          <option>Restaurant Experience</option>
+          <option>Mobile Ordering</option>
+          <option>Caniac Club</option>
+          <option>Gift Cards</option>
+          <option>Catering</option>
+          <option>Franchising</option>
+          <option>Media Inquiry</option>
+        </select>
+      </div>
+      <div class="field full"><label>Message</label>
+        <textarea name="message" rows="5">{{ form.get('message','') }}</textarea></div>
+    </div>
+    <p style="margin-top:14px"><button class="btn btn-primary" type="submit">Send Message</button></p>
+  </form>
+</div>
+{% endblock %}

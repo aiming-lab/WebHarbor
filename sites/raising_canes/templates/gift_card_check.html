@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Balance Check | Raising Cane’s Gift Cards{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>Check Your Gift Card Balance</h1>
+  <p class="muted">To check the balance of your gift card, simply enter the information below.</p>
+
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+
+  {% if result %}
+  <div class="form-card" style="border-color:var(--canes-red)">
+    <h2 style="margin-top:0">Gift Card {{ result.card_number }}</h2>
+    <div class="summary-box">
+      <div class="summary-total summary-line">
+        <span>Current balance</span><span>{{ result.balance | money }}</span>
+      </div>
+      <div class="summary-line"><span>Initial value</span><span>{{ result.initial_balance | money }}</span></div>
+    </div>
+    <p class="muted">This gift card can be used as payment for Order Ahead pickup and curbside orders, or at any
+      participating Raising Cane’s restaurant.</p>
+  </div>
+  {% endif %}
+
+  <form class="form-card" method="post" action="{{ url_for('gift_card_check') }}" style="margin-top:18px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+      <div class="field full">
+        <label>Gift Card Number</label>
+        <input type="text" name="card_number" placeholder="16-digit number on the back of your card" required>
+      </div>
+      <div class="field full">
+        <label>PIN</label>
+        <input type="text" name="pin" placeholder="4-digit PIN" required>
+      </div>
+      <div class="field full">
+        <label>Email address (Optional)</label>
+        <input type="email" name="email" placeholder="We’ll also deliver the balance to your email">
+      </div>
+    </div>
+    <p style="margin-top:14px"><button class="btn btn-primary" type="submit">Check Balance</button>
+      <a class="btn btn-ghost" href="{{ url_for('gift_cards') }}">Shop Gift Cards</a></p>
+  </form>
+</div>
+{% endblock %}

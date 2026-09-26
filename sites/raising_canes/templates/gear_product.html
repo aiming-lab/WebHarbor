@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.title }} — Raising Cane’s Gear{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb">
+    <a href="{{ url_for('gear_home') }}">Cane’s Gear</a> ›
+    <a href="{{ url_for('gear_collection', name=product.collection) }}">{{ product.collection }}</a> › {{ product.title }}
+  </div>
+  <div class="two-col">
+    <div>
+      {% if product.image_main %}
+      <img src="{{ url_for('static', filename='images/' + product.image_main) }}" alt="{{ product.title }}" style="border-radius:14px">
+      {% endif %}
+      {% if product.image_alt %}
+      <img src="{{ url_for('static', filename='images/' + product.image_alt) }}" alt="{{ product.title }} alternate view" style="border-radius:14px; margin-top:10px">
+      {% endif %}
+    </div>
+    <div>
+      <h1>{{ product.title }}</h1>
+      <div class="badge-row">
+        {% if product.new_item %}<span class="tag tag-new">New Item!</span>{% endif %}
+        <span class="tag">{{ product.collection }}</span>
+        {% for t in product.tag_list() %}<span class="service-chip">{{ t }}</span>{% endfor %}
+      </div>
+      <p class="big-price">{{ product.price | money }}</p>
+      {% if product.description %}
+      <p>{{ product.description }}</p>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('gear_cart') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="handle" value="{{ product.handle }}">
+        <div class="field" style="max-width:260px">
+          <label>{% if product.variants | length > 1 %}Choose an option{% else %}Option{% endif %}</label>
+          <select name="variant">
+            {% for variant in product.variants %}
+            <option value="{{ variant.title }}" data-price="{{ variant.price }}">{{ variant.title }} — {{ variant.price | money }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field" style="max-width:120px">
+          <label>Quantity</label>
+          <input type="number" name="qty" value="1" min="1" max="20">
+        </div>
+        <button class="btn btn-primary" type="submit">Add to Cart</button>
+        <a class="btn btn-ghost" href="{{ url_for('gear_cart') }}">View cart</a>
+      </form>
+      <p class="muted" style="font-size:0.85rem">FREE Ground Shipping on all orders $50+ · Questions? Call 1-844-646-1829</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

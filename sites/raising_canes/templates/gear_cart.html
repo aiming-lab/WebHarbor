@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Your Cart — Raising Cane’s Gear{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>Your Cart</h1>
+  {% if lines %}
+  {% for line in lines %}
+  <div class="cart-line">
+    <img src="{{ url_for('static', filename='images/' + line.product.image_main) }}" alt="{{ line.product.title }}">
+    <div class="grow">
+      <h4>{{ line.product.title }}</h4>
+      <div class="cart-selections">{{ line.variant }} · Qty {{ line.qty }}</div>
+      <form method="post" action="{{ url_for('gear_cart_remove') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="index" value="{{ loop.index0 }}">
+        <button class="btn btn-sm btn-ghost" type="submit">Remove</button>
+      </form>
+    </div>
+    <span class="price">{{ (line.price * line.qty) | money }}</span>
+  </div>
+  {% endfor %}
+
+  <div class="checkout-grid section">
+    <div class="muted">
+      {% if subtotal < free_threshold %}
+      <p>Add {{ (free_threshold - subtotal) | money }} more for FREE ground shipping!</p>
+      {% else %}
+      <p>Your order qualifies for FREE ground shipping.</p>
+      {% endif %}
+    </div>
+    <div class="summary-box">
+      <div class="summary-line"><span>Subtotal</span><span>{{ subtotal | money }}</span></div>
+      <div class="summary-line"><span>Shipping</span><span>{% if shipping %}{{ shipping | money }}{% else %}FREE{% endif %}</span></div>
+      <div class="summary-total summary-line"><span>Total</span><span>{{ total | money }}</span></div>
+      <p><a class="btn btn-primary" href="{{ url_for('gear_checkout') }}">Checkout</a></p>
+    </div>
+  </div>
+  {% else %}
+  <p>Your gear cart is empty. <a href="{{ url_for('gear_home') }}">Shop Cane’s Gear</a> to add some ONE LOVE to your closet.</p>
+  {% endif %}
+</div>
+{% endblock %}

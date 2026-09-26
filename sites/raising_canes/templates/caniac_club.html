@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Caniac Club | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>CRAZY FOR CANE’S? JOIN THE CANIAC® CLUB!</h1>
+  <p class="muted">Get insider info on what’s happening in the Raising Cane’s world and receive members-only
+    benefits like special surprises for your birthday, member anniversary and more!</p>
+
+  <div class="two-col section">
+    <div>
+      <h2>How to Join</h2>
+      <ol>
+        <li>Head to your local participating Raising Cane’s location and ask a Crewmember for a Caniac Club card.</li>
+        <li>Come right back to this page and click Register Your Card below.</li>
+        <li>Enter your contact info and verify your email address.</li>
+      </ol>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('caniac_register') }}" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label>Card number</label>
+          <input type="text" name="card_number" placeholder="Number on your Caniac Club card">
+        </div>
+        <div class="field" style="align-self:end">
+          <button class="btn btn-primary" type="submit">Register Your Card</button>
+        </div>
+      </form>
+      {% else %}
+      <p><a class="btn btn-primary" href="{{ url_for('login') }}">Log in to register your card</a></p>
+      {% endif %}
+    </div>
+    <div>
+      {% if card %}
+      <div class="summary-box">
+        <h2 style="margin-top:0">Your Caniac Club Card</h2>
+        <div class="summary-line"><span>Card number</span><strong>{{ card.card_number }}</strong></div>
+        <div class="summary-line"><span>Points</span><strong>{{ card.points }}</strong></div>
+        <div class="summary-line"><span>Member since</span><span>{{ card.member_since.strftime('%B %Y') }}</span></div>
+      </div>
+      {% else %}
+      <img src="{{ url_for('static', filename='images/brand/icon_caniac_club.png') }}" alt="Caniac Club" style="border-radius:14px">
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Current Offers</h2>
+    {% if claimed %}
+    <p class="muted">Offers on your account (redeem at checkout with the offer code):</p>
+    {% for entry in claimed %}
+    <div class="option-group">
+      <h3>{{ entry.offer.title }} <span class="tag">{{ entry.offer.code }}</span>
+        {% if entry.redeemed %}<span class="service-chip">Redeemed on {{ entry.redeemed_order }}</span>{% endif %}</h3>
+      <p class="hint">{{ entry.offer.description }}</p>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="muted">All active Caniac Club offers are listed below. Members can redeem their personal offers
+      at Order Ahead checkout.</p>
+    {% endif %}
+    <div class="loc-list">
+      {% for offer in offers %}
+      <div class="loc-row">
+        <div class="loc-main">
+          <h3>{{ offer.title }}</h3>
+          <p>{{ offer.description }}</p>
+        </div>
+        <span class="tag">{{ offer.code }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Go Cardless</h2>
+    <p class="muted">Once your Caniac Club account has been registered, you can connect your Caniac Club account
+      to your Raising Cane’s mobile and online ordering account to easily view and redeem available offers:</p>
+    <ol>
+      <li>Sign up or log into your Raising Cane’s account online or in our App.</li>
+      <li>Go to profile and select My Account.</li>
+      <li>Select Connect My CANIAC Club Card to link your account.</li>
+    </ol>
+    <p class="muted">Your Caniac Club account email address must be the same as your Raising Cane’s account email.</p>
+  </div>
+</div>
+{% endblock %}

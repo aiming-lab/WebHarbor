@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}My Orders | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>My Orders</h1>
+  {% if orders %}
+  <div class="loc-list">
+    {% for order in orders %}
+    <div class="loc-row">
+      <div class="loc-main">
+        <h3><a href="{{ url_for('order_detail', order_number=order.order_number) }}">Order {{ order.order_number }}</a></h3>
+        <p>Raising Cane’s — {{ order.location.city }}, {{ order.location.state }} ·
+          {{ order.pickup_mode }} {{ order.pickup_date }} at {{ order.pickup_time }}</p>
+        <p class="muted">Placed {{ order.placed_at.strftime('%Y-%m-%d') }} · Status: {{ order.status }}</p>
+      </div>
+      <div style="text-align:right">
+        <strong>{{ order.total | money }}</strong>
+        <form method="post" action="{{ url_for('reorder', order_number=order.order_number) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-primary" type="submit">Reorder</button>
+        </form>
+        {% if order.status != 'Cancelled' %}
+        <form method="post" action="{{ url_for('order_cancel', order_number=order.order_number) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-ghost" type="submit">Cancel</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No orders yet. <a href="{{ url_for('order_start') }}">Place your first order</a> — it looks like you need to start eating more Raising Cane’s.</p>
+  {% endif %}
+</div>
+{% endblock %}

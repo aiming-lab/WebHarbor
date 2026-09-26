@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.name }} | Order Ahead | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb">
+    <a href="{{ url_for('order_start') }}">Order Ahead</a> ›
+    <a href="{{ url_for('order_location_menu', slug=loc.slug) }}">{{ loc.city }}, {{ loc.state }}</a> › {{ item.name }}
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h1>{{ item.name }}</h1>
+      <div class="badge-row">
+        <span class="tag">{{ item.category.name }}</span>
+        <span class="tag">{{ item.calorie_label() }}</span>
+      </div>
+      <p style="white-space: pre-line;">{{ item.description }}</p>
+    </div>
+    {% if item.image %}
+    <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.name }}" style="border-radius:14px">
+    {% endif %}
+  </div>
+
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+
+  {% if qty_group and not qty %}
+  {# Step 1: choose the quantity #}
+  <form method="get" action="{{ url_for('order_item', slug=loc.slug, item_id=item.id) }}">
+    <div class="option-group">
+      <h3>{{ qty_group.name }}</h3>
+      <p class="hint">Required — choose how many you need, then continue to the options.</p>
+      {% for option in qty_group.options %}
+      <div class="option-row">
+        <input type="radio" id="qty-{{ option.id }}" name="qty" value="{{ option.name }}" {% if loop.first %}checked{% endif %}>
+        <label for="qty-{{ option.id }}">{{ option.name }}</label>
+        <span class="option-price">{{ option.price_delta | money }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-primary" type="submit">Continue to Options</button>
+    <a class="btn btn-ghost" href="{{ url_for('order_location_menu', slug=loc.slug) }}">Back to menu</a>
+  </form>
+
+  {% else %}
+  {# Step 2: choose options for the selected quantity #}
+  <form method="post" action="{{ url_for('order_item', slug=loc.slug, item_id=item.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="qty" value="{{ qty }}">
+    <div class="pill-note">
+      <strong>Quantity: {{ qty }}</strong>
+      {% if qty_group %}
+      {% set qty_option = (qty_group.options | selectattr('name', 'equalto', qty) | list) %}
+      {% if qty_option %}— {{ qty_option[0].price_delta | money }}{% endif %}
+      {% endif %}
+      <a class="btn btn-sm btn-ghost" style="margin-left:12px"
+         href="{{ url_for('order_item', slug=loc.slug, item_id=item.id) }}">Change</a>
+    </div>
+
+    {% for group in nested_groups + always_groups %}
+    <div class="option-group">
+      <h3>{{ group.name }}</h3>
+      <p class="hint">{% if group.mandatory %}Required{% else %}Optional{% endif %}{% if group.multi %} — pick all that apply{% endif %}</p>
+      {% for option in group.options %}
+      <div class="option-row">
+        <input type="{% if group.multi %}checkbox{% else %}radio{% endif %}"
+               id="opt-{{ group.id }}-{{ option.id }}" name="group_{{ group.id }}"
+               value="{{ option.name }}" {% if loop.first and not group.multi %}checked{% endif %}>
+        <label for="opt-{{ group.id }}-{{ option.id }}">{{ option.name }}</label>
+        <span class="option-price">
+          {% if option.price_delta %}{{ '+' if option.price_delta > 0 else '−' }}{{ option.price_delta | abs | money }}{% else %}Included{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <button class="btn btn-primary" type="submit">Add Item to Order</button>
+    <a class="btn btn-ghost" href="{{ url_for('order_location_menu', slug=loc.slug) }}">Back to menu</a>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

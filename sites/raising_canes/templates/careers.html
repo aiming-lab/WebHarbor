@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Jobs at Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>OPEN JOBS</h1>
+  <p class="muted">RAISING CANE’S — join a Crew that loves what it does.</p>
+
+  <form class="form-card" method="get" action="{{ url_for('careers') }}">
+    <div class="form-grid">
+      <div class="field">
+        <label>Keyword Search</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Title, city or street">
+      </div>
+      <div class="field">
+        <label>State</label>
+        <select name="state">
+          <option value="">All states</option>
+          {% for s in states %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Job Type</label>
+        <select name="type">
+          <option value="">All types</option>
+          <option value="Full Time" {% if job_type == 'Full Time' %}selected{% endif %}>Full Time</option>
+          <option value="Part Time" {% if job_type == 'Part Time' %}selected{% endif %}>Part Time</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <select name="department">
+          <option value="">All departments</option>
+          {% for d in departments %}<option value="{{ d }}" {% if d == department %}selected{% endif %}>{{ d }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <p style="margin:14px 0 0">
+      <button class="btn btn-primary" type="submit">Search</button>
+      <a class="btn btn-ghost" href="{{ url_for('careers') }}">Clear Filter</a>
+    </p>
+  </form>
+
+  <div class="section">
+    <h2>Showing {{ jobs | length }} of {{ total }} jobs</h2>
+    <div class="loc-list">
+      {% for job in jobs %}
+      <div class="loc-row">
+        <div class="loc-main">
+          <h3><a href="{{ url_for('job_detail', reference=job.reference) }}">{{ job.title }}</a></h3>
+          <p>{{ job.street }}, {{ job.city }}, {{ job.state_abbr }} {{ job.zip_code }}</p>
+        </div>
+        <div style="text-align:right">
+          <span class="tag">{{ job.department }}</span>
+          <p class="muted" style="font-size:0.8rem">{{ job.employment_type }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if total > 60 %}
+    <p class="muted">Showing the first 60 of {{ total }} matching jobs — narrow your filters to see more.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

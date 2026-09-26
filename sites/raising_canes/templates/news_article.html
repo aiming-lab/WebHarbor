@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }} | Raising Cane’s News{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb"><a href="{{ url_for('news') }}">News</a> › {{ article.category }}</div>
+  <span class="tag">{{ article.category }}</span>
+  <h1>{{ article.title }}</h1>
+  <p class="muted">{{ article.published }}</p>
+  {% if article.image %}
+  <img src="{{ url_for('static', filename='images/' + article.image) }}" alt="{{ article.title }}" style="border-radius:14px; margin:14px 0">
+  {% endif %}
+  <p>Raising Cane’s — ONE LOVE® in action. This story comes straight from the world of Cane’s:
+    our Crew, our Culture and our active Community involvement.</p>
+  <p>Read more about what’s happening across the Cane’s world on the <a href="{{ url_for('news') }}">News page</a>.</p>
+</div>
+{% endblock %}

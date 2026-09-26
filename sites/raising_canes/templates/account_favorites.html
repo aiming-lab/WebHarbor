@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Favorite Restaurants | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>FAVORITE RESTAURANTS</h1>
+  {% if locations %}
+  <div class="loc-list">
+    {% for loc in locations %}
+    <div class="loc-row">
+      <div class="loc-main">
+        <h3><a href="{{ url_for('location_detail', slug=loc.slug) }}">Raising Cane’s — {{ loc.city }}, {{ loc.state }}</a></h3>
+        <p>{{ loc.address_line() }}</p>
+      </div>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('order_location_menu', slug=loc.slug) }}">Order Here</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No favorites yet — tap the ♡ next to a restaurant on the
+    <a href="{{ url_for('locations_page') }}">Locations page</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

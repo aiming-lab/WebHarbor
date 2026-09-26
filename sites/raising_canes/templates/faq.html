@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}FAQ | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>FREQUENTLY ASKED QUESTIONS</h1>
+  <p class="muted">Here are the most common questions we get asked. If you don’t find the answer you’re
+    looking for, <a href="{{ url_for('contact_us') }}">Contact Us</a> for further assistance.</p>
+
+  <form class="form-card" method="get" action="{{ url_for('faq') }}" style="padding:14px 18px">
+    <div class="form-grid">
+      <div class="field">
+        <label>Search questions</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="e.g. gift card">
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select name="category" onchange="this.form.submit()">
+          <option value="">All categories</option>
+          {% for c in categories %}<option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+
+  <div class="section">
+    {% if q %}
+    <h2>Results for “{{ q }}”</h2>
+    {% elif category %}
+    <h2>{{ category }}</h2>
+    {% endif %}
+    {% for entry in entries %}
+    <details class="faq-item">
+      <summary>{{ entry.question }}</summary>
+      <div class="answer">{{ entry.answer }}</div>
+    </details>
+    {% else %}
+    <p class="muted">No matching questions. Try another search or <a href="{{ url_for('contact_us') }}">contact us</a>.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

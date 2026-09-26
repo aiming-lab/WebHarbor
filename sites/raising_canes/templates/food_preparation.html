@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Food Preparation | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>FOOD PREPARATION</h1>
+  <p class="muted">Never frozen. Fresh, never-ever chicken. Hand-battered and made to order.</p>
+  <p>Our Chicken Fingers are hand-battered and cooked to order. The Crinkle-Cut Fries are cooked in an
+    all-vegetable, trans fat free blend of soybean and canola oil, and the Texas Toast is garlic-buttered and
+    grilled on the flat top. Cane’s Sauce® is made fresh in every Restaurant, every day.</p>
+  <h2>The Menu, Item by Item</h2>
+  <div class="loc-list">
+    {% for item in items %}
+    <div class="loc-row">
+      <div class="loc-main">
+        <h3><a href="{{ url_for('menu_item', slug=item.slug) }}">{{ item.name }}</a></h3>
+        <p>{{ item.description.split('\n')[0] }}</p>
+      </div>
+      <span class="tag">{{ item.calorie_label() }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <h1>EDIT PROFILE</h1>
+  <form class="form-card" method="post" action="{{ url_for('account_edit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label>Full name</label><input type="text" name="name" value="{{ current_user.name }}"></div>
+    <div class="field"><label>Phone</label><input type="tel" name="phone" value="{{ current_user.phone }}"></div>
+    <p style="margin-top:14px"><button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-ghost" href="{{ url_for('account') }}">Cancel</a></p>
+  </form>
+</div>
+{% endblock %}

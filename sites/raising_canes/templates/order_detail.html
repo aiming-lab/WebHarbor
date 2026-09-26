@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order.order_number }} | Raising Cane’s{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="breadcrumb"><a href="{{ url_for('order_history') }}">My Orders</a> › {{ order.order_number }}</div>
+  <h1>Order {{ order.order_number }}</h1>
+  <p class="muted">Status: <strong>{{ order.status }}</strong> · Placed {{ order.placed_at.strftime('%Y-%m-%d') }}</p>
+
+  <div class="two-col">
+    <div>
+      <h2>Pickup</h2>
+      <p>Raising Cane’s — {{ order.location.city }}, {{ order.location.state }}<br>
+        {{ order.location.address_line() }}<br>
+        {{ order.pickup_mode }} · {{ order.pickup_date }} at {{ order.pickup_time }}</p>
+      <p>Contact: {{ order.contact_name }} · {{ order.contact_phone }}</p>
+      {% if order.caniac_offer %}<p>Offer applied: {{ order.caniac_offer }}</p>{% endif %}
+      <p>Payment: {{ order.payment_method }}
+        {% if order.gift_card_number %}(gift card {{ order.gift_card_number }}){% endif %}</p>
+    </div>
+    <div class="summary-box">
+      <h2 style="margin-top:0">Receipt</h2>
+      {% for line in order.items %}
+      <div class="summary-line">
+        <span>{{ line.menu_item.name }} ({{ line.quantity_label }})</span>
+        <span>{{ line.line_total | money }}</span>
+      </div>
+      {% if line.selection_list() %}
+      <div class="summary-line muted" style="font-size:0.85rem">
+        <span>{{ line.selection_list() | join(', ') }}</span><span></span>
+      </div>
+      {% endif %}
+      {% endfor %}
+      <div class="summary-line"><span>Subtotal</span><span>{{ order.subtotal | money }}</span></div>
+      {% if order.discount %}<div class="summary-line"><span>Discount</span><span>−{{ order.discount | money }}</span></div>{% endif %}
+      <div class="summary-line"><span>Sales tax</span><span>{{ order.tax | money }}</span></div>
+      <div class="summary-total summary-line"><span>Total</span><span>{{ order.total | money }}</span></div>
+      <div class="summary-line"><span>Caniac Club points earned</span><span>+{{ order.points_earned }}</span></div>
+    </div>
+  </div>
+
+  <p style="margin-top:18px">
+    <form method="post" action="{{ url_for('reorder', order_number=order.order_number) }}" style="display:inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-primary" type="submit">Reorder these items</button>
+    </form>
+    {% if order.status != 'Cancelled' %}
+    <form method="post" action="{{ url_for('order_cancel', order_number=order.order_number) }}" style="display:inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost" type="submit">Cancel this order</button>
+    </form>
+    {% endif %}
+    <a class="btn btn-ghost" href="{{ url_for('order_history') }}">Back to my orders</a>
+  </p>
+</div>
+{% endblock %}
