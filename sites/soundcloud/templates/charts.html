@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_macros.html" import playlist_card %}
+{% block title %}Listen to the top played music charts on SoundCloud this week{% endblock %}
+{% block content %}
+<div class="search-head">
+  <h1>Charts</h1>
+  <p class="page-sub">The most played tracks this week, updated weekly by Music Charts.</p>
+</div>
+
+<div class="chart-group">
+  <h2>Music Charts US</h2>
+  <div class="chart-cols">
+    {% for p in us_charts %}
+    <a class="chart-card" href="/{{ p.owner.permalink }}/sets/{{ p.permalink }}">
+      <div class="art">{% if p.artwork %}<img src="{{ p.artwork }}" alt="{{ p.title }}">{% endif %}</div>
+      <div>
+        <div class="t">{{ p.title }}</div>
+        <div class="a">{{ p.owner.username }}</div>
+        <div class="n">{{ p.track_count }} tracks · {{ p.likes|compact }} likes</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="chart-group">
+  <h2>Music Charts UK</h2>
+  <div class="chart-cols">
+    {% for p in uk_charts %}
+    <a class="chart-card" href="/{{ p.owner.permalink }}/sets/{{ p.permalink }}">
+      <div class="art">{% if p.artwork %}<img src="{{ p.artwork }}" alt="{{ p.title }}">{% endif %}</div>
+      <div>
+        <div class="t">{{ p.title }}</div>
+        <div class="a">{{ p.owner.username }}</div>
+        <div class="n">{{ p.track_count }} tracks · {{ p.likes|compact }} likes</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

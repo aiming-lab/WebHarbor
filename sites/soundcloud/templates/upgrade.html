@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}SoundCloud Go+ & Next Pro — Plans{% endblock %}
+{% block content %}
+<div class="search-head">
+  <h1>SoundCloud plans</h1>
+  <p class="page-sub">Listen without limits, or take your career further. Cancel anytime.</p>
+</div>
+
+{% if current_sub %}
+<div class="flash"><div class="flash-msg">
+  Your current plan: <b>{{ current_sub.plan_title }}</b> ({{ current_sub.cycle }}, {{ current_sub.amount|money }}),
+  renews {{ current_sub.renews_at.strftime('%B %-d, %Y') if current_sub.renews_at else '' }} · card ending {{ current_sub.card_last4 }}
+</div></div>
+{% endif %}
+
+<div class="plan-grid" style="margin-top:26px;">
+  {% for code, p in plans.items() %}
+  <div class="plan-card {{ 'current' if current_sub and current_sub.plan_code == code }}">
+    <h3>{{ p.title }}</h3>
+    <div class="price">{{ p.monthly|money }}</div>
+    <div class="per">/ month{% if p.yearly %} or {{ p.yearly|money }} / year{% endif %}{% if p.trial_days %} · {{ p.trial_days }}-day free trial{% endif %}</div>
+    <ul>
+      {% if code == 'go' %}
+      <li>Ad-free listening</li>
+      <li>Offline access to your library</li>
+      <li>Access to 30M+ premium tracks</li>
+      {% elif code == 'go-plus' %}
+      <li>Everything in Go</li>
+      <li>Full premium catalog in high quality</li>
+      <li>Preview Next Pro stats</li>
+      {% else %}
+      <li>Unlimited upload time</li>
+      <li>Advanced audience stats</li>
+      <li>Distribute to Spotify, Apple Music and more</li>
+      <li>Priority support</li>
+      {% endif %}
+    </ul>
+    <form method="post" action="/upgrade/subscribe">
+      <input type="hidden" name="plan" value="{{ code }}">
+      {% if p.yearly %}
+      <div class="cycle-row">
+        <label class="sel"><input type="radio" name="cycle" value="monthly" checked style="display:none;">Monthly</label>
+        <label><input type="radio" name="cycle" value="yearly" style="display:none;">Yearly ({{ p.yearly|money }})</label>
+      </div>
+      {% else %}
+      <input type="hidden" name="cycle" value="monthly">
+      {% endif %}
+      <input type="text" name="card" placeholder="Card number (e.g. 4242 4242 4242 4242)" required>
+      <button class="btn {{ 'btn-tertiary' if current_sub and current_sub.plan_code == code else 'btn-primary' }}" type="submit">
+        {{ 'Switch to this plan' if current_sub else ('Start ' ~ p.title ~ ( (' with ' ~ p.trial_days ~ '-day free trial') if p.trial_days else '')) }}
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.cycle-row label').forEach(function (lab) {
+    lab.addEventListener('click', function () {
+      lab.parentElement.querySelectorAll('label').forEach(function (x) { x.classList.remove('sel'); });
+      lab.classList.add('sel');
+      lab.querySelector('input').checked = true;
+    });
+  });
+});
+</script>
+{% endblock %}

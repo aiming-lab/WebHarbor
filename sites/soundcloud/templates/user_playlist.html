@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ pl.title }} | Your playlist | SoundCloud{% endblock %}
+{% block content %}
+<div class="pl-hero">
+  <div class="art" style="display:flex;align-items:center;justify-content:center;font-size:52px;">♫</div>
+  <div class="body">
+    <div class="kind">Playlist</div>
+    <h1>{{ pl.title }}</h1>
+    <div class="owner">
+      <div>
+        <span class="name">{{ user.display_name }}</span>
+        <div style="color:var(--muted);font-size:12px;">Created {{ pl.created_at|time_ago }}</div>
+      </div>
+    </div>
+    <div class="facts">
+      <span><b>{{ pl.track_count }}</b> tracks</span>
+      <span><b>{{ pl.genre or 'Any genre' }}</b></span>
+    </div>
+    <div class="pl-actions">
+      <button class="btn btn-primary" data-sc-play data-sc-queue="#upl-list" style="height:44px;width:44px;border-radius:50%;font-size:16px;">▶</button>
+      <span class="count-chip">Play all</span>
+    </div>
+  </div>
+</div>
+
+<section class="section" style="margin-top:10px;">
+  <div class="track-list" id="upl-list">
+    {% for e in pl.entries %}
+    {% set t = e.track %}
+    {% set payload = {'id': t.id, 'title': t.title, 'artist': t.artist.username,
+                      'artwork': t.artwork, 'duration': t.duration,
+                      'url': '/' ~ t.artist.permalink ~ '/' ~ t.permalink } %}
+    <div class="track-row" data-sc-track='{{ payload|tojson }}'>
+      <div class="rank">{{ e.position }}</div>
+      <div class="art" data-sc-play>
+        {% if t.artwork %}<img src="{{ t.artwork }}" alt="{{ t.title }}">{% endif %}
+        <span class="play-badge">▶</span>
+      </div>
+      <div class="info">
+        <a class="t" href="/{{ t.artist.permalink }}/{{ t.permalink }}">{{ t.title }}</a>
+        <a class="a" href="/{{ t.artist.permalink }}">{{ t.artist.username }}</a>
+      </div>
+      <div class="stats">{{ t.plays|compact }}</div>
+      <div class="mini-actions">
+        <button class="btn btn-ghost btn-sm pl-remove-btn" data-pl="{{ pl.id }}" data-track="{{ t.id }}">Remove</button>
+      </div>
+    </div>
+    {% else %}
+    <p class="inline-note">This playlist is empty — add tracks with the ＋ button.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

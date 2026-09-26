@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card, playlist_card %}
+{% block title %}{{ q }} results on SoundCloud{% endblock %}
+{% block content %}
+<div class="search-head">
+  <h1>Search results for “{{ q }}”</h1>
+</div>
+<nav class="search-tabs">
+  <a class="{{ 'active' if tab == 'everything' }}" href="/search?q={{ q|urlencode }}">Everything</a>
+  <a class="{{ 'active' if tab == 'tracks' }}" href="/search?q={{ q|urlencode }}&tab=tracks">Tracks</a>
+  <a class="{{ 'active' if tab == 'people' }}" href="/search?q={{ q|urlencode }}&tab=people">People</a>
+  <a class="{{ 'active' if tab == 'playlists' }}" href="/search?q={{ q|urlencode }}&tab=playlists">Playlists</a>
+</nav>
+
+{% if not q %}
+<p class="found-note">Type something in the search bar above to find tracks, people and playlists.</p>
+{% else %}
+<p class="found-note">
+  Found {{ counts.playlists }} playlists, {{ counts.tracks }} tracks, {{ counts.people }} people
+</p>
+
+{% if tab == 'people' %}
+<section class="section">
+  {% for a in results.people %}
+  <div class="person-row">
+    <a href="/{{ a.permalink }}">{% if a.avatar %}<img src="{{ a.avatar }}" alt="{{ a.username }}">{% endif %}</a>
+    <div>
+      <a class="who" href="/{{ a.permalink }}">{{ a.username }}</a>
+      {% if a.verified %}<span class="verified-badge">✓ Verified</span>{% endif %}
+      <div class="meta">{% if a.city %}{{ a.city }}{% if a.country_code %}, {% endif %}{% endif %}{{ a.country_code }}</div>
+    </div>
+    <div style="margin-left:auto;color:var(--muted);font-size:12.5px;">{{ '{:,}'.format(a.followers) }} followers</div>
+  </div>
+  {% else %}
+  <p class="inline-note">No people found.</p>
+  {% endfor %}
+</section>
+{% elif tab == 'playlists' %}
+<section class="section">
+  <div class="card-grid">
+    {% for p in results.playlists %}{{ playlist_card(p) }}{% else %}<p class="inline-note">No playlists found.</p>{% endfor %}
+  </div>
+</section>
+{% else %}
+<section class="section">
+  <div class="section__head"><h2>Tracks</h2></div>
+  <div class="card-grid">
+    {% for t in results.tracks[:18] %}{{ track_card(t) }}{% endfor %}
+  </div>
+</section>
+{% if tab == 'everything' %}
+<section class="section">
+  <div class="section__head"><h2>People</h2></div>
+  {% for a in results.people[:4] %}
+  <div class="person-row">
+    <a href="/{{ a.permalink }}">{% if a.avatar %}<img src="{{ a.avatar }}" alt="{{ a.username }}">{% endif %}</a>
+    <div>
+      <a class="who" href="/{{ a.permalink }}">{{ a.username }}</a>
+      {% if a.verified %}<span class="verified-badge">✓ Verified</span>{% endif %}
+      <div class="meta">{{ '{:,}'.format(a.followers) }} followers</div>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+<section class="section">
+  <div class="section__head"><h2>Playlists</h2></div>
+  <div class="card-grid">
+    {% for p in results.playlists[:8] %}{{ playlist_card(p) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

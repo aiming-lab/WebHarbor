@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card, playlist_card %}
+{% block title %}Stream {{ track.title }} by {{ artist.username }} | Listen online for free on SoundCloud{% endblock %}
+{% block content %}
+<div class="listen">
+  <div class="artwork">
+    {% if track.artwork %}
+      <img src="{{ track.artwork }}" alt="{{ track.title }}">
+    {% else %}
+      <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:64px;color:#3a3a3a;">♫</div>
+    {% endif %}
+    <div class="play-overlay">
+      {% set payload = {'id': track.id, 'title': track.title, 'artist': artist.username,
+                        'artwork': track.artwork, 'duration': track.duration,
+                        'url': '/' ~ artist.permalink ~ '/' ~ track.permalink } %}
+      <button data-sc-play data-sc-track='{{ payload|tojson }}' aria-label="Play {{ track.title }}">▶</button>
+    </div>
+  </div>
+  <div class="body">
+    <h1 class="title">{{ track.title }}</h1>
+    <div class="artist">
+      <a href="/{{ artist.permalink }}">{% if artist.avatar %}<img src="{{ artist.avatar }}" alt="{{ artist.username }}">{% endif %}</a>
+      <div>
+        <a class="name" href="/{{ artist.permalink }}">{{ artist.username }}</a>
+        {% if artist.verified %}<span class="verified-badge">✓</span>{% endif %}
+      </div>
+    </div>
+    <div class="posted">Posted {{ track.display_date|time_ago }}</div>
+    <div class="waveform" id="waveform" title="Waveform">
+      {% for h in track.waveform_samples %}
+      <i style="height:{{ 3 + (h * 54 / 100)|int }}px" data-idx="{{ loop.index0 }}"></i>
+      {% endfor %}
+    </div>
+    <div class="stats">
+      <span>{{ '{:,}'.format(track.plays) }} plays</span>
+      <span>{{ track.likes|compact }} likes</span>
+      <span>{{ track.reposts|compact }} reposts</span>
+      <span>{{ track.duration_label }}</span>
+      {% if track.explicit %}<span style="border:1px solid var(--surface-3);padding:0 5px;border-radius:3px;font-size:11px;">EXPLICIT</span>{% endif %}
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary act-like {{ 'liked' if liked }}" data-track="{{ track.id }}" style="min-width:86px;">
+        ♥ <span class="n">{{ track.likes|compact }}</span>
+      </button>
+      <button class="btn btn-tertiary act-repost {{ 'reposted' if reposted }}" data-track="{{ track.id }}">
+        ⟳ Repost <span class="n">{{ track.reposts|compact }}</span>
+      </button>
+      <button class="btn btn-tertiary act-addtopl" data-track="{{ track.id }}">＋ Add to playlist</button>
+      {% if track.genre %}<a class="btn btn-ghost" href="/tags/{{ track.genre|replace(' ', '-') }}">{{ track.genre }}</a>{% endif %}
+    </div>
+    {% if track.tag_names %}
+    <div class="tags">
+      {% for tag in track.tag_names[:10] %}<a href="/tags/{{ tag|replace(' ', '-') }}">#{{ tag }}</a>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="listen-cols">
+  <div class="main">
+    <section class="panel">
+      <h3>{{ '{:,}'.format(track.comment_count) }} comments</h3>
+      {% set u = current_user() %}
+      {% if u %}
+      <form class="comment-form" id="comment-form" data-track="{{ track.id }}">
+        <img src="{{ url_for('static', filename='images/avatars/_default.png') }}" alt="">
+        <div class="fields">
+          <input type="text" id="comment-input" placeholder="Write a comment" maxlength="1000">
+          <div class="row2">
+            <span class="at-time">at <input type="text" id="comment-at" placeholder="m:ss" style="width:52px;background:transparent;border:1px solid var(--surface-3);border-radius:3px;color:var(--text);padding:2px 5px;font-size:11px;font-family:inherit;"> · Comment must not exceed 1000 characters</span>
+            <button class="btn btn-primary btn-sm" type="submit">Post</button>
+          </div>
+        </div>
+      </form>
+      {% else %}
+      <p class="inline-note"><a href="/signin" style="color:var(--accent);">Sign in</a> to comment on this track.</p>
+      {% endif %}
+      <div>
+        {% for c in comments %}
+        <div class="comment">
+          {% if c.author_avatar %}<img src="{{ c.author_avatar }}" alt="{{ c.author_name }}">{% endif %}
+          <div>
+            <span class="who">{{ c.author_name }}</span>
+            <span class="when">Posted {{ c.created_at|time_ago }}</span>
+            <div class="body">{{ c.body }}</div>
+            {% if c.at_label %}<div class="at">at {{ c.at_label }}</div>{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <p class="inline-note">No comments yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if more_from_artist %}
+    <section class="section">
+      <div class="section__head"><h2>More from {{ artist.username }}</h2></div>
+      <div class="card-grid">
+        {% for t in more_from_artist[:4] %}{{ track_card(t) }}{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if related %}
+    <section class="section">
+      <div class="section__head"><h2>Related tracks</h2><span class="more">View all</span></div>
+      <div class="card-grid">
+        {% for t in related[:8] %}{{ track_card(t) }}{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="side">
+    <section class="panel">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/{{ artist.permalink }}">{% if artist.avatar %}<img src="{{ artist.avatar }}" alt="{{ artist.username }}" style="width:56px;height:56px;border-radius:50%;">{% endif %}</a>
+        <div>
+          <a href="/{{ artist.permalink }}" style="font-size:14.5px;font-weight:700;">{{ artist.username }}</a>
+          {% if artist.verified %}<span class="verified-badge">✓ Verified</span>{% endif %}
+          <div style="color:var(--muted);font-size:12px;">{{ artist.followers|compact }} followers</div>
+        </div>
+      </div>
+      <div class="follow-block" style="margin-top:12px;">
+        <button class="btn btn-tertiary act-follow {{ 'following' if following }}" data-artist="{{ artist.id }}" style="width:100%;">
+          <span>{{ 'Following' if following else 'Follow' }}</span>
+        </button>
+      </div>
+      <div style="color:var(--muted);font-size:12px;margin-top:8px;">
+        <span class="followers-n">{{ '{:,}'.format(artist.followers) }}</span> followers · {{ artist.track_count }} tracks
+      </div>
+    </section>
+
+    {% if track.description %}
+    <section class="panel">
+      <h3>About this track</h3>
+      <div class="description">{{ track.description }}</div>
+    </section>
+    {% endif %}
+
+    {% if track.label_name or track.publisher_artist or track.license %}
+    <section class="panel">
+      <h3>Details</h3>
+      <table class="simple-table">
+        {% if track.publisher_artist %}<tr><td>Artist</td><td>{{ track.publisher_artist }}</td></tr>{% endif %}
+        {% if track.label_name %}<tr><td>Label</td><td>{{ track.label_name }}</td></tr>{% endif %}
+        <tr><td>License</td><td>{{ 'All rights reserved' if track.license == 'all-rights-reserved' else track.license }}</td></tr>
+        <tr><td>Released</td><td>{{ track.display_date.strftime('%B %-d, %Y') if track.display_date else '' }}</td></tr>
+      </table>
+    </section>
+    {% endif %}
+
+    {% if in_playlists %}
+    <section class="panel">
+      <h3>In playlists</h3>
+      {% for p in in_playlists %}
+      <a class="playlist-card" href="/{{ p.owner.permalink }}/sets/{{ p.permalink }}" style="margin-bottom:12px;">
+        <div style="display:flex;gap:12px;">
+          <div style="width:64px;height:64px;border-radius:4px;overflow:hidden;flex:none;">
+            {% if p.artwork %}<img src="{{ p.artwork }}" alt="{{ p.title }}" style="width:100%;height:100%;object-fit:cover;">{% endif %}
+          </div>
+          <div>
+            <div class="t" style="font-size:13px;font-weight:600;">{{ p.title }}</div>
+            <div style="color:var(--muted);font-size:12px;">{{ p.owner.username }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

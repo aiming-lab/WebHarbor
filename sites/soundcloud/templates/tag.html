@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card, playlist_card %}
+{% block title %}Music tracks, songs, playlists tagged {{ tag_clean }} on SoundCloud{% endblock %}
+{% block content %}
+<div class="search-head">
+  <h1>New tracks tagged #{{ tag_clean }}</h1>
+  <p class="page-sub">Browse the latest {{ tag_clean }} uploads, most played tracks and playlists on SoundCloud.</p>
+</div>
+
+<section class="section">
+  <div class="section__head"><h2>Popular Tracks</h2></div>
+  <div class="card-grid">
+    {% for t in popular[:12] %}{{ track_card(t) }}{% else %}<p class="inline-note">Nothing here yet.</p>{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head"><h2>Recent Tracks</h2></div>
+  <div class="card-grid">
+    {% for t in recent[:12] %}{{ track_card(t) }}{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head"><h2>Playlists</h2></div>
+  <div class="card-grid">
+    {% for p in playlists %}{{ playlist_card(p) }}{% endfor %}
+  </div>
+</section>
+{% endblock %}

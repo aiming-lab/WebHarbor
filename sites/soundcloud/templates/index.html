@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card, playlist_card %}
+{% block title %}SoundCloud — Hear what’s trending{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>IT ALL STARTS WITH AN UPLOAD.</h1>
+  <p>SoundCloud is where you define what’s next in music. Just hit upload.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="/upload">Upload</a>
+    <a class="btn btn-tertiary" href="/upgrade">Explore Artist Pro</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Hear what’s trending for free</h2>
+    <a class="more" href="/charts">See all charts →</a>
+  </div>
+  <div class="card-grid">
+    {% for t in hero_tracks[:12] %}{{ track_card(t) }}{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Charts on SoundCloud</h2>
+    <a class="more" href="/charts">All charts →</a>
+  </div>
+  <div class="card-grid">
+    {% for p in chart_playlists %}{{ playlist_card(p) }}{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Artists to watch</h2>
+    <a class="more" href="/search?q=verified">More people →</a>
+  </div>
+  <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));">
+    {% for a in top_artists %}
+    <a class="artist-card" href="/{{ a.permalink }}">
+      <div class="ava">{% if a.avatar %}<img src="{{ a.avatar }}" alt="{{ a.username }}">{% endif %}</div>
+      <div class="t">{{ a.username }}</div>
+      <div class="m">{{ a.followers|compact }} followers</div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2>Go+ and Next Pro</h2>
+    <a class="more" href="/upgrade">Compare plans →</a>
+  </div>
+  <div class="plan-grid">
+    <div class="plan-card">
+      <h3>Go+</h3>
+      <div class="price">$11.99</div>
+      <div class="per">/ month after 30-day free trial</div>
+      <ul>
+        <li>Full premium catalog</li>
+        <li>Ad-free listening</li>
+        <li>Offline listening</li>
+      </ul>
+      <a class="btn btn-primary" href="/upgrade">Explore Go+</a>
+    </div>
+    <div class="plan-card">
+      <h3>Next Pro</h3>
+      <div class="price">$15.99</div>
+      <div class="per">/ month or $99.00 / year</div>
+      <ul>
+        <li>Unlimited uploads</li>
+        <li>Detailed stats</li>
+        <li>Distribute everywhere</li>
+      </ul>
+      <a class="btn btn-tertiary" href="/upgrade">Explore Next Pro</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

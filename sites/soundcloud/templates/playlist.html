@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_row %}
+{% block title %}Stream {{ pl.owner.username }} | Listen to {{ pl.title }} playlist online for free on SoundCloud{% endblock %}
+{% block content %}
+<div class="pl-hero">
+  <div class="art">{% if pl.artwork %}<img src="{{ pl.artwork }}" alt="{{ pl.title }}">{% endif %}</div>
+  <div class="body">
+    <div class="kind">{{ 'Chart playlist' if pl.is_chart else 'Playlist' }}</div>
+    <h1>{{ pl.title }}</h1>
+    <div class="owner">
+      <a href="/{{ pl.owner.permalink }}">{% if pl.owner.avatar %}<img src="{{ pl.owner.avatar }}" alt="{{ pl.owner.username }}">{% endif %}</a>
+      <div>
+        <a class="name" href="/{{ pl.owner.permalink }}">{{ pl.owner.username }}</a>
+        {% if pl.owner.verified %}<span class="verified-badge">✓ Verified</span>{% endif %}
+        <div style="color:var(--muted);font-size:12px;">Updated {{ pl.display_date|time_ago if pl.display_date else '' }}</div>
+      </div>
+    </div>
+    <div class="facts">
+      <span><b>{{ pl.genre or 'All genres' }}</b></span>
+      <span><b>{{ entries|length }}</b> tracks</span>
+      {% if pl.duration %}<span><b>{{ pl.duration_label }}</b> total</span>{% endif %}
+      <span><b>{{ pl.likes|compact }}</b> likes</span>
+      <span><b>{{ pl.reposts|compact }}</b> reposts</span>
+    </div>
+    {% if pl.is_chart %}
+    <div class="pl-actions">
+      <button class="btn btn-primary" data-sc-play data-sc-queue="#chart-track-list" style="height:44px;width:44px;border-radius:50%;font-size:16px;">▶</button>
+      <span class="count-chip">Play all</span>
+    </div>
+    {% else %}
+    <div class="pl-actions">
+      <button class="btn btn-primary" data-sc-play data-sc-queue="#chart-track-list" style="height:44px;width:44px;border-radius:50%;font-size:16px;">▶</button>
+      <span class="count-chip">Play all</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if pl.description %}
+<div class="artist-bio" style="max-width:760px;">{{ pl.description }}</div>
+{% endif %}
+
+<div class="tags" style="margin-bottom:22px;">
+  {% for tag in pl.tag_list.split() if tag %}
+  <a href="/tags/{{ tag.strip('"') }}">{{ tag.strip('"') }}</a>
+  {% endfor %}
+</div>
+
+<section class="section" style="margin-top:10px;">
+  <div class="track-list" id="chart-track-list">
+    {% for e in entries %}
+      {{ track_row(e.track, rank=loop.index, show_wave=False) }}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

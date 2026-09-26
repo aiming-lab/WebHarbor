@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "_macros.html" import track_card %}
+{% block title %}Your Library | SoundCloud{% endblock %}
+{% block content %}
+<div class="library-grid">
+  <nav class="library-nav">
+    <a class="{{ 'active' if view == 'likes' }}" href="/you/likes">Likes</a>
+    <a class="{{ 'active' if view == 'playlists' }}" href="/you/playlists">Playlists</a>
+    <a class="{{ 'active' if view == 'following' }}" href="/you/following">Following</a>
+    <a class="{{ 'active' if view == 'history' }}" href="/you/history">History</a>
+    <a href="/settings">Settings</a>
+  </nav>
+
+  <div>
+    {% if view == 'likes' %}
+    <h1 class="page-title">Likes</h1>
+    <p class="page-sub">{{ likes|length }} liked tracks</p>
+    <div class="track-list">
+      {% for l in likes %}
+      {% set t = l.track %}
+      {% set payload = {'id': t.id, 'title': t.title, 'artist': t.artist.username,
+                        'artwork': t.artwork, 'duration': t.duration,
+                        'url': '/' ~ t.artist.permalink ~ '/' ~ t.permalink } %}
+      <div class="track-row" data-sc-track='{{ payload|tojson }}'>
+        <div class="art" data-sc-play>
+          {% if t.artwork %}<img src="{{ t.artwork }}" alt="{{ t.title }}">{% endif %}
+          <span class="play-badge">▶</span>
+        </div>
+        <div class="info">
+          <a class="t" href="/{{ t.artist.permalink }}/{{ t.permalink }}">{{ t.title }}</a>
+          <a class="a" href="/{{ t.artist.permalink }}">{{ t.artist.username }}</a>
+        </div>
+        <div class="stats">{{ t.plays|compact }}</div>
+        <div class="mini-actions">
+          <button class="act-like liked" data-track="{{ t.id }}" title="Unlike">♥<span class="n">{{ t.likes|compact }}</span></button>
+          <button class="act-addtopl" data-track="{{ t.id }}" title="Add to playlist">＋</button>
+        </div>
+      </div>
+      {% else %}
+      <p class="inline-note">Nothing liked yet — tap the heart on any track.</p>
+      {% endfor %}
+    </div>
+
+    {% elif view == 'playlists' %}
+    <h1 class="page-title">Your playlists</h1>
+    <p class="page-sub">{{ playlists|length }} playlists</p>
+    <div class="card-grid">
+      {% for p in playlists %}
+      <a class="playlist-card" href="/you/playlist/{{ p.id }}">
+        <div class="art" style="display:flex;align-items:center;justify-content:center;font-size:30px;">♫</div>
+        <div class="t">{{ p.title }}</div>
+        <div class="a">{{ p.track_count }} tracks</div>
+      </a>
+      {% else %}
+      <p class="inline-note">No playlists yet — use ＋ on any track to start one.</p>
+      {% endfor %}
+    </div>
+
+    {% elif view == 'following' %}
+    <h1 class="page-title">Following</h1>
+    <p class="page-sub">{{ follows|length }} artists</p>
+    {% for f in follows %}
+    <div class="person-row">
+      <a href="/{{ f.artist.permalink }}">{% if f.artist.avatar %}<img src="{{ f.artist.avatar }}" alt="{{ f.artist.username }}">{% endif %}</a>
+      <div>
+        <a class="who" href="/{{ f.artist.permalink }}">{{ f.artist.username }}</a>
+        {% if f.artist.verified %}<span class="verified-badge">✓ Verified</span>{% endif %}
+        <div class="meta">{{ '{:,}'.format(f.artist.followers) }} followers</div>
+      </div>
+      <div style="margin-left:auto;">
+        <button class="btn btn-tertiary act-follow following" data-artist="{{ f.artist.id }}"><span>Following</span></button>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% elif view == 'history' %}
+    <h1 class="page-title">Listening history</h1>
+    <p class="page-sub">Your most recent plays</p>
+    <div class="track-list">
+      {% for h in history %}
+      {% set t = h.track %}
+      <div class="track-row">
+        <div class="art">
+          {% if t.artwork %}<img src="{{ t.artwork }}" alt="{{ t.title }}">{% endif %}
+        </div>
+        <div class="info">
+          <a class="t" href="/{{ t.artist.permalink }}/{{ t.permalink }}">{{ t.title }}</a>
+          <a class="a" href="/{{ t.artist.permalink }}">{{ t.artist.username }}</a>
+        </div>
+        <div class="stats">played {{ h.played_at|time_ago }}</div>
+      </div>
+      {% else %}
+      <p class="inline-note">Nothing played yet.</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

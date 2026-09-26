@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SoundCloud{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/soundcloud.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/soundcloud-logo.svg') }}">
+</head>
+<body>
+<header class="header">
+  <div class="header__inner l-container">
+    <div class="header__logo">
+      <a href="/" title="Home" aria-label="SoundCloud">
+        <img src="{{ url_for('static', filename='icons/soundcloud-logo.svg') }}" alt="SoundCloud" style="height:28px;width:auto;">
+      </a>
+    </div>
+    <nav class="header__nav">
+      <a href="/discover" class="{{ 'active' if request.path == '/discover' }}">Home</a>
+      <a href="/charts" class="{{ 'active' if request.path.startswith('/charts') or '/sets/' in request.path }}">Charts</a>
+      <a href="/you/library" class="{{ 'active' if request.path.startswith('/you') }}">Library</a>
+    </nav>
+    <form class="header__search" action="/search" method="get" role="search">
+      <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Search for artists, bands, tracks, podcasts" aria-label="Search" autocomplete="off">
+      <button class="search-icon" type="submit" aria-label="Search">⌕</button>
+    </form>
+    <div class="header__actions">
+      {% set u = current_user() %}
+      {% if u %}
+        <a class="whoami" href="/you/library" title="{{ u.display_name }}">{{ u.display_name }}</a>
+        <a class="btn btn-tertiary" href="/upload">Upload</a>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+      {% else %}
+        <button class="btn btn-tertiary" onclick="window.location='/signin'">Sign in</button>
+        <button class="btn btn-primary" onclick="window.location='/signup'">Create account</button>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main class="page l-container">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash">
+        {% for m in messages %}<div class="flash-msg">{{ m }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="l-container cols">
+    <a href="/signup">Get the app</a>
+    <a href="/discover">Discover</a>
+    <a href="/charts">Charts</a>
+    <a href="/upgrade">Plans</a>
+    <a href="/upload">Upload</a>
+    <span class="lang">Language: English (US)</span>
+  </div>
+</footer>
+
+{# playbar #}
+<div class="playbar" id="playbar">
+  <div class="transport">
+    <button class="pb-btn" id="pb-prev" aria-label="Skip to previous">⏮</button>
+    <button class="pb-btn play-main" id="pb-play" aria-label="Play current">▶</button>
+    <button class="pb-btn" id="pb-next" aria-label="Skip to next">⏭</button>
+  </div>
+  <div class="now">
+    <img id="pb-art" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" style="visibility:hidden">
+    <div>
+      <a class="t" id="pb-title" href="#"></a>
+      <div class="a" id="pb-artist"></div>
+    </div>
+  </div>
+  <div class="timeline">
+    <div class="times"><span id="pb-elapsed">0:00</span><span id="pb-total">0:00</span></div>
+    <div class="bar" id="pb-bar"><div class="fill" id="pb-fill"></div></div>
+  </div>
+  <div class="vol">
+    <span aria-hidden="true">🔊</span>
+    <input type="range" id="pb-vol" min="0" max="100" value="80" aria-label="Volume">
+  </div>
+</div>
+
+{# global add-to-playlist modal: rendered on every page so the ＋ button on
+   chart rows / artist pages / library works everywhere (upstream behavior).
+   Anonymous visitors get the sign-in prompt instead of a dead button. #}
+{% block modal %}
+{% set u = current_user() %}
+<div class="modal-backdrop" id="pl-modal">
+  <div class="modal">
+    <h3>Add to playlist</h3>
+    {% if u %}
+    <form id="pl-create-form">
+      <div class="new-pl-row">
+        <input type="text" id="pl-new-title" placeholder="New playlist title">
+        <button class="btn btn-primary btn-sm" type="submit">Create</button>
+      </div>
+    </form>
+    <ul>
+      {% for up in nav_playlists %}
+      <li>
+        <span>{{ up.title }} · {{ up.count }} tracks</span>
+        <button class="pl-add-btn" data-pl="{{ up.id }}" data-track-ids="{{ up.track_ids|join(',') }}">Add</button>
+      </li>
+      {% else %}
+      <li><span class="inline-note">No playlists yet — create one above.</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="inline-note"><a href="/signin" style="color:var(--accent);">Sign in</a> to create playlists and save tracks.</p>
+    {% endif %}
+    <div class="close-row"><button class="btn btn-ghost modal-close">Close</button></div>
+  </div>
+</div>
+{% endblock %}
+<script src="{{ url_for('static', filename='js/soundcloud.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
