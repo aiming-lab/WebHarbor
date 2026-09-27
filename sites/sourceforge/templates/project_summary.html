@@ -46,7 +46,7 @@
               <h2 class="as-h3 summary">{{ p.summary }}</h2>
               {% if p.developers %}
               <div class="as-h3 brought-by">Brought to you by:
-                {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/">{{ u }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+                {% for u, dn in p.developers %}{% set _u = user_href(u) %}{% if _u %}<a href="/u/{{ _u }}/profile/">{{ u }}</a>{% else %}{{ u }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
               </div>
               {% endif %}
             </div>
@@ -154,9 +154,9 @@
               <time datetime="{{ ev.date }}" title="{{ ev.date }}">{{ relative_date(ev.date[:10]) }}</time>
               <div>
                 {% if ev.actor_is_project %}
-                {{ ev.actor }} {{ ev.verb }} <a href="{{ ev.obj_url }}">{{ ev.obj }}</a>
+                {{ ev.actor }} {{ ev.verb }} {% if ev.obj_url and file_download_exists(ev.obj_url) %}<a href="{{ ev.obj_url }}">{{ ev.obj }}</a>{% else %}{{ ev.obj }}{% endif %}
                 {% else %}
-                <a href="/u/{{ ev.actor }}/profile/">{{ ev.actor }}</a> {{ ev.verb }} <a href="{{ ev.obj_url }}">{{ ev.obj }}</a>{% if ev.target %} on <a href="{{ ev.target_url }}">{{ ev.target }}</a>{% endif %}
+                {% set _u = user_href(ev.actor) %}{% if _u %}<a href="/u/{{ _u }}/profile/">{{ ev.actor }}</a>{% else %}{{ ev.actor }}{% endif %} {{ ev.verb }} {% if ev.obj_url and file_download_exists(ev.obj_url) %}<a href="{{ ev.obj_url }}">{{ ev.obj }}</a>{% else %}{{ ev.obj }}{% endif %}{% if ev.target %} on <a href="{{ ev.target_url }}">{{ ev.target }}</a>{% endif %}
                 {% endif %}
               </div>
               {% if ev.summary %}<div class="summary">{{ ev.summary[:160] }}</div>{% endif %}

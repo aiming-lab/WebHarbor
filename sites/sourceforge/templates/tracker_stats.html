@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block viewport %}width=1100{% endblock %}
+{% block body_id %}forge{% endblock %}
+{% block body_classes %}body_class sandiego_chrome legacy_chrome l-allow-natural-width{% endblock %}
+{% block forge_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/forge.css') }}">{% endblock %}
+{% block title %}{{ p.name }} / {{ tracker_label }} Stats{% endblock %}
+{% block content %}
+<section id="page-body" class="neighborhood-Projects project-{{ p.shortname }} mountpoint-{{ tracker }}">
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div id="sidebar">
+        <ul class="sidebarmenu">
+          <li><a class="icon" href="/p/{{ p.shortname }}/{{ tracker }}/" title="Back to the {{ tracker_label }} list"><i class="fa fa-list"></i> <span>Back to {{ tracker_label }}</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>{{ tracker_label }} Stats</span></h2>
+      <div class="pad">
+        <h3>Tickets by status</h3>
+        <table class="ticket-list">
+          <thead>
+            <tr><th>Status</th><th>Tickets</th></tr>
+          </thead>
+          <tbody>
+            {% for status, count in statuses %}
+            <tr>
+              <td><a href="/p/{{ p.shortname }}/{{ tracker }}/?status={{ status }}">{{ status }}</a></td>
+              <td>{{ fmt_int(count) }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <td><strong>Total</strong></td>
+              <td><strong>{{ fmt_int(total) }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        {% if priorities %}
+        <h3>Tickets by priority</h3>
+        <table class="ticket-list">
+          <thead>
+            <tr><th>Priority</th><th>Tickets</th></tr>
+          </thead>
+          <tbody>
+            {% for priority, count in priorities %}
+            <tr>
+              <td>{{ priority }}</td>
+              <td>{{ fmt_int(count) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+{% endblock %}

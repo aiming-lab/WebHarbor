@@ -29,7 +29,7 @@
       <div class="editbox">
         <div class="grid-9 gravatar sm">
           <label class="simple">Authors: </label>
-          {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/" class="user-mention">{{ dn }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+          {% for u, dn in p.developers %}{% set _u = user_href(u) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ dn }}</a>{% else %}{{ dn }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
         </div>
         <div class="grid-9 gravatar sm">
           <label class="simple">Page Last Modified: </label>

@@ -22,7 +22,7 @@ def run_checks(judge, traj, initial_db, after_db):
     check_visited_path(judge, traj, "visited_stats_timeline", r"/stats/timeline")
     check_visited_path(judge, traj, "visited_stats_os", r"/stats/os")
     check_visited_path(judge, traj, "visited_stats_map", r"/stats/map")
-    check_visited_path(judge, traj, "sorted_search", r"/directory/\?q=file\+compression.*sort=popular")
+    check_visited_path(judge, traj, "sorted_search", r"/directory/\?q=file(\+|%20)compression.*sort=popular")
     check_visited_path(judge, traj, "visited_mingw", r"/projects/mingw/")
     check_visited_path(judge, traj, "visited_autoclicker", r"/projects/orphamielautoclicker/")
     check_visited_path(judge, traj, "visited_winscp", r"/projects/winscp/")

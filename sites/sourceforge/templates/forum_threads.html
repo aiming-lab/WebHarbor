@@ -31,11 +31,11 @@
               <tr>
                 <td class="topic">
                   <h3><a href="/p/{{ p.shortname }}/discussion/{{ forum.shortname }}/thread/{{ th.thread_id }}/">{{ th.subject }}</a></h3>
-                  <span>By <a href="/u/{{ th.creator|lower|replace(' ','') }}/profile/" class="user-mention">{{ th.creator }}</a> </span> on {{ th.created }}
+                  <span>By {% set _u = user_href(th.creator) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ th.creator }}</a>{% else %}{{ th.creator }}{% endif %} </span> on {{ th.created }}
                 </td>
                 <td>{{ th.posts }}</td>
                 <td>{{ fmt_int(th.views) }}</td>
-                <td>By <a href="/u/{{ th.last_author|lower|replace(' ','') }}/profile/" class="user-mention">{{ th.last_author }}</a> <br/>on {{ th.last_date }}</td>
+                {% set _la, _ld = thread_last_post(forum.shortname, th.thread_id, th.last_author, th.last_date) %}<td>{% if _la %}By {% set _u = user_href(_la) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ _la }}</a>{% else %}{{ _la }}{% endif %} <br/>on {{ _ld }}{% else %}&mdash;{% endif %}</td>
               </tr>
               {% endfor %}
             </tbody>

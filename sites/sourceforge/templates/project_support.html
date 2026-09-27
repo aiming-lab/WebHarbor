@@ -14,7 +14,7 @@
             <div class="title">
               <h1>{{ p.name }} Support</h1>
               <h2 class="as-h3 summary">{{ p.summary }}</h2>
-              {% if p.developers %}<div class="as-h3 brought-by">Brought to you by: {% for u, dn in p.developers %}<a href="/u/{{ u }}/profile/">{{ u }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+              {% if p.developers %}<div class="as-h3 brought-by">Brought to you by: {% for u, dn in p.developers %}{% set _u = user_href(u) %}{% if _u %}<a href="/u/{{ _u }}/profile/">{{ u }}</a>{% else %}{{ u }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
             </div>
           </div>
         </div>

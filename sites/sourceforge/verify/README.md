@@ -2,8 +2,8 @@
 
 One verifier per task (`verify_0.py` … `verify_20.py`) plus the shared
 `verify_lib.py`. Ground truth is HARDCODED in each verifier module (frozen from
-the deterministic seed built at image time, md5 `bfb58247…`, sha256 rows
-`05fdb69d…`) — never in `tasks.jsonl`, which carries only the two additional
+the deterministic seed built at image time, md5 `523b5904…`, sha256 rows
+`520501ac…`; schema digest `aa61b172…`) — never in `tasks.jsonl`, which carries only the two additional
 keys `verifier_path` and `judge_rubric` (pure-rule English; the original five
 keys stay byte-identical, no `answer` key).
 

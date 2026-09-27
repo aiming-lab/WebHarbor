@@ -19,7 +19,7 @@ def _pid(db, shortname):
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
-    check_visited_path(judge, traj, "sorted_search", r"/directory/\?q=file\+compression.*sort=popular")
+    check_visited_path(judge, traj, "sorted_search", r"/directory/\?q=file(\+|%20)compression.*sort=popular")
     check_visited_path(judge, traj, "visited_mingw", r"/projects/mingw/")
     check_visited_path(judge, traj, "visited_autoclicker", r"/projects/orphamielautoclicker/")
     check_visited_path(judge, traj, "visited_7zip", r"/projects/sevenzip/")

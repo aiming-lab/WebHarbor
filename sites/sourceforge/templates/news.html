@@ -16,7 +16,7 @@
         <div style="margin-bottom: 10px">
           <h3>{{ n.title }}</h3>
           <div class="markdown_content"><p>{{ n.body }}</p></div>
-          <em class="grid-19">Posted by <a href="/u/{{ n.author }}/profile/" class="user-mention">{{ n.author }}</a> <span title="{{ n.date }}">{{ n.date }}</span></em>
+          <em class="grid-19">Posted by {% set _u = user_href(n.author) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ n.author }}</a>{% else %}{{ n.author }}{% endif %} <span title="{{ n.date }}">{{ n.date }}</span></em>
           <div style="clear: both"></div>
         </div>
         <hr/>

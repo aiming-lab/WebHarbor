@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block viewport %}width=1100{% endblock %}
+{% block body_id %}forge{% endblock %}
+{% block body_classes %}body_class sandiego_chrome legacy_chrome l-allow-natural-width{% endblock %}
+{% block forge_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/forge.css') }}">{% endblock %}
+{% block title %}{{ p.name }} / New {{ tracker_label }}{% endblock %}
+{% block content %}
+<section id="page-body" class="neighborhood-Projects project-{{ p.shortname }} mountpoint-{{ tracker }}">
+<div class="l-two-column-page">
+  <div class="l-side-column l-has-sidebar">
+    <div class="side-column-contents">
+      <div id="sidebar">
+        <ul class="sidebarmenu">
+          <li><a class="icon" href="/p/{{ p.shortname }}/{{ tracker }}/" title="Back to the {{ tracker_label }} list"><i class="fa fa-list"></i> <span>Back to {{ tracker_label }}</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="l-gutter"></div>
+  <div class="l-content-column">
+    <div class="grid-20 pad">
+      <h2 class="dark title"><span>New {{ tracker_label }}</span></h2>
+      <div class="pad">
+        <p>To create a new ticket, you must be authorized by the project admin.</p>
+        <p>Only project members with ticket-creation rights may file tickets in
+           the {{ p.name }} {{ tracker_label }} tracker. If you believe you should
+           have access, contact the project administrators via the
+           <a href="/p/{{ p.shortname }}/discussion/">discussion forums</a>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+{% endblock %}

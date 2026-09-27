@@ -25,6 +25,7 @@ import math
 import os
 import re
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, send_file, url_for)
@@ -517,9 +518,176 @@ def relative_date(date_str):
     return f"{days // 365} years ago"
 
 
+# ---------------------------------------------------------------------------
+# Upstream-faithful user links (audit fix)
+#
+# The forge templates linkify author/creator display names to
+# /u/<username>/profile/. Deriving the username by lower-casing the display
+# name produces wrong usernames for most authors (e.g. "Igor Pavlov" is
+# /u/ipavlov/, not /u/igorpavlov/), and the mirror's users table only carries
+# the OSS-directory population, so several upstream forum users have no row.
+# The mapping below is extracted verbatim from the captured upstream pages
+# (source_data/pages/*: every /u/<name>/profile/ href next to its display
+# name), so profile links resolve to the same usernames upstream serves.
+UPSTREAM_USER_LINKS = {
+    "@ipavlov": "ipavlov", "@karlynhoz": "karlynhoz", "@kb0000001": "kb0000001",
+    "AdamL": "leckronat", "Alex V": "alexandrv", "AlexS": "sov44",
+    "Algrin Bolus": "algrinbolus", "Amber Jones": "amber111", "An mac": "anmac1789",
+    "Andrew": "blangel", "Arav": "arav4592", "Aren Cambre": "acambre",
+    "Asta Nora": "astanora", "Bella": "llb15", "Bob Smith": "chicken0895",
+    "CP van Ekeris": "cvanekeris", "Carlos Nunes": "karlynhoz",
+    "Carlos Scheid": "cgscheid", "Casteele M.": "casteele72",
+    "Cecily Curtis": "cecilyc23", "ChDelannoy": "chdelannoy",
+    "Chloe Jones": "cimanchester123", "Cristian Mattioli": "nerfer4",
+    "Deyan Delchev": "ddelchev", "Dmitry Glavatskikh": "dngc99",
+    "Dragon 99": "dragon99", "Ellie Jones": "ellie78", "Farahin Fauze": "farahinfauze",
+    "GamerGoddessDin": "firegoddessdin", "Harry Stein": "hstein2000",
+    "Igor Pavlov": "ipavlov", "Jakub Kuczys": "jackenmen", "Jamie": "ourcefan123111",
+    "Janne Soukka": "jannesoukka", "John Howard": "jhphotographer",
+    "Keith Schlesinger": "kirk-rs", "KrashDummy": "krashdummy", "Larry": "lar3ryca",
+    "Lauren Williams": "lauren10", "Lyubomyr Shaydariv": "l-shaydariv",
+    "Miko G": "mgmuana", "Morgan John Dalton": "mog666", "Neustradamus": "neustradamus",
+    "Nigbir": "imbir", "Nikita": "nik1231241", "Nobody/Anonymous": "nobody",
+    "Noel Reese": "oopscrunch", "Peter Dirk": "geextah", "Peter Henkel": "rohrspatz",
+    "Priyanka Phadke": "priya-11", "R. Jasper": "rob-j99", "Reebig Frank": "reebigfrank",
+    "Rich Scholl": "rfscholl", "Robert Barcikowski": "rbarciko", "Roy Tam": "roytam1",
+    "Rui": "ruuiii", "Sam Tansy": "tansy", "Satish Godara": "satishgodara496",
+    "Siddharth Sharma": "ssharma1081", "Stefan Holmes": "honestflames",
+    "Tanzmusikus": "tanzmusikus", "Thomas": "thoste", "Thomas Stephens": "dantoys",
+    "Tish": "itisljar", "Unglaublich": "unglaublich", "VictorVG": "viksoftru",
+    "Wlodzimierz O. Kubera": "wlodzimierz", "Yovaraj Karunakaran": "yovaraj",
+    "alida": "alidas", "arhfk": "asovj", "chfakht": "chfakht", "diLan A": "boomramada",
+    "engin çiçek": "eskehacettddbey", "estomagado": "estomagado",
+    "eugenesan": "eugenesan", "fedorauser67": "fedorauser67", "gaurav": "gau33",
+    "ipavlov": "ipavlov", "james anthony lambert": "silverdollar57",
+    "john": "modz2021", "kb0000001": "kb0000001", "kp jones": "kp-jones7",
+    "matthijs": "tijsco", "mdadm": "mdadm", "mgs": "pol098", "mik": "gmichencigh",
+    "mmortal03": "mmortal03", "orion33": "orion33", "r_x": "r_x", "rtm": "rtm",
+    "shinchiro": "shinchiro", "simon": "lixu1989", "thebigfatgeek": "thebigfatgeek",
+    "therube": "therube", "tsingkong": "tsingkong", "yifei zhu": "ruichuangzhu",
+    "风之暇想": "fzxx",
+}
+
+# (forum id, thread id) -> (last-post author display name, date) exactly as the
+# upstream thread lists render them (source_data/pages/forum*_clean.html).
+# The captured seed left forum_threads.last_author/last_date empty, so this is
+# the render-layer fallback that keeps the "Last Post" column upstream-faithful
+# instead of printing "By None on None".
+UPSTREAM_THREAD_LAST_POST = {
+    ("45797", "01728b2dfb"): ("Keith Schlesinger", "Thu Aug 13, 2026 04:31 AM"),
+    ("45797", "02ab9dee74"): ("r_x", "Sat Sep 05, 2026 09:40 AM"),
+    ("45797", "096400c30b"): ("mgs", "Fri Sep 04, 2026 12:05 PM"),
+    ("45797", "09cf00be2d"): ("Priyanka Phadke", "Thu Sep 03, 2026 09:12 AM"),
+    ("45797", "0f17be73d3"): ("CP van Ekeris", "Sun Sep 20, 2026 08:33 AM"),
+    ("45797", "2ed1dd3419"): ("Deyan Delchev", "Sun Jul 26, 2026 11:24 AM"),
+    ("45797", "46defab8d4"): ("engin çiçek", "Sun Sep 06, 2026 08:52 PM"),
+    ("45797", "514294cd69"): ("Sam Tansy", "Wed Jul 29, 2026 08:03 AM"),
+    ("45797", "55adf4c747"): ("matthijs", "Wed Sep 02, 2026 03:10 PM"),
+    ("45797", "55bd794c"): ("mmortal03", "Mon Aug 31, 2026 11:07 AM"),
+    ("45797", "5eb1b8d5"): ("tsingkong", "Fri Sep 11, 2026 06:05 AM"),
+    ("45797", "5ed712eada"): ("风之暇想", "Sat Sep 05, 2026 05:57 AM"),
+    ("45797", "735fd9fc84"): ("Casteele M.", "Fri Sep 18, 2026 05:19 AM"),
+    ("45797", "74d0dfdce1"): ("kp jones", "Sat Sep 19, 2026 07:30 AM"),
+    ("45797", "768a550c16"): ("CP van Ekeris", "Sun Sep 20, 2026 08:30 AM"),
+    ("45797", "8299d94c0e"): ("Janne Soukka", "Tue Sep 15, 2026 11:11 PM"),
+    ("45797", "8915cc7c74"): ("KrashDummy", "Fri Sep 11, 2026 05:22 PM"),
+    ("45797", "942820b266"): ("Igor Pavlov", "Wed Jul 22, 2026 10:34 AM"),
+    ("45797", "9ed0a3f537"): ("Larry", "Thu Sep 03, 2026 05:14 PM"),
+    ("45797", "b8d64839d0"): ("arhfk", "Sun Jul 19, 2026 08:27 PM"),
+    ("45797", "c6812ccfa3"): ("Satish Godara", "Wed Sep 09, 2026 01:01 PM"),
+    ("45797", "d62b23968a"): ("Peter Dirk", "Mon Jul 27, 2026 10:04 PM"),
+    ("45797", "db6922e1d0"): ("Igor Pavlov", "Wed Sep 23, 2026 10:58 AM"),
+    ("45797", "e0906b9334"): ("Tish", "Fri Aug 14, 2026 08:49 PM"),
+    ("45797", "f2a6603d5c"): ("Wlodzimierz O. Kubera", "Thu Aug 13, 2026 07:04 PM"),
+    ("45798", "009bb83db8"): ("Sam Tansy", "Tue Mar 10, 2026 08:36 PM"),
+    ("45798", "14b45206e4"): ("Igor Pavlov", "Mon Aug 31, 2026 06:59 AM"),
+    ("45798", "203e624013"): ("Igor Pavlov", "Thu May 21, 2026 05:25 AM"),
+    ("45798", "3e72140a2e"): ("VictorVG", "Tue Mar 03, 2026 01:12 AM"),
+    ("45798", "3f3f89774b"): ("fedorauser67", "Thu Jul 02, 2026 03:06 AM"),
+    ("45798", "568c2620dc"): ("An mac", "Wed Mar 04, 2026 09:25 AM"),
+    ("45798", "609e725bf4"): ("Nikita", "Tue Mar 31, 2026 11:07 AM"),
+    ("45798", "64e3285d64"): ("james anthony lambert", "Sun Aug 30, 2026 08:58 PM"),
+    ("45798", "7cd1100377"): ("Jamie", "Thu Aug 13, 2026 06:17 AM"),
+    ("45798", "83e3e1f8bc"): ("orion33", "Mon Feb 16, 2026 12:02 PM"),
+    ("45798", "8e8f91f1b5"): ("AlexS", "Wed Apr 08, 2026 02:55 PM"),
+    ("45798", "914407e2ad"): ("Algrin Bolus", "Tue Mar 31, 2026 08:20 PM"),
+    ("45798", "9196fad1c4"): ("Noel Reese", "Sun Feb 08, 2026 09:25 PM"),
+    ("45798", "9a5c7eb9ec"): ("VictorVG", "Wed Feb 04, 2026 06:46 PM"),
+    ("45798", "aadb3f765e"): ("therube", "Thu Apr 30, 2026 04:13 PM"),
+    ("45798", "b56995273c"): ("Lyubomyr Shaydariv", "Wed Jul 22, 2026 05:39 PM"),
+    ("45798", "be65c1f094"): ("Yovaraj Karunakaran", "Sat Apr 04, 2026 05:48 PM"),
+    ("45798", "d47452f8be"): ("Dragon 99", "Fri May 01, 2026 01:51 PM"),
+    ("45798", "d4bbe9cc"): ("An mac", "Sun Mar 01, 2026 06:28 AM"),
+    ("45798", "d4f2f21027"): ("Morgan John Dalton", "Thu Apr 09, 2026 08:12 PM"),
+    ("45798", "d7bbafd63a"): ("Igor Pavlov", "Tue Aug 04, 2026 01:03 PM"),
+    ("45798", "d8f0c370e0"): ("Sam Tansy", "Wed Jul 29, 2026 08:25 AM"),
+    ("45798", "dda4d8d8bd"): ("Unglaublich", "Wed May 06, 2026 06:36 PM"),
+    ("45798", "e0541aa8fc"): ("Igor Pavlov", "Thu Sep 03, 2026 09:06 AM"),
+    ("45798", "fe29b9d201"): ("Jakub Kuczys", "Sun Jun 14, 2026 12:35 PM"),
+}
+
+
+def user_href(name):
+    """Resolve an author display name to the upstream /u/<username>/ slug.
+
+    Returns None when no honest target exists, in which case templates render
+    the plain display name (upstream never serves a dead profile link)."""
+    if not name or not str(name).strip() or str(name).strip().lower() == "none":
+        return None
+    name = str(name).strip()
+    hit = UPSTREAM_USER_LINKS.get(name)
+    if hit:
+        return hit
+    normalized = name.lower().replace(" ", "")
+    if User.query.filter_by(username=normalized).first():
+        return normalized
+    return None
+
+
+def thread_last_post(fsid, thread_id, db_author, db_date):
+    """(author, date) for a thread's Last Post column: DB value first, then
+    the upstream-captured fallback, then None (rendered as a dash)."""
+    if db_author and str(db_author).strip() and str(db_author).strip().lower() != "none":
+        return db_author, db_date
+    hit = UPSTREAM_THREAD_LAST_POST.get((str(fsid), str(thread_id)))
+    if hit:
+        return hit
+    return None, None
+
+
+def biz_logo(slug):
+    """Filename of the product's captured logo, or None when upstream has no
+    icon for the product (the card then renders the upstream default-project-icon
+    placeholder instead of a broken image)."""
+    if not slug:
+        return None
+    candidate = Path(app.static_folder) / "images" / "ui" / f"biz-{slug}.png"
+    return candidate.name if candidate.is_file() else None
+
+
+def file_download_exists(obj_url):
+    """True when an activity-feed obj_url points at a file the mirror actually
+    serves (the captured feed references three 26.03 builds that are not in the
+    files table; those render as plain text instead of dead links)."""
+    if not obj_url:
+        return False
+    m = re.match(r"/projects/([\w.\-]+)/files/(.+)/download$", str(obj_url))
+    if not m:
+        return True  # non-download links are rendered as-is
+    p = Project.query.filter_by(shortname=m.group(1)).first()
+    if not p:
+        return False
+    return bool(ProjectFile.query.filter_by(project_id=p.id, path=m.group(2),
+                                           is_folder=False).first())
+
+
 app.jinja_env.globals.update(relative_date=relative_date,
                              fmt_int=fmt_int,
-                             fmt_compact=fmt_compact)
+                             fmt_compact=fmt_compact,
+                             user_href=user_href,
+                             thread_last_post=thread_last_post,
+                             biz_logo=biz_logo,
+                             file_download_exists=file_download_exists)
 
 
 def get_content(key, default=None):
@@ -957,6 +1125,46 @@ def tracker_search(shortname, tracker):
     return tracker_browse(shortname, tracker)
 
 
+@app.route("/p/<shortname>/<tracker>/new/")
+def tracker_new_ticket(shortname, tracker):
+    """Upstream's Create Ticket entry: anonymous visitors are sent to the
+    login page (upstream behavior); logged-in users see the authorization
+    notice the tracker sidebar already carries."""
+    if tracker not in TRACKERS:
+        abort(404)
+    p = project_or_404(shortname)
+    if tracker not in p.tools:
+        abort(404)
+    if not current_user.is_authenticated:
+        return redirect("/auth/")
+    return render_template("tracker_new.html", p=p, tracker=tracker,
+                           tracker_label=TRACKERS[tracker])
+
+
+@app.route("/p/<shortname>/<tracker>/stats/")
+def tracker_stats(shortname, tracker):
+    """Upstream's View Stats page: ticket counts by status, from the DB."""
+    if tracker not in TRACKERS:
+        abort(404)
+    p = project_or_404(shortname)
+    if tracker not in p.tools:
+        abort(404)
+    tickets = Ticket.query.filter_by(project_id=p.id, tracker=tracker).all()
+    statuses = {}
+    for t in tickets:
+        statuses[t.status] = statuses.get(t.status, 0) + 1
+    priorities = {}
+    for t in tickets:
+        if t.priority is not None:
+            priorities[t.priority] = priorities.get(t.priority, 0) + 1
+    return render_template("tracker_stats.html", p=p, tracker=tracker,
+                           tracker_label=TRACKERS[tracker],
+                           statuses=sorted(statuses.items(),
+                                           key=lambda kv: -kv[1]),
+                           priorities=sorted(priorities.items()),
+                           total=len(tickets))
+
+
 @app.route("/p/<shortname>/<tracker>/<int:num>/")
 def tracker_ticket(shortname, tracker, num):
     if tracker not in TRACKERS:
@@ -991,6 +1199,17 @@ def project_wiki_page(shortname, title):
         abort(404)
     pages = WikiPage.query.filter_by(project_id=p.id).order_by(WikiPage.title).all()
     return render_template("wiki_page.html", p=p, page=page, pages=pages)
+
+
+@app.route("/p/<shortname>/wiki/browse_pages/")
+def project_wiki_browse(shortname):
+    """Upstream's Browse Pages list: every captured wiki page with its last
+    modification date."""
+    p = project_or_404(shortname)
+    if "wiki" not in p.tools:
+        abort(404)
+    pages = WikiPage.query.filter_by(project_id=p.id).order_by(WikiPage.title).all()
+    return render_template("wiki_browse.html", p=p, pages=pages)
 
 
 @app.route("/p/<shortname>/discussion/")
@@ -1047,14 +1266,70 @@ def project_activity(shortname):
     return render_template("activity.html", p=p, events=events)
 
 
+@app.route("/p/<shortname>/activity/feed")
+def project_activity_feed(shortname):
+    """Upstream's project activity RSS/Atom feed (the masthead RSS button)."""
+    p = project_or_404(shortname)
+    events = (ActivityEvent.query.filter_by(project_id=p.id)
+              .order_by(ActivityEvent.ordinal.desc()).limit(30).all())
+    base = request.url_root.rstrip("/")
+    entries = []
+    for ev in events:
+        title = f"{ev.actor} {ev.verb} {ev.obj}"
+        if ev.summary:
+            title = ev.summary
+        link = ev.obj_url if (ev.obj_url and str(ev.obj_url).startswith("/")) else f"/p/{p.shortname}/activity/"
+        date = str(ev.date).split()[0] if str(ev.date).strip() else "2026-09-04"
+        entries.append(
+            "    <entry>\n"
+            f"      <id>{base}/p/{p.shortname}/activity/#{ev.id}</id>\n"
+            f"      <title>{_xml_escape(title)}</title>\n"
+            f"      <updated>{date}</updated>\n"
+            f"      <link href=\"{base}{link}\"/>\n"
+            f"      <author><name>{_xml_escape(ev.actor)}</name></author>\n"
+            "      <content type=\"text\">" + _xml_escape(title) + "</content>\n"
+            "    </entry>")
+    feed = (f"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+            f"<feed xmlns=\"http://www.w3.org/2005/Atom\">\n"
+            f"  <title>{_xml_escape(p.name)} Activity</title>\n"
+            f"  <id>{base}/p/{p.shortname}/activity/feed</id>\n"
+            f"  <link href=\"{base}/p/{p.shortname}/activity/\"/>\n"
+            f"  <updated>{(str(events[0].date).split()[0] if events else '2026-09-04')}</updated>\n"
+            + "\n".join(entries) + "\n</feed>\n")
+    return app.response_class(feed, mimetype="application/atom+xml")
+
+
+def _xml_escape(text):
+    return (str(text).replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
 # ---------------------------------------------------------------------------
 # Routes — users
 # ---------------------------------------------------------------------------
 @app.route("/u/<username>/profile/")
 def user_profile(username):
     u = User.query.filter_by(username=username).first()
+    display_name = u.display_name if u else None
+    joined = u.joined if u else None
     if not u:
-        abort(404)
+        # Upstream serves a profile page for every user its pages link to;
+        # the mirror's users table only carries the OSS-directory population.
+        # For the upstream forum/ticket authors (UPSTREAM_USER_LINKS values)
+        # render the same profile page from the captured display name instead
+        # of a dead 404 link.
+        display_name = next((dn for dn, un in UPSTREAM_USER_LINKS.items()
+                             if un == username), None)
+        if not display_name:
+            abort(404)
+
+        class _UpstreamAuthor:
+            pass
+
+        u = _UpstreamAuthor()
+        u.username = username
+        u.display_name = display_name
+        u.joined = None
     projects = (Project.query
                 .filter(Project.developers_json.like(f'%"{username}"%'))
                 .order_by(Project.updated.desc()).all())
@@ -1155,7 +1430,18 @@ def software_category(category):
     categories = get_content("business_categories", [])
     label = next((c["name"] for c in categories if c["slug"] == category), None)
     if not label:
-        abort(404)
+        # Upstream project pages link "Related Business Categories" cards to
+        # /software/<slug>/ pages for a few categories that carry no captured
+        # product (file-compression, backup, archiving). Serve the category
+        # page with an empty product list instead of a dead 404 link — the
+        # same page upstream serves.
+        related = set()
+        for names in get_content("related_business", {}).values():
+            for name in names or []:
+                related.add(str(name).strip().lower().replace(" ", "-"))
+        if category not in related:
+            abort(404)
+        label = category.replace("-", " ").title()
     products = (BusinessProduct.query.filter_by(category=category)
                .order_by(BusinessProduct.ratings_count.desc()).all())
     return render_template("software_category.html", category=category,

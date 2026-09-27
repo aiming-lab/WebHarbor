@@ -13,7 +13,7 @@
       <h2 class="dark title"><span>{{ thread.subject }}</span></h2>
       <div class="editbox">
         <div class="grid-5"><label>Forum:</label> <a href="/p/{{ p.shortname }}/discussion/{{ forum.shortname }}/">{{ forum.name }}</a></div>
-        <div class="grid-5"><label>Creator:</label> <a href="/u/{{ thread.creator|lower|replace(' ','') }}/profile/" class="user-mention">{{ thread.creator }}</a></div>
+        <div class="grid-5"><label>Creator:</label> {% set _u = user_href(thread.creator) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ thread.creator }}</a>{% else %}{{ thread.creator }}{% endif %}</div>
         <div class="grid-4"><label>Created:</label> <span>{{ thread.created }}</span></div>
       </div>
       <div>
@@ -30,7 +30,7 @@
                       </div>
                       <div class="grid-16 post-content bubble">
                         <div class="header">
-                          <a href="/u/{{ post.author|lower|replace(' ','') }}/profile/" class="user-mention">{{ post.author }}</a> - <i style="color: #777"><span title="{{ post.date }}">{{ post.date }}</span></i>
+                          {% set _u = user_href(post.author) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ post.author }}</a>{% else %}{{ post.author }}{% endif %} - <i style="color: #777"><span title="{{ post.date }}">{{ post.date }}</span></i>
                         </div>
                         <div class="display_post">
                           <div><div class="markdown_content"><p>{{ post.text }}</p></div></div>

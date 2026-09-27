@@ -63,7 +63,7 @@ def anyof(name, variants, label=""):
 TASKS = {}
 
 TASKS[0] = [
-    ("path", "sorted_search", r"/directory/\?q=file\+compression.*sort=popular"),
+    ("path", "sorted_search", r"/directory/\?q=file(\+|%20)compression.*sort=popular"),
     ("path", "visited_mingw", r"/projects/mingw/"),
     ("path", "visited_autoclicker", r"/projects/orphamielautoclicker/"),
     ("path", "visited_7zip", r"/projects/sevenzip/"),
@@ -268,7 +268,7 @@ TASKS[8] = [
     ("path", "visited_stats_timeline", r"/stats/timeline"),
     ("path", "visited_stats_os", r"/stats/os"),
     ("path", "visited_stats_map", r"/stats/map"),
-    ("path", "sorted_search", r"/directory/\?q=file\+compression.*sort=popular"),
+    ("path", "sorted_search", r"/directory/\?q=file(\+|%20)compression.*sort=popular"),
     ("path", "visited_mingw", r"/projects/mingw/"),
     ("path", "visited_autoclicker", r"/projects/orphamielautoclicker/"),
     ("path", "visited_winscp", r"/projects/winscp/"),

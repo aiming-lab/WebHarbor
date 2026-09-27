@@ -23,7 +23,8 @@
               <td>
                 {% if f.threads %}
                 <a href="/p/{{ p.shortname }}/discussion/{{ f.shortname }}/thread/{{ f.threads[0].thread_id }}/">{{ f.threads[0].subject }}</a><br>
-                by <a href="/u/{{ f.threads[0].last_author }}/profile/" class="user-mention">{{ f.threads[0].last_author }}</a>
+                {% set _la, _ld = thread_last_post(f.shortname, f.threads[0].thread_id, f.threads[0].last_author, f.threads[0].last_date) %}
+                by {% set _u = user_href(_la) %}{% if _u %}<a href="/u/{{ _u }}/profile/" class="user-mention">{{ _la }}</a>{% else %}{{ _la }}{% endif %}
                 {% endif %}
               </td>
               <td class="count"><span class="forum-topic-count">{{ fmt_int(f.num_topics) }}</span></td>
