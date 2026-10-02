@@ -44,7 +44,9 @@ mirror's offered dates and times are accepted, and the latest time must be
 strictly later than the earliest. Invalid submissions retain their values on
 Date & Time and create no pickup. Regression cases cover reversed/equal times,
 malformed or missing values, invalid saved sessions, and correcting a rejected
-window, including the AM/noon boundary.
+window, including the AM/noon boundary. The Date & Time fee hint also labels
+$16.60 as the Saturday total, rather than incorrectly calling it an additional
+stop charge.
 
 This is a focused handler regression review. Existing task definitions, rubrics,
 verifiers, and HF archives are unchanged. Browser evidence and the combined
