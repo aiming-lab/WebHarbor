@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ answer.title }} — FAST Answers — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/fast-answers">FAST Answers</a> &rsaquo; {{ answer.title }}</div>
+{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <h1>{{ answer.title }}</h1>
+  <p class="meta">FAST Answer
+    {% if answer.origin == 'captured' %}<span class="origin-tag captured">captured from sec.gov/answers</span>
+    {% else %}<span class="origin-tag fixture">fixture</span>{% endif %}
+    {% if answer.modified %} &middot; Modified: {{ answer.modified }}{% endif %}</p>
+</div>
+<div class="prose">
+  {% for para in (answer.body or '').split('\n\n') %}
+  <p>{{ para }}</p>
+  {% endfor %}
+</div>
+<p><a class="button-usa" href="/fast-answers">Back to FAST Answers</a></p>
+{% endblock %}

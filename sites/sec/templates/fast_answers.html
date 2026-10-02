@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}FAST Answers — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; FAST Answers</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>FAST Answers</h1>
+  <p class="lede">The SEC's dictionary of answers to frequently asked questions about
+  investing, the forms companies file, and how the markets work.</p>
+</div>
+<form class="filter-bar" method="get" action="/fast-answers">
+  <div>
+    <label for="q">Search</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. 10-K or Ponzi">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} answer{{ '' if total == 1 else 's' }}</span>
+</form>
+<ul class="collection">
+  {% for a in rows %}
+  <li>
+    <p class="taxonomy">FAST Answer
+      {% if a.origin == 'captured' %}<span class="origin-tag captured">captured from sec.gov</span>
+      {% else %}<span class="origin-tag fixture">fixture</span>{% endif %}</p>
+    <a href="/fast-answers/{{ a.slug }}">{{ a.title }}</a>
+    {% if a.modified %}<p class="meta">Modified: {{ a.modified }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

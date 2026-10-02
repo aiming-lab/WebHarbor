@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Rulemaking Activity — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; Rulemaking</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Rulemaking Activity</h1>
+  <p class="lede">The SEC engages in rulemaking through a transparent process guided by the
+  Administrative Procedure Act and informed by public comment.</p>
+</div>
+<form class="filter-bar" method="get" action="/rules-regulations/rulemaking-activity">
+  <div>
+    <label for="q">Search title / file no.</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Interval Fund or S7-2026-34">
+  </div>
+  <div>
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="">-View All-</option>
+      {% for s in statuses %}
+      <option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} item{{ '' if total == 1 else 's' }}</span>
+</form>
+<table class="data">
+  <thead><tr><th>Date</th><th>File No.</th><th>Title</th><th>Status / Releases</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.date }}</td>
+      <td>{{ r.file_no or '' }}</td>
+      <td>{{ r.title }}</td>
+      <td>{{ r.status_releases }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/rules-regulations/rulemaking-activity?q={{ q }}&status={{ status }}&page={{ page - 1 }}">&laquo; Previous</a>
+  {% endif %}
+  <span class="current">Page {{ page }}</span>
+  {% if page * per_page < total %}
+  <a href="/rules-regulations/rulemaking-activity?q={{ q }}&status={{ status }}&page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}

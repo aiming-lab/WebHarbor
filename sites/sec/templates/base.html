@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SEC.gov{% endblock %}</title>
+  <link rel="icon" href="/static/icons/favicon.ico">
+  <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<section class="usa-banner">
+  <div class="usa-banner__inner">
+    <div class="usa-banner__header">
+      <img src="/static/images/upstream/us_flag_small.png" alt="U.S. flag" width="16" height="11">
+      <span>An official website of the United States government</span>
+      <span class="usa-banner__icons">
+        <img src="/static/images/upstream/icon-dot-gov.svg" alt="" width="20" height="20">
+        <span>Here's how you know</span>
+        <img src="/static/images/upstream/icon-https.svg" alt="" width="20" height="20">
+      </span>
+    </div>
+    <div class="usa-banner__guidance">
+      <p><strong>.gov</strong> — official websites use .gov. A <strong>.gov</strong>
+      website belongs to an official government organization in the United States.</p>
+      <p><strong>https://</strong> — secure websites use HTTPS. A lock icon means
+      you've safely connected to a .gov website.</p>
+    </div>
+  </div>
+</section>
+
+<header class="site-header">
+  <div class="site-header__wrap">
+    <a class="site-header__home" href="/">
+      <img src="/static/images/upstream/sec-logo-1x.png" alt="SEC Seal" width="40" height="40">
+      <span class="site-header__title">U.S. Securities and Exchange Commission</span>
+    </a>
+    <form class="site-search" action="/search-filings/cik-lookup" method="get" role="search">
+      <label class="sr-only" for="global-search">Search EDGAR company filings</label>
+      <input id="global-search" type="search" name="company" placeholder="Search company filings">
+      <button type="submit">Search</button>
+    </form>
+  </div>
+  <nav class="site-nav" aria-label="Primary">
+    <ul>
+      <li><a href="/search-filings">Search Filings</a></li>
+      <li><a href="/enforcement-litigation">Enforcement</a></li>
+      <li><a href="/newsroom">Newsroom</a></li>
+      <li><a href="/rules-regulations/rulemaking-activity">Rulemaking</a></li>
+      <li><a href="/submit-filings/forms-index">Forms</a></li>
+      <li><a href="/resources-investors">Investor Resources</a></li>
+      <li><a href="/fast-answers">FAST Answers</a></li>
+      <li><a href="/submit-tip-or-complaint">Submit a Tip</a></li>
+      <li class="nav-auth"><a href="/login">Log In</a> <a href="/signup">Sign Up</a></li>
+    </ul>
+  </nav>
+</header>
+
+{% if current_user.is_authenticated %}
+<div class="account-strip">
+  <div class="account-strip__inner">
+    <span>Signed in as <strong>{{ current_user.name }}</strong></span>
+    <a href="/account">My Account</a>
+    <a href="/logout">Log Out</a>
+  </div>
+</div>
+{% endif %}
+
+<main id="main">
+{% block breadcrumb %}{% endblock %}
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <img src="/static/images/upstream/sec-logo-white-1x.png" alt="SEC" width="80" height="20">
+      <p>U.S. Securities and Exchange Commission<br>100 F Street, NE, Washington, DC 20549</p>
+    </div>
+    <div class="site-footer__links">
+      <h3>Quick Links</h3>
+      <ul>
+        <li><a href="/search-filings">Search Filings</a></li>
+        <li><a href="/enforcement-litigation">Enforcement &amp; Litigation</a></li>
+        <li><a href="/newsroom">Newsroom</a></li>
+        <li><a href="/resources-investors">Resources for Investors</a></li>
+      </ul>
+    </div>
+    <div class="site-footer__signup">
+      <h3>Stay connected. Sign up for email updates.</h3>
+      <form action="/subscribe" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="sr-only" for="footer-email">Your email address</label>
+        <input id="footer-email" type="email" name="email" required placeholder="Your email address">
+        <label><input type="checkbox" name="topics" value="press releases"> Press releases</label>
+        <label><input type="checkbox" name="topics" value="investor alerts"> Investor alerts</label>
+        <label><input type="checkbox" name="topics" value="enforcement"> Enforcement news</label>
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+  </div>
+  <div class="site-footer__legal">
+    <p>WebHarbor offline research mirror of sec.gov — not affiliated with or endorsed by
+    the U.S. Securities and Exchange Commission. Works of the U.S. federal government
+    are in the public domain.</p>
+  </div>
+</footer>
+</body>
+</html>

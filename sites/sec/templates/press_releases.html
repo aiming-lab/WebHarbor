@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Press Releases — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/newsroom">Newsroom</a> &rsaquo; Press Releases</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Press Releases</h1>
+  <p class="lede">News releases issued by the SEC since January 2026.</p>
+</div>
+<form class="filter-bar" method="get" action="/newsroom/press-releases">
+  <div>
+    <label for="q">Search title / release no.</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. charges or 2026-98">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} release{{ '' if total == 1 else 's' }}</span>
+</form>
+<ul class="collection">
+  {% for pr in rows %}
+  <li>
+    <p class="taxonomy">Press Release</p>
+    <a href="/newsroom/press-releases/{{ pr.slug }}">{{ pr.title }}</a>
+    <p class="meta">{{ pr.date }} — Release No. {{ pr.release_no }}</p>
+  </li>
+  {% endfor %}
+</ul>
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/newsroom/press-releases?q={{ q }}&page={{ page - 1 }}">&laquo; Previous</a>
+  {% endif %}
+  <span class="current">Page {{ page }}</span>
+  {% if page * per_page < total %}
+  <a href="/newsroom/press-releases?q={{ q }}&page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}What's New — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/newsroom">Newsroom</a> &rsaquo; What's New</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>What's New</h1>
+  <p class="lede">All the latest items posted across the SEC's website.</p>
+</div>
+<p class="prose">{{ total }} items captured in this snapshot.</p>
+<table class="data">
+  <thead><tr><th>Date</th><th>Title</th><th>Division/Office</th></tr></thead>
+  <tbody>
+    {% for w in rows %}
+    <tr>
+      <td>{{ w.date }}</td>
+      <td>{% if w.href.startswith('/enforcement-litigation/litigation-releases/') %}
+          <a href="{{ w.href }}">{{ w.title }}</a>
+          {% elif w.href.startswith('/newsroom/press-releases/') %}
+          <a href="{{ w.href }}">{{ w.title }}</a>
+          {% else %}{{ w.title }}{% endif %}</td>
+      <td>{{ w.kind }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

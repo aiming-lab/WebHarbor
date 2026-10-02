@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}My Account — SEC.gov{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>My Account</h1>
+  <p class="lede">Signed in as {{ current_user.name }} ({{ current_user.email }}).</p>
+</div>
+<h2>Company Watchlist</h2>
+{% if watchlist %}
+<table class="data watch-table">
+  <thead><tr><th>CIK</th><th>Company</th><th>Ticker</th><th>Added</th><th></th></tr></thead>
+  <tbody>
+    {% for w in watchlist %}
+    {% set c = companies.get(w.cik) %}
+    <tr>
+      <td><a href="/edgar/company/{{ w.cik }}">{{ w.cik }}</a></td>
+      <td><a href="/edgar/company/{{ w.cik }}">{{ c.name if c else w.cik }}</a></td>
+      <td>{{ c.ticker if c else '' }}</td>
+      <td>{{ w.added_at }}</td>
+      <td>
+        <form method="post" action="/account/watchlist/toggle">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="cik" value="{{ w.cik }}">
+          <input type="hidden" name="back" value="/account">
+          <button class="usa secondary" type="submit">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="meta">{{ watchlist|length }} compan{{ 'y' if watchlist|length == 1 else 'ies' }} on your watchlist.</p>
+{% else %}
+<p>Your watchlist is empty. Search for a company and choose "Add to Watchlist" on its page.</p>
+{% endif %}
+
+<h2>My Investor Complaints</h2>
+{% if complaints %}
+<table class="data">
+  <thead><tr><th>Reference</th><th>Firm</th><th>Problem</th><th>Filed</th></tr></thead>
+  <tbody>
+    {% for c in complaints %}
+    <tr>
+      <td>{{ c.reference }}</td>
+      <td>{{ c.subject_firm }}</td>
+      <td>{{ c.issue_type }}</td>
+      <td>{{ c.submitted_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>You have not filed any investor complaints.</p>
+{% endif %}
+
+<h2>My Tips (TCR)</h2>
+{% if tips %}
+<table class="data">
+  <thead><tr><th>Reference</th><th>Violation</th><th>Firm</th><th>Filed</th></tr></thead>
+  <tbody>
+    {% for t in tips %}
+    <tr>
+      <td>{{ t.reference }}</td>
+      <td>{{ t.violation_type }}</td>
+      <td>{{ t.subject_firm or '—' }}</td>
+      <td>{{ t.submitted_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>You have not submitted any tips.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}EDGAR Full-Text Search — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/search-filings">Search Filings</a> &rsaquo; Full-Text Search</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>EDGAR Full-Text Search</h1>
+  <p class="lede">Search the full text of filings by keyword and narrow by form type and dates.</p>
+</div>
+<form class="filter-bar" method="get" action="/edgar/full-text-search">
+  <div>
+    <label for="q">Keywords</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder='e.g. "artificial intelligence"'>
+  </div>
+  <div>
+    <label for="forms">Form Type</label>
+    <select id="forms" name="forms">
+      <option value="">All forms</option>
+      {% for f in ['8-K', '10-K', '10-Q'] %}
+      <option value="{{ f }}" {% if f == form %}selected{% endif %}>{{ f }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="datea">From Date</label>
+    <input type="text" id="datea" name="datea" value="{{ datea }}" placeholder="YYYY-MM-DD">
+  </div>
+  <div>
+    <label for="dateb">To Date</label>
+    <input type="text" id="dateb" name="dateb" value="{{ dateb }}" placeholder="YYYY-MM-DD">
+  </div>
+  <button class="usa" type="submit">Search</button>
+</form>
+
+{% if q %}
+  {% if docs %}
+  <p class="prose"><strong>{{ total_value }}{% if total_relation == 'gte' %}+{% endif %}</strong>
+  documents matched your query <strong>"{{ q }}"</strong>{% if form %} for form {{ form }}{% endif %}.
+  Showing {{ docs|length }} document{{ '' if docs|length == 1 else 's' }}.</p>
+  <table class="data">
+    <thead>
+      <tr><th>Company / CIK</th><th>Form</th><th>Filing Date</th><th>Accession No.</th><th>Document</th></tr>
+    </thead>
+    <tbody>
+      {% for d in docs %}
+      <tr>
+        <td>{{ d.display_name }}</td>
+        <td>{{ d.form }}</td>
+        <td>{{ d.file_date }}</td>
+        <td>{{ d.adsh }}</td>
+        <td>{{ d.hit_id.split(':')[1] if ':' in d.hit_id else d.hit_id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="prose">No documents in the captured full-text search index match
+  <strong>"{{ q }}"</strong>{% if form %} for form {{ form }}{% endif %}.
+  This mirror serves the frozen snapshot of EDGAR full-text search results captured on
+  {{ '2026-09-30' }}; try one of the captured queries below.</p>
+  {% endif %}
+  <div class="sidebox">
+    <h2>Captured queries in this snapshot</h2>
+    <ul>
+      {% for term in queries %}
+      <li><a href="/edgar/full-text-search?q={{ term }}">{{ term }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+{% else %}
+<div class="sidebox">
+  <h2>Captured queries in this snapshot</h2>
+  <p>This offline mirror serves the real results captured from the live EDGAR full-text
+  search API on 2026-09-30 for the queries listed below. Enter one of these queries to
+  browse the captured hits.</p>
+  <ul>
+    {% for term in queries %}
+    <li><a href="/edgar/full-text-search?q={{ term }}">{{ term }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

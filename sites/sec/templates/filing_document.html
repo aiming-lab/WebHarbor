@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ filing.primary_doc }} — {{ company.name }} — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/edgar/company/{{ company.cik }}">{{ company.name }}</a> &rsaquo;
+<a href="/edgar/filing/{{ company.cik }}/{{ filing.accession }}">Filing Detail</a> &rsaquo; Document</div>
+{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <h1>{{ filing.primary_doc }}</h1>
+  <p class="meta">Primary document of Form {{ filing.form }} &middot; Accession No. {{ filing.accession }}</p>
+</div>
+<dl class="facts">
+  <dt>Company</dt><dd>{{ company.name }} (CIK {{ company.cik }})</dd>
+  <dt>Form</dt><dd>{{ filing.form }}</dd>
+  <dt>Filing Date</dt><dd>{{ filing.filed }}</dd>
+  <dt>Period of Report</dt><dd>{{ filing.report_date or '—' }}</dd>
+  <dt>Upstream Location</dt><dd>{{ filing.doc_url }}</dd>
+</dl>
+<div class="sidebox">
+  <h2>About this mirror</h2>
+  <p>This offline research mirror reproduces the filing's EDGAR metadata. The full
+  document text is hosted upstream at sec.gov under
+  <code>{{ filing.doc_url }}</code>.</p>
+</div>
+<p><a class="button-usa" href="/edgar/filing/{{ company.cik }}/{{ filing.accession }}">Back to Filing Detail</a></p>
+{% endblock %}

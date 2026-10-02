@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Speeches &amp; Statements — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/newsroom">Newsroom</a> &rsaquo; Speeches &amp; Statements</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Speeches &amp; Statements</h1>
+  <p class="lede">Remarks and statements by the Chairman, Commissioners and SEC staff.</p>
+</div>
+<form class="filter-bar" method="get" action="/newsroom/speeches-statements">
+  <div>
+    <label for="q">Search title / speaker</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Peirce or insider">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} item{{ '' if total == 1 else 's' }}</span>
+</form>
+<table class="data">
+  <thead><tr><th>Date</th><th>Title</th><th>Speaker</th><th>Type</th></tr></thead>
+  <tbody>
+    {% for s in rows %}
+    <tr>
+      <td>{{ s.date }}</td>
+      <td>{{ s.title }}</td>
+      <td>{{ s.speaker }}</td>
+      <td>{{ s.kind }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Forms Index — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/submit-filings">Submit Filings</a> &rsaquo; Forms Index</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Forms Index</h1>
+  <p class="lede">This page provides links to PDF versions of SEC public forms and many of the
+  rules, regulations, and schedules associated with these forms.</p>
+</div>
+<form class="filter-bar" method="get" action="/submit-filings/forms-index">
+  <div>
+    <label for="q">Search form / title / SEC number</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. 10-K or Annual report">
+  </div>
+  <div>
+    <label for="filed_by">Filed By</label>
+    <select id="filed_by" name="filed_by">
+      <option value="">-View All-</option>
+      {% for a in audiences %}
+      <option value="{{ a }}" {% if a == filed_by %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="statute">Statute</label>
+    <select id="statute" name="statute">
+      <option value="">-View All-</option>
+      {% for s in statutes_facet %}
+      <option value="{{ s }}" {% if s == statute %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ rows|length }} form{{ '' if rows|length == 1 else 's' }}</span>
+</form>
+<table class="data">
+  <thead><tr><th>SEC Number</th><th>Description</th><th>Last Updated</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.sec_number or '' }}</td>
+      <td>
+        {% if r.pdf and r.pdf in archived_files %}
+        <a href="{{ r.pdf }}"><span class="pdf-badge">PDF</span>{{ r.title }}</a>
+        {% else %}
+        <a href="https://www.sec.gov{{ r.pdf }}"><span class="pdf-badge">PDF</span>{{ r.title }}</a>
+        {% endif %}
+        {% if r.form %}<br><span class="meta">Form {{ r.form }}</span>{% endif %}
+        {% if r.filed_by %}<br><span class="meta">Filed by: {{ r.filed_by.replace('|', ', ') }}</span>{% endif %}
+        {% if r.statutes %}<br><span class="meta">Statute: {{ r.statutes.replace('|', ', ') }}</span>{% endif %}
+      </td>
+      <td>{{ r.last_updated or '' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

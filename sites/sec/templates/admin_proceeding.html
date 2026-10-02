@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ ap.title or ap.respondents }} — Administrative Proceeding — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/enforcement-litigation">Enforcement &amp; Litigation</a> &rsaquo;
+<a href="/enforcement-litigation/administrative-proceedings">Administrative Proceedings</a> &rsaquo; {{ ap.release_no }}</div>
+{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <h1>{{ ap.title or ap.respondents }}</h1>
+  <p class="meta">Administrative Proceeding &middot; {{ ap.date }} &middot;
+  Release No. {{ ap.release_no }}{% if ap.file_number %} &middot; File Number: {{ ap.file_number }}{% endif %}</p>
+</div>
+<div class="prose">
+  {% for para in (ap.text or '').split('\n\n') %}
+  <p>{{ para }}</p>
+  {% endfor %}
+</div>
+{% set resources = ap.resources and (ap.resources | from_json) or [] %}
+{% if resources %}
+<div class="resources">
+  <h2>Resources</h2>
+  <ul>
+    {% for link in resources %}
+    <li>
+      {% if link.href.startswith('/') and link.href in archived_files %}
+      <a href="{{ link.href }}"><span class="pdf-badge">PDF</span>{{ link.label }}</a>
+      {% else %}
+      <a href="{{ link.href if link.href.startswith('http') else 'https://www.sec.gov' + link.href }}">
+        <span class="pdf-badge">PDF</span>{{ link.label }}</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% if ap.last_reviewed %}
+<p class="meta">Last Reviewed or Updated: {{ ap.last_reviewed }}</p>
+{% endif %}
+{% endblock %}
