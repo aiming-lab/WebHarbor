@@ -799,6 +799,194 @@ def test_missing_screenshot_fails(index, tmp_path):
     assert result["pass"] is False
 
 
+def _with_answer(tmp_path, index, answer):
+    run_dir, _initial, _after = HONEST[index](tmp_path)
+    traj = json.loads((run_dir / "trajectory.json").read_text())
+    traj["final_answer"] = answer
+    (run_dir / "trajectory.json").write_text(json.dumps(traj))
+    return run_verifier(index, run_dir)
+
+
+def test_task14_swapped_week_scores_fail(tmp_path):
+    result = _with_answer(tmp_path, 14,
+        "The AFC West's other undefeated team is the Las Vegas Raiders: 2-0, +26 point "
+        "differential (53 PF, 27 PA), 2nd AFC West. W1: beat the Dolphins 26-14; W2: won "
+        "27-13 at the Chargers. Bye week: Week 13 (the schedule skips REG 13). First home "
+        "game after the bye: W14 vs the Chargers, Sunday December 13, 4:05pm ET (LV 2-0, "
+        "LAC 0-2). Coach Klint Kubiak, home stadium Allegiant Stadium. W3: at the Saints, "
+        "SUN 4:25pm ET, Caesars Superdome. Post-bye opponent's coach: Jim Harbaugh. Week 2 "
+        "aftermath article: 'NFL Week 2 Sunday aftermath: Surprising Raiders, soaring Chiefs "
+        "and sinking Chargers in spotlight' by Kevin Patra, September 21, 2026.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_w1_final", result
+
+
+def test_task14_score_and_year_do_not_count_as_the_differential(tmp_path):
+    result = _with_answer(tmp_path, 14,
+        "The AFC West's other undefeated team is the Las Vegas Raiders: 2-0, point "
+        "differential (53 PF, 27 PA), 2nd AFC West. W1: beat the Dolphins 27-13; W2: won "
+        "26-14 at the Chargers. Bye week: Week 13 (the schedule skips REG 13). First home "
+        "game after the bye: W14 vs the Chargers, Sunday December 13, 4:05pm ET (LV 2-0, "
+        "LAC 0-2). Coach Klint Kubiak, home stadium Allegiant Stadium. W3: at the Saints, "
+        "SUN 4:25pm ET, Caesars Superdome. Post-bye opponent's coach: Jim Harbaugh. Week 2 "
+        "aftermath article by Kevin Patra, September 21, 2026.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_point_differential", result
+
+
+def test_task14_december_13_is_not_the_bye_week(tmp_path):
+    result = _with_answer(tmp_path, 14,
+        "The AFC West's other undefeated team is the Las Vegas Raiders: 2-0, +26 point "
+        "differential (53 PF, 27 PA), 2nd AFC West. W1: beat the Dolphins 27-13; W2: won "
+        "26-14 at the Chargers. Bye week: a late week (the schedule skips that week). "
+        "First home game after the bye: W14 vs the Chargers, Sunday December 13, 4:05pm ET "
+        "(LV 2-0, LAC 0-2). Coach Klint Kubiak, home stadium Allegiant Stadium. W3: at the "
+        "Saints, SUN 4:25pm ET, Caesars Superdome. Post-bye opponent's coach: Jim Harbaugh. "
+        "Week 2 aftermath article by Kevin Patra, September 21, 2026.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_bye_week_13", result
+
+
+def test_task18_swapped_team_point_totals_fail(tmp_path):
+    result = _with_answer(tmp_path, 18,
+        "Best point-differential division leader: San Francisco 49ers (NFC West, 2-0, 48 "
+        "scored, 42 allowed, +6). Worst: Philadelphia Eagles (NFC East, 62 points for, 20 "
+        "against, +42, 2-0). Leaders: passing Tyler Shough (Saints), rushing Kenneth Walker "
+        "III (Chiefs), receiving Amon-Ra St. Brown (Lions), tackles Anthony Hill Jr. "
+        "(Titans), interceptions Jevon Holland (Giants). Only Walker III plays for a "
+        "division leader (Chiefs, 1st AFC West). 49ers: Kyle Shanahan, Levi's Stadium, next "
+        "game W3 vs the Cardinals (SUN 4:05pm, Levi's Stadium). Eagles: Nick Sirianni, "
+        "Lincoln Financial Field, next game W3 at the Bears (MON 8:15pm, Soldier Field). "
+        "Week 4: 49ers host Broncos on Sunday, October 4, 4:25pm ET at Levi's Stadium. "
+        "Eagles host Rams on Sunday, October 4, 1:00pm ET at Lincoln Financial Field.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_best_points", result
+
+
+def test_task18_year_2026_is_not_the_eagles_differential(tmp_path):
+    result = _with_answer(tmp_path, 18,
+        "Best point-differential division leader: San Francisco 49ers (NFC West, 2-0, 62 "
+        "scored, 20 allowed, +42). Worst: Philadelphia Eagles (NFC East, 48 points for, 42 "
+        "against, 2-0). Season 2026. Leaders: passing Tyler Shough (Saints), rushing "
+        "Kenneth Walker III (Chiefs), receiving Amon-Ra St. Brown (Lions), tackles Anthony "
+        "Hill Jr. (Titans), interceptions Jevon Holland (Giants). Only Walker III plays for "
+        "a division leader (Chiefs, 1st AFC West). 49ers: Kyle Shanahan, Levi's Stadium, "
+        "next game W3 vs the Cardinals (SUN 4:05pm, Levi's Stadium). Eagles: Nick Sirianni, "
+        "Lincoln Financial Field, next game W3 at the Bears (MON 8:15pm, Soldier Field). "
+        "Week 4: 49ers host Broncos on Sunday, October 4, 4:25pm ET at Levi's Stadium. "
+        "Eagles host Rams on Sunday, October 4, 1:00pm ET at Lincoln Financial Field.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_worst_differential", result
+
+
+def test_task5_week_10_does_not_count_as_week_1(tmp_path):
+    result = _with_answer(tmp_path, 5,
+        "International games: 49ers at Rams (Melbourne, played); W3 Ravens at Cowboys "
+        "(Rio de Janeiro); W4 Colts at Commanders (London); W5 Eagles at Jaguars (London); "
+        "Texans at Jaguars (London); Steelers at Saints (Saint-Denis); Bengals at Falcons "
+        "(Madrid); W10 Patriots at Lions (Munich); W11 Vikings at 49ers (Mexico City). "
+        "The played one: 49ers won 27-7, attendance 100,021, Melbourne Cricket Ground, "
+        "East Melbourne, on Netflix. Records now: 49ers 2-0, Rams 1-1.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_intl_weeks", result
+
+
+def test_task8_19_years_is_not_9_years(tmp_path):
+    result = _with_answer(tmp_path, 8,
+        "Saquon Barkley: #26, 6-0, 232 lbs, 19 years experience, Penn State. Eagles: head "
+        "coach Nick Sirianni, home stadium Lincoln Financial Field, 2-0 and 1st in the NFC "
+        "East. Other active RBs: Will Shipley (#28), Tank Bigsby (#8). Active QBs: Jalen "
+        "Hurts (#1), Andy Dalton (#14), Tanner McKee (#16), Cole Payton (#18). Week 2 "
+        "final: Eagles won 24-20 at the Titans. Week 3 MNF: Eagles at Bears, MON Sep 28 "
+        "8:15pm ET, Soldier Field. Bears: head coach Ben Johnson, home stadium Soldier Field.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_experience_9_years", result
+
+
+def test_task8_21st_is_not_1st(tmp_path):
+    result = _with_answer(tmp_path, 8,
+        "Saquon Barkley: #26, 6-0, 232 lbs, 9 years experience, Penn State. Eagles: head "
+        "coach Nick Sirianni, home stadium Lincoln Financial Field, 2-0 and 21st in the NFC "
+        "East. Other active RBs: Will Shipley (#28), Tank Bigsby (#8). Active QBs: Jalen "
+        "Hurts (#1), Andy Dalton (#14), Tanner McKee (#16), Cole Payton (#18). Week 2 "
+        "final: Eagles won 24-20 at the Titans. Week 3 MNF: Eagles at Bears, MON Sep 28 "
+        "8:15pm ET, Soldier Field. Bears: head coach Ben Johnson, home stadium Soldier Field.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_record_and_standing", result
+
+
+def test_task4_swapped_week_finals_fail(tmp_path):
+    result = _with_answer(tmp_path, 4,
+        "The highest-scoring undefeated team is the Buffalo Bills: 1st AFC East, 2-0, "
+        "77 points scored, 62 allowed. W1: won 41-31 at the Texans; W2: beat the Lions "
+        "36-31. Next two: W3 vs the Chargers (SUN 1:00pm, Highmark Stadium; LAC 0-2, "
+        "-24, Jim Harbaugh, SoFi Stadium) and W4 vs the Patriots (SUN 1:00pm, "
+        "Highmark Stadium; NE 1-1, +14, Mike Vrabel, Gillette Stadium).")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_w1_final", result
+
+
+def test_task4_swapped_opponent_differentials_fail(tmp_path):
+    result = _with_answer(tmp_path, 4,
+        "The highest-scoring undefeated team is the Buffalo Bills: 1st AFC East, 2-0, "
+        "77 points scored, 62 allowed. W1: won 36-31 at the Texans; W2: beat the Lions "
+        "41-31. Next two: W3 vs the Chargers (SUN 1:00pm, Highmark Stadium; LAC 0-2, "
+        "+14, Jim Harbaugh, SoFi Stadium) and W4 vs the Patriots (SUN 1:00pm, "
+        "Highmark Stadium; NE 1-1, -24, Mike Vrabel, Gillette Stadium).")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_opponent_chargers_diff", result
+
+
+def test_task12_positive_36_is_not_minus_36(tmp_path):
+    result = _with_answer(tmp_path, 12,
+        "My Team now: Miami Dolphins (0-2), 4th AFC East; Week 3: Kansas City Chiefs at "
+        "Miami Dolphins, SUN 1:00pm ET. Coach Jeff Hafley, home stadium Hard Rock Stadium. "
+        "Next two: W3 vs the Chiefs (SUN 1:00pm, Hard Rock Stadium, on CBS) and W4 at the "
+        "Vikings (SUN 4:05pm, U.S. Bank Stadium). Division rank 4th AFC East, point "
+        "differential +36.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_point_differential", result
+
+
+def test_task17_186_is_not_86_interceptions(tmp_path):
+    result = _with_answer(tmp_path, 17,
+        "Mahomes career totals: 128 games, 4,747 attempts, 36,505 passing yards, 272 TDs, "
+        "186 INTs; single-season best 5,097 yards in 2018; 2026 row: 2 games, 47/74, 566 "
+        "yards, 5 TDs, 1 INT; Week 2 stat line: 32/47, 382 yards, 3 TDs, 0 INTs in the "
+        "33-30 overtime win over the Colts; college Texas Tech. Passing leaderboard: ranks "
+        "5th with 566 yards. W2 final: Chiefs 33, Colts 30 (FINAL/OT). W3 (schedule): at "
+        "the Dolphins, SUN 1:00pm ET. Preview video: 'Chiefs vs. Dolphins Week 3 Preview | "
+        "NFL Daily'. Division rank: 1st AFC West.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_career_interceptions", result
+
+
+def test_task17_career_attempts_do_not_satisfy_the_2026_row(tmp_path):
+    result = _with_answer(tmp_path, 17,
+        "Mahomes career totals: 128 games, 4,747 attempts, 36,505 passing yards, 272 TDs, "
+        "86 INTs; single-season best 5,097 yards in 2018; 2026 row: 2 games, 566 yards, 5 "
+        "TDs, 1 INT; Week 2 stat line: 32 completions, 382 yards, 3 TDs, 0 INTs in the "
+        "33-30 overtime win over the Colts; college Texas Tech. Passing leaderboard: ranks "
+        "5th with 566 yards. W2 final: Chiefs 33, Colts 30 (FINAL/OT). W3 (schedule): at "
+        "the Dolphins, SUN 1:00pm ET. Preview video: 'Chiefs vs. Dolphins Week 3 Preview | "
+        "NFL Daily'. Division rank: 1st AFC West.")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_2026_row", result
+
+
+def test_task10_page_number_is_not_a_publish_date(tmp_path):
+    result = _with_answer(tmp_path, 10,
+        "Giants QB Jaxson Dart: knee, season-ending surgery (out for the season) — "
+        "'Giants QB Jaxson Dart to undergo season-ending knee surgery' by Kevin Patra, "
+        "Sep 3, 2026 (see page 123). Bears QB Caleb Williams: hamstring, 'week to week' — "
+        "by Kevin Patra, Sep 1, 2026. Sep 22 report: 'NFL Network: Giants' Jaxson Dart "
+        "potentially out for season after testing shows worse knee injury' by Nick Shook. "
+        "Giants: John Harbaugh, 1-1, 3rd NFC East, W3 vs Titans. Bears: Ben Johnson, 1-1, "
+        "2nd NFC North, W3 vs Eagles (MNF).")
+    assert result["pass"] is False, result
+    assert result.get("reason") == "answer_publish_dates", result
+
+
 @pytest.mark.parametrize("index", range(21))
 def test_not_terminated_fails(index, tmp_path):
     run_dir, initial_db, after_db = HONEST[index](tmp_path)

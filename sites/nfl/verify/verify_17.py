@@ -25,8 +25,9 @@ readable from the page; the verifier gates the FINAL/OT status and the 33-30
 final, which the page does show. Read-only task.
 """
 from verify_lib import (Judge, check_read_only_db, check_trajectory_identity,
-                        contains_all, contains_amount, contains_phrase, contains_record,
-                        contains_time, final_answer, navigated_to, run_verifier)
+                        contains_all, contains_amount, contains_count, contains_phrase,
+                        contains_record, contains_time, contains_whole_number, final_answer,
+                        navigated_to, run_verifier)
 
 TASK_ID = "NFL--17"
 TOTALS = (("games", "128"), ("attempts", "4747"), ("yards", "36505"),
@@ -67,18 +68,18 @@ def run_checks(judge, traj, initial_db, after_db):
                 "required: /standings/ (division rank)")
     # answer gates: the five career totals (with or without separators)
     for label, value in TOTALS:
-        plain = value in answer.replace(",", "")
-        sep = f"{int(value):,}" in answer
-        judge.check(f"answer_career_{label}", plain or sep,
+        judge.check(f"answer_career_{label}", contains_whole_number(answer, value),
                    f"expected career {label} {value}")
     judge.check("answer_best_season_5097",
-                BEST_YDS in answer.replace(",", ""),
+                contains_whole_number(answer, BEST_YDS),
                 "expected the single-season best 5,097 passing yards")
-    judge.check("answer_best_year_2018", BEST_YEAR in answer,
+    judge.check("answer_best_year_2018", contains_whole_number(answer, BEST_YEAR),
                 "expected the 5,097-yard season to be 2018")
-    judge.check("answer_2026_row", contains_all(answer, ROW_2026),
+    judge.check("answer_2026_row",
+                all(contains_count(answer, token) for token in ROW_2026),
                 f"expected the 2026 row (47/74, 566 yards); tokens {ROW_2026}")
-    judge.check("answer_w2_stat_line", contains_all(answer, W2_LINE),
+    judge.check("answer_w2_stat_line",
+                all(contains_count(answer, token) for token in W2_LINE),
                 f"expected the Week 2 stat line (32/47, 382 yards); tokens {W2_LINE}")
     judge.check("answer_college", contains_phrase(answer, COLLEGE),
                 f"expected college {COLLEGE}")

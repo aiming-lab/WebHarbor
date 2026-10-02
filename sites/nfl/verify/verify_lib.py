@@ -219,11 +219,246 @@ def contains_amount(answer, amount, tolerance=0.011):
 
 
 def contains_count(answer, count):
-    """The integer count appears as a standalone number (not part of money/decimal)."""
-    for m in re.finditer(r"(?<![\d.,\$])\d+(?![\d.,])", str(answer)):
-        if int(m.group(0)) == int(count):
+    """The integer count appears as a standalone number (not part of money/decimal).
+
+    A trailing sentence period or list comma still counts ('74,' / '-36.'), and
+    a thousands group ('4,747') does not yield 47 or 747.
+    """
+    text = normalize_text(answer)
+    return any(int(span[2]) == int(count) for span in _count_spans(text))
+
+
+def contains_whole_number(answer, value):
+    """`value` appears as its own integer, ignoring thousands commas.
+
+    86 does not match inside 186, and 36505 matches '36,505'.
+    """
+    text = str(answer or "")
+    pattern = r"(?<![\w.,])(?:\d{1,3}(?:,\d{3})+|\d+)(?![\w]|[.,]\d)"
+    return any(int(m.group().replace(",", "")) == int(value) for m in re.finditer(pattern, text))
+
+
+def contains_signed_number(answer, value):
+    """A negative total matches '-36' or 'minus 36', not a bare or positive 36."""
+    number = int(value)
+    text = normalize_text(answer)
+    if number < 0:
+        if re.search(rf"(?<!\d)-{abs(number)}(?!\d)", text):
             return True
-    return False
+        return re.search(rf"\b(?:minus|negative)\s+{abs(number)}\b", text) is not None
+    return contains_whole_number(answer, number)
+
+
+def contains_ordinal(answer, ordinal):
+    """'1st' matches 1st, not the tail of 21st."""
+    return re.search(rf"\b{re.escape(ordinal)}\b", answer or "", re.I) is not None
+
+
+def week_mentioned(answer, week):
+    """Week 10 does not count as week 1, and 100,021 does not count as week 1."""
+    return any(int(match.group(1)) == int(week)
+               for match in re.finditer(r"\b(?:week|w)\s*0*(\d{1,2})\b", answer or "", re.I))
+
+
+# --------------------------------------------- subject binding (nearest label)
+#
+# A score or count belongs to the team, week, or phrase it sits nearest to.
+# Co-presence anywhere in the answer is not attribution: Week 1's 27-13 is not
+# Week 2's 26-14, and the Eagles' +6 is not the digit inside 2026. Scorelines,
+# kickoff times, years, month-day dates, and ordinals are not bare counts.
+
+_BIND_WINDOW = 240
+_SCORE_RE = re.compile(r"(?<![\d.])(\d{1,3})\s*(?:-|to)\s*(\d{1,3})(?!\d|\.\d)")
+_TIME_RE = re.compile(r"\b\d{1,2}:\d{2}(?!\d)")
+_YEAR_RE = re.compile(r"\b(?:19|20)\d{2}\b")
+_MONTH_DAY_RE = re.compile(
+    r"\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?)\.?\s+\d{1,2}\b",
+    re.I,
+)
+_ORDINAL_RE = re.compile(r"\b\d+(?:st|nd|rd|th)\b", re.I)
+_COUNT_RE = re.compile(r"(?<![\w.,$])([+-]?\d+(?:,\d{3})*)(?!\w|[.,]\d)")
+
+
+def _num_eq(a, b):
+    try:
+        return abs(float(a) - float(b)) < 1e-6
+    except (TypeError, ValueError):
+        return False
+
+
+def _gap(a, b):
+    if a[1] <= b[0]:
+        return b[0] - a[1]
+    if b[1] <= a[0]:
+        return a[0] - b[1]
+    return 0
+
+
+def _overlaps(start, end, spans):
+    return any(not (end <= s or e <= start) for s, e in spans)
+
+
+def _clause_ranges(text):
+    """Split on commas, semicolons, periods, and 'and' outside parentheses.
+    A comma between digits is a thousands separator."""
+    text = text or ""
+    ranges = []
+    last = 0
+    depth = 0
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")" and depth:
+            depth -= 1
+        elif depth == 0 and (ch in ",;.\n" or text.startswith("and", i)):
+            if ch == ",":
+                before = text[i - 1] if i else ""
+                after = text[i + 1] if i + 1 < len(text) else ""
+                if before.isdigit() and after.isdigit():
+                    i += 1
+                    continue
+            if ch in ",;.\n":
+                ranges.append((last, i))
+                last = i + 1
+            elif (i == 0 or not text[i - 1].isalnum()) and (
+                    i + 3 == len(text) or not text[i + 3].isalnum()):
+                ranges.append((last, i))
+                last = i + 3
+                i += 3
+                continue
+        i += 1
+    ranges.append((last, len(text)))
+    return ranges or [(0, 0)]
+
+
+def _clause_index(pos, ranges):
+    for index, (start, end) in enumerate(ranges):
+        if start <= pos < end:
+            return index
+    return max(0, len(ranges) - 1)
+
+
+def _touches(span, clauses, origin):
+    start, end = clauses[origin]
+    return span[0] < end and span[1] > start
+
+
+def _nearest_label(span, labels, window, clauses, text):
+    """The label this value belongs to. A name written before the value wins
+    over a later name, and a label in the same clause wins over another clause."""
+    local = [label for label in labels if not re.search(
+        r"[.!?](?:\s|$)|\n", text[min(span[1], label[1]):max(span[0], label[0])])]
+    labels = local or labels
+    origin = _clause_index(span[0], clauses)
+    buckets = {key: [] for key in ("in_precede", "in_follow", "out_precede", "out_follow")}
+    for other in labels:
+        if other[0] == span[0] and other[1] == span[1]:
+            continue
+        gap = _gap(span, other)
+        if gap > window:
+            continue
+        if other[1] <= span[0]:
+            side = "precede"
+        elif other[0] >= span[1]:
+            side = "follow"
+        else:
+            continue
+        same = _touches(other, clauses, origin) or _touches(span, clauses, _clause_index(other[0], clauses))
+        buckets[("in_" if same else "out_") + side].append(((gap, other[0]), other))
+    for key in ("in_precede", "in_follow", "out_precede", "out_follow"):
+        if buckets[key]:
+            return min(buckets[key], key=lambda item: item[0])[1]
+    return None
+
+
+def _label_spans(text, aliases, competitor_groups):
+    entries = [(alias, "target") for alias in aliases if alias]
+    for index, group in enumerate(competitor_groups):
+        for alias in group:
+            if alias:
+                entries.append((alias, f"c{index}"))
+    entries.sort(key=lambda item: len(item[0]), reverse=True)
+    spans = []
+    for alias, tag in entries:
+        for match in re.finditer(r"\b" + re.escape(alias) + r"\b", text or "", re.I):
+            if _overlaps(match.start(), match.end(), [(s, e) for s, e, _ in spans]):
+                continue
+            spans.append((match.start(), match.end(), tag))
+    return spans
+
+
+def _occupied_non_counts(text):
+    occupied = []
+    for pattern in (_SCORE_RE, _TIME_RE, _YEAR_RE, _MONTH_DAY_RE, _ORDINAL_RE):
+        occupied.extend((m.start(), m.end()) for m in pattern.finditer(text or ""))
+    return occupied
+
+
+def _count_spans(text):
+    text = text or ""
+    occupied = _occupied_non_counts(text)
+    spans = []
+    for match in _COUNT_RE.finditer(text):
+        start, end = match.start(1), match.end(1)
+        if end < len(text) and text[end] == "." and end + 1 < len(text) and text[end + 1].isdigit():
+            continue
+        if end < len(text) and text[end] == "," and re.match(r",\d{3}(?!\d)", text[end:]):
+            continue
+        if start > 0 and text[start - 1] == "," and re.search(r"\d,\d{3}$", text[max(0, start - 4):end]):
+            continue
+        if _overlaps(start, end, occupied):
+            continue
+        spans.append((start, end, int(match.group(1).replace(",", ""))))
+    return spans
+
+
+def _score_spans(text):
+    return [(m.start(), m.end(), (int(m.group(1)), int(m.group(2))))
+            for m in _SCORE_RE.finditer(text or "")]
+
+
+def _bound_to_target(span, labels, clauses, text):
+    owner = _nearest_label(span, labels, _BIND_WINDOW, clauses, text)
+    if owner is None or owner[2] != "target":
+        return False
+    start, end = min(span[0], owner[0]), max(span[1], owner[1])
+    prefix = re.split(r"[;,:\n.!?]|\band\b", text[:start])[-1]
+    return not re.search(r"\b(?:not|never|isn't|wasn't|incorrect|wrong)\b", prefix + text[start:end])
+
+
+def number_bound_to(answer, aliases, number, competitor_groups=()):
+    """`number` is a bare count whose nearest label is this subject.
+
+    Scorelines, dates, times, years, and ordinals are not counts, so 26-14 and
+    2026 do not satisfy a +26 differential and December 13 does not satisfy
+    bye week 13.
+    """
+    text = "\n".join(normalize_text(line) for line in str(answer or "").splitlines())
+    text = re.sub(r"\b(?:minus|negative)\s+(\d+)", r"-\1", text)
+    labels = _label_spans(text, aliases, competitor_groups)
+    if not labels:
+        return False
+    clauses = _clause_ranges(text)
+    wanted = int(number)
+    return any(_num_eq(span[2], wanted) and _bound_to_target(span, labels, clauses, text)
+               for span in _count_spans(text))
+
+
+def score_bound_to(answer, aliases, left, right, competitor_groups=()):
+    """The scoreline left-right is nearest this week or team, not merely present."""
+    text = "\n".join(normalize_text(line) for line in str(answer or "").splitlines())
+    text = re.sub(r"\b(?:minus|negative)\s+(\d+)", r"-\1", text)
+    labels = _label_spans(text, aliases, competitor_groups)
+    if not labels:
+        return False
+    clauses = _clause_ranges(text)
+    wanted = (int(left), int(right))
+    return any(span[2] == wanted and _bound_to_target(span, labels, clauses, text)
+               for span in _score_spans(text))
 
 
 def contains_time(answer, hhmm):
@@ -267,6 +502,17 @@ def contains_date(answer, iso_date):
              f"{d.strftime('%B')} {d.day}".lower(),
              f"{d.month}/{d.day}/{d.year}"]
     return any(f in a for f in forms)
+
+
+def date_bound_to(answer, aliases, iso_date, competitor_groups=()):
+    """Bind common written/ISO dates to the subject in their sentence or row."""
+    text = "\n".join(normalize_text(line) for line in str(answer or "").splitlines())
+    labels = _label_spans(text, aliases, competitor_groups)
+    pattern = r"\b(?:20\d{2}[-/]\d{2}[-/]\d{2}|\d{1,2}/\d{1,2}/20\d{2}|(?:jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\.?\s+\d{1,2}(?:,?\s+20\d{2})?)\b"
+    clauses = _clause_ranges(text)
+    return any(contains_date(m.group().replace(".", ""), iso_date)
+               and _bound_to_target((m.start(), m.end(), m.group()), labels, clauses, text)
+               for m in re.finditer(pattern, text))
 
 
 # ---------------------------------------------------------------- snapshots

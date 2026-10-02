@@ -25,7 +25,7 @@ records) and the nine international games. Read-only task.
 """
 from verify_lib import (Judge, check_read_only_db, check_trajectory_identity,
                         contains_amount, contains_phrase, contains_record, final_answer,
-                        navigated_to, run_verifier)
+                        navigated_to, run_verifier, week_mentioned)
 
 TASK_ID = "NFL--5"
 INTL_WEEKS = (1, 3, 4, 5, 6, 7, 9, 10, 11)
@@ -64,7 +64,7 @@ def run_checks(judge, traj, initial_db, after_db):
         judge.check(f"answer_intl_{away.lower().replace(' ', '')}_at_{home.lower().replace(' ', '')}",
                     contains_phrase(answer, away) and contains_phrase(answer, home),
                     f"expected the international game {away} at {home}")
-    weeks_named = sum(1 for w in INTL_WEEKS if str(w) in answer)
+    weeks_named = sum(1 for w in INTL_WEEKS if week_mentioned(answer, w))
     judge.check("answer_intl_weeks", weeks_named >= 6,
                 f"expected the international games' weeks (1,3,4,5,6,7,9,10,11); found {weeks_named}")
     # the played game's details
