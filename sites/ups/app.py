@@ -21,7 +21,7 @@ import hashlib
 import json
 import math
 import os
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
@@ -1029,6 +1029,27 @@ def ship_confirm(tracking_number):
 # --------------------------------------------------------------------------
 # Schedule a Pickup
 # --------------------------------------------------------------------------
+PICKUP_DATES = tuple((MIRROR_DATE + timedelta(days=i)).isoformat() for i in range(6))
+PICKUP_EARLIEST_TIMES = ('8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+                        '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
+                        '4:00 PM', '5:00 PM')
+PICKUP_LATEST_TIMES = ('12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
+                      '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM')
+
+
+def pickup_schedule_errors(data):
+    """Validate the same frozen schedule at review and immediately before saving."""
+    errors = []
+    if data.get('pickup_date') not in PICKUP_DATES:
+        errors.append('Select an available pickup date.')
+    earliest, latest = data.get('earliest'), data.get('latest')
+    if earliest not in PICKUP_EARLIEST_TIMES or latest not in PICKUP_LATEST_TIMES:
+        errors.append('Select valid earliest and latest pickup times.')
+    elif datetime.strptime(latest, '%I:%M %p') <= datetime.strptime(earliest, '%I:%M %p'):
+        errors.append('Latest available time must be later than earliest ready time.')
+    return errors
+
+
 @app.route('/pickup', methods=['GET', 'POST'])
 def pickup():
     data = session.get('pickup_wizard', {})
@@ -1087,48 +1108,46 @@ def pickup():
             if not errors:
                 step = 'datetime'
         elif step == 'datetime':
-            pickup_date = request.form.get('pickup_date', '')
-            earliest = request.form.get('earliest', '')
-            latest = request.form.get('latest', '')
-            if not pickup_date:
-                errors.append('Pickup date is required.')
-            if not earliest or not latest:
-                errors.append('Pickup time window is required.')
+            data.update({key: request.form.get(key, '')
+                         for key in ('pickup_date', 'earliest', 'latest')})
+            errors.extend(pickup_schedule_errors(data))
             if not errors:
-                data.update({'pickup_date': pickup_date,
-                             'earliest': earliest, 'latest': latest})
                 step = 'review'
         elif step == 'review':
-            saturday = data.get('pickup_date', '') in ('2026-10-03', '2026-10-10')
-            fee, fee_label = pickup_fee_for(data.get('pickup_date', ''), saturday)
-            confirmation = 'PK' + str(1000000 + PickupRequest.query.count() + 1)
-            pr = PickupRequest(
-                confirmation_number=confirmation,
-                user_id=current_user.id if current_user.is_authenticated else None,
-                contact_name=data.get('company', ''),
-                email=data.get('email', ''),
-                company=data.get('company', ''),
-                address_line1=data.get('street', ''),
-                city=data.get('city', ''), state=data.get('state', ''), zip=data.get('zip', ''),
-                phone=data.get('phone', ''),
-                pickup_date=data.get('pickup_date', ''),
-                earliest_time=data.get('earliest', ''), latest_time=data.get('latest', ''),
-                packages=data.get('packages', 1), weight_lb=data.get('weight', 1),
-                service=data.get('service', ''),
-                saturday=saturday,
-                fee_usd=fee, payment=request.form.get('payment', 'Pay driver at pickup'),
-            )
-            db.session.add(pr)
-            try:
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-                confirmation = 'PK' + str(1000000 + PickupRequest.query.count() + 2)
-                pr.confirmation_number = confirmation
+            errors.extend(pickup_schedule_errors(data))
+            if errors:
+                step = 'datetime'
+            else:
+                saturday = data.get('pickup_date', '') in ('2026-10-03', '2026-10-10')
+                fee, fee_label = pickup_fee_for(data.get('pickup_date', ''), saturday)
+                confirmation = 'PK' + str(1000000 + PickupRequest.query.count() + 1)
+                pr = PickupRequest(
+                    confirmation_number=confirmation,
+                    user_id=current_user.id if current_user.is_authenticated else None,
+                    contact_name=data.get('company', ''),
+                    email=data.get('email', ''),
+                    company=data.get('company', ''),
+                    address_line1=data.get('street', ''),
+                    city=data.get('city', ''), state=data.get('state', ''), zip=data.get('zip', ''),
+                    phone=data.get('phone', ''),
+                    pickup_date=data.get('pickup_date', ''),
+                    earliest_time=data.get('earliest', ''), latest_time=data.get('latest', ''),
+                    packages=data.get('packages', 1), weight_lb=data.get('weight', 1),
+                    service=data.get('service', ''),
+                    saturday=saturday,
+                    fee_usd=fee, payment=request.form.get('payment', 'Pay driver at pickup'),
+                )
                 db.session.add(pr)
-                db.session.commit()
-            session.pop('pickup_wizard', None)
-            return redirect(url_for('pickup_confirm', confirmation=confirmation))
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    confirmation = 'PK' + str(1000000 + PickupRequest.query.count() + 2)
+                    pr.confirmation_number = confirmation
+                    db.session.add(pr)
+                    db.session.commit()
+                session.pop('pickup_wizard', None)
+                return redirect(url_for('pickup_confirm', confirmation=confirmation))
         data['step'] = step
         session['pickup_wizard'] = data
         session.modified = True
@@ -1139,7 +1158,9 @@ def pickup():
     return render_template('pickup.html', step=step, data=data, errors=errors,
                            services=services, fee_same=fee_same,
                            fee_future=fee_future, fee_saturday=fee_saturday,
-                           MIRROR_DATE=MIRROR_DATE_ISO)
+                           MIRROR_DATE=MIRROR_DATE_ISO, pickup_dates=PICKUP_DATES,
+                           earliest_times=PICKUP_EARLIEST_TIMES,
+                           latest_times=PICKUP_LATEST_TIMES)
 
 
 @app.route('/pickup/confirm/<confirmation>')

@@ -265,6 +265,51 @@ class UPSSeededTests(unittest.TestCase):
         self.assertEqual(round(9.65 + 6.95, 2), p.fee_usd)
         self.assertTrue(p.saturday)
 
+    def test_pickup_rejects_invalid_schedule_and_preserves_input(self):
+        from app import PickupRequest
+        for date, earliest, latest in [
+            ('2026-09-30', '5:00 PM', '12:00 PM'),
+            ('2026-09-30', '1:00 PM', '1:00 PM'),
+            ('2026-09-30', 'bad', '5:00 PM'),
+            ('2026-09-30', '9:00 AM', '25:00 PM'),
+            ('2026-09-30', '', '5:00 PM'),
+            ('not-a-date', '9:00 AM', '5:00 PM'),
+            ('2026-10-10', '9:00 AM', '5:00 PM'),
+        ]:
+            with self.subTest(date=date, earliest=earliest, latest=latest):
+                before = PickupRequest.query.count()
+                payload = {'pickup_date': date, 'earliest': earliest, 'latest': latest}
+                response = self.client.post('/pickup?step=datetime', data=payload)
+                self.assertIn(b'Select Date &amp; Time', response.data)
+                self.assertNotIn(b'Review your pickup request', response.data)
+                with self.client.session_transaction() as sess:
+                    self.assertEqual('datetime', sess['pickup_wizard']['step'])
+                    for key, value in payload.items():
+                        self.assertEqual(value, sess['pickup_wizard'][key])
+                # A forged final-step POST must also leave the DB untouched.
+                response = self.client.post('/pickup?step=review')
+                self.assertIn(b'Select Date &amp; Time', response.data)
+                self.assertEqual(before, PickupRequest.query.count())
+
+    def test_pickup_revalidates_invalid_saved_schedule(self):
+        from app import PickupRequest
+        before = PickupRequest.query.count()
+        with self.client.session_transaction() as sess:
+            sess['pickup_wizard'] = {'step': 'review', 'pickup_date': '2026-09-30',
+                                     'earliest': '5:00 PM', 'latest': '12:00 PM'}
+        response = self.client.post('/pickup?step=review')
+        self.assertIn(b'Latest available time must be later', response.data)
+        self.assertEqual(before, PickupRequest.query.count())
+
+    def test_pickup_noon_boundary_and_correction(self):
+        self.client.post('/pickup?step=datetime', data={
+            'pickup_date': '2026-09-30', 'earliest': '5:00 PM', 'latest': '12:00 PM'})
+        self._run_pickup_wizard('2026-09-30', '11:00 AM', '12:00 PM')
+        from app import PickupRequest
+        pickup = PickupRequest.query.order_by(PickupRequest.id.desc()).first()
+        self.assertEqual(('11:00 AM', '12:00 PM'),
+                         (pickup.earliest_time, pickup.latest_time))
+
     def _run_pickup_wizard(self, date, earliest, latest) -> None:
         r = self.client.post('/pickup?step=location', data={
             'company': "Miller Outfitters", 'street': '1701 S MoPac Expy',

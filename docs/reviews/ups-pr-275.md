@@ -35,3 +35,18 @@ The complete **20-task** browser/verifier replay was not executed. The 10 existi
 2. **(MAJOR) Keep invalid schedules on the Date & Time step.** Show a validation error and preserve the submitted values so the user can correct them.
 3. **(MAJOR) Revalidate immediately before writing the pickup.** Validate the saved schedule at final submission before inserting `pickup_requests`; add a negative case for an invalid saved schedule.
 4. **(Verification pending) Complete environment acceptance.** Run a fresh Docker build, authenticated reset/reset-all with byte-identical seed checks, and the complete 20-task browser/verifier replay. Complete the upstream visual comparison before declaring full review PASS.
+
+## Follow-up implementation
+
+The original audit above describes the pre-fix snapshot. The continuation adds
+shared schedule validation at both Date & Time and final submission: only the
+mirror's offered dates and times are accepted, and the latest time must be
+strictly later than the earliest. Invalid submissions retain their values on
+Date & Time and create no pickup. Regression cases cover reversed/equal times,
+malformed or missing values, invalid saved sessions, and correcting a rejected
+window, including the AM/noon boundary.
+
+This is a focused handler regression review. Existing task definitions, rubrics,
+verifiers, and HF archives are unchanged. Browser evidence and the combined
+build/reset results are recorded in the PR description and external review
+artifacts; the original full-site/upstream review limitations remain explicit.
