@@ -29,9 +29,29 @@
       });
       if (!wasOpen && section.querySelector(".nav-dropdown") && window.matchMedia("(hover: none)").matches) {
         section.classList.add("open");
+        positionDropdown(section);
         e.preventDefault();
       }
     });
+  });
+  /* keep fixed dropdowns aligned with their section and inside the viewport */
+  function positionDropdown(section) {
+    var dd = section.querySelector(".nav-dropdown");
+    if (!dd) return;
+    dd.style.top = "0px";
+    var rect = section.getBoundingClientRect();
+    var h = dd.offsetHeight;
+    var vh = window.innerHeight || 800;
+    var top = Math.min(Math.max(rect.top, 8), Math.max(8, vh - h - 8));
+    dd.style.top = top + "px";
+  }
+  ["mouseenter", "focusin"].forEach(function (ev) {
+    document.querySelectorAll(".sidebar-section").forEach(function (s) {
+      s.addEventListener(ev, function () { positionDropdown(s); });
+    });
+  });
+  window.addEventListener("resize", function () {
+    document.querySelectorAll(".sidebar-section.open").forEach(positionDropdown);
   });
   document.addEventListener("click", function (e) {
     if (!e.target.closest(".sidebar-section")) {

@@ -14,7 +14,7 @@
       <div class="muted">
         {% if member.name and member.name != member.username %}{{ member.name }} · {% endif %}
         {{ member.country_name or member.country_code or '' }}
-        {% if member.location %} · {{ member.location }}{% endif %}
+        {% if member.location and member.location != (member.country_name or member.country_code or '') %} · {{ member.location }}{% endif %}
       </div>
       <div class="profile-ratings">
         {% for cat, label in [('blitz', 'Blitz'), ('bullet', 'Bullet'), ('rapid', 'Rapid'), ('daily', 'Daily'), ('tactics', 'Tactics')] %}
@@ -52,7 +52,7 @@
           <tr><th>Category</th><th class="t-right">Rank</th><th class="t-right">Rating</th><th class="t-right">W / D / L</th></tr>
           {% for cat, entry in lb_entries.items() %}
             <tr>
-              <td><b>{{ cat|capitalize }}</b></td>
+              <td><b><a href="{{ '/leaderboard/live' if cat == 'blitz' else '/leaderboard/live/' + cat if cat in ('bullet', 'rapid') else '/leaderboard/' + cat }}">{{ cat|capitalize }}</a></b></td>
               <td class="t-right">#{{ entry.rank }}</td>
               <td class="t-right">{{ entry.score }}</td>
               <td class="t-right muted">{{ entry.wins or 0 }} / {{ entry.draws or 0 }} / {{ entry.losses or 0 }}</td>

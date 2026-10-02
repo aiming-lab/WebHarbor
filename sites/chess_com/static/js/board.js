@@ -171,8 +171,13 @@
     this.container.classList.add("board");
     this.squares = {};
     var order = [];
-    for (var r = 1; r <= 8; r++) { for (var f = 0; f < 8; f++) { order.push(FILES[f] + r); } }
-    if (this.flip) order.reverse();
+    if (this.flip) {
+      /* Black POV: rank 1 at the top edge, files h->a left to right. */
+      for (var r = 1; r <= 8; r++) { for (var f = 7; f >= 0; f--) { order.push(FILES[f] + r); } }
+    } else {
+      /* White POV (site default): rank 8 at the top, files a->h left to right. */
+      for (var r = 8; r >= 1; r--) { for (var f = 0; f < 8; f++) { order.push(FILES[f] + r); } }
+    }
     order.forEach(function (sq) {
       var el = document.createElement("div");
       var isLight = (FILES.indexOf(sq[0]) + parseInt(sq[1], 10)) % 2 === 0;
@@ -265,6 +270,9 @@
       }
     }
     delete this.state.squares[from];
+    if (!promo && piece.toUpperCase() === "P" && (to[1] === "8" || to[1] === "1")) {
+      promo = piece === "P" ? "Q" : "q";
+    }
     this.state.squares[to] = promo || piece;
     if (piece.toUpperCase() === "P" && Math.abs(parseInt(to[1], 10) - parseInt(from[1], 10)) === 2) {
       this.state.ep = from[0] + (parseInt(from[1], 10) + (colorOf(piece) === "w" ? 1 : -1));

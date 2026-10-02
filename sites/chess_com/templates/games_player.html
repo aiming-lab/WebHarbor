@@ -47,7 +47,7 @@
           {% endif %}
         </div>
       </div>
-      <section class="section-title"><h2>{{ player.name }} Chess Games</h2></section>
+      <section class="section-title"><h2>{{ player.name if player.name.endswith('Chess Games') else player.name ~ ' Chess Games' }}</h2></section>
       <div class="card" style="padding:4px 8px;">
         <table class="data-table">
           <tr><th>Players</th><th>Opening</th><th>Result</th><th class="t-right">Moves</th><th class="t-right">Year</th></tr>
@@ -74,7 +74,7 @@
       <div class="side-panel">
         <h3>Openings played</h3>
         {% for name, slug in openings %}
-          {% if slug %}<a class="variation-row" href="{{ url_for('opening_detail', slug=slug) }}">{{ name }}</a>{% endif %}
+          {% if slug %}<a class="variation-row" href="{{ url_for('opening_detail', slug=slug) }}">{{ name }}</a>{% else %}<span class="variation-row">{{ name }}</span>{% endif %}
         {% endfor %}
       </div>
       <div class="side-panel">

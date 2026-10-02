@@ -67,7 +67,7 @@ SCHEMA_SHA256 = "e4f507ee48467cea7d4b3aad0ae5d19eaaea644ae2778d4ce55221be30b745a
 # sha256 over every seed row (table-scanonical, ORDER BY all columns). The seed is rebuilt
 # deterministically at image-build time (PYTHONHASHSEED=0, see .build-generated-seed); the
 # physical file layout may differ between sqlite builds but this logical digest is frozen.
-SEED_ROWS_SHA256 = "8a80a039b34ff198e27d77f09e1693ae89f4cf8a625841825df264cb78ae4fe4"
+SEED_ROWS_SHA256 = "6227f861887c80548522ae2cc8d20e719f785d82d647e605350d66a921b81765"
 SEED_USERS = {  # email -> (id, username); identity columns never change
     "alice.j@test.com": (1176, "alice_j"),
     "bob.c@test.com": (1177, "bob_c"),
