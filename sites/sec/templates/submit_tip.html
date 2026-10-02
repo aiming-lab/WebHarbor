@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Submit a Tip or Complaint — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; Submit a Tip or Complaint</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Submit a Tip or Complaint</h1>
+  <p class="lede">My Tip or Complaint Relates To:</p>
+</div>
+<section class="home-grid">
+  {% for opt in pages.tip_options %}
+  <div class="sidebox">
+    <h2>{{ opt.label }}</h2>
+    {% if 'possible-securities-law-violations' in opt.href %}
+    <p>Possible securities law violations like fraud, Ponzi schemes, insider trading,
+    market manipulation, or other wrongdoing.</p>
+    <p><a class="button-usa" href="/submit-tip-or-complaint/tcr-disclaimer">Tips, Complaints &amp; Referrals Form</a></p>
+    {% elif 'investment-account' in opt.href %}
+    <p>A problem I'm having with my investment account or financial professional.</p>
+    <p><a class="button-usa" href="/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional">Investor Complaint Form</a></p>
+    {% elif 'self-regulatory' in opt.href %}
+    <p>The SEC or self-regulatory organizations (SROs) such as stock exchanges or FINRA.</p>
+    <p><a class="button-usa" href="/submit-tip-or-complaint/report-problem-sec-or-self-regulatory-organization">Investor Question Form</a></p>
+    {% else %}
+    <p>Other matters handled by the SEC's offices.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

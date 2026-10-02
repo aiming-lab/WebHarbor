@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ filing.form }} — {{ company.name }} — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/search-filings">Search Filings</a> &rsaquo;
+<a href="/edgar/company/{{ company.cik }}">{{ company.name }}</a> &rsaquo; Filing Detail</div>
+{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <h1>Form {{ filing.form }}</h1>
+  <p class="meta">{{ filing.primary_desc or filing.form }} &middot; SEC Accession No. {{ filing.accession }}</p>
+</div>
+
+<dl class="facts">
+  <dt>Filing Date</dt><dd>{{ filing.filed }}</dd>
+  <dt>Accepted</dt><dd>{{ filing.acceptance or '—' }}</dd>
+  <dt>Period of Report</dt><dd>{{ filing.report_date or '—' }}</dd>
+  {% if filing.items %}<dt>Items</dt><dd>{{ filing.items }}</dd>{% endif %}
+  <dt>Primary Document</dt><dd>{{ filing.primary_doc }}</dd>
+  <dt>File Number</dt><dd>{{ filing.file_num or '—' }}</dd>
+  <dt>Film Number</dt><dd>{{ filing.film_num or '—' }}</dd>
+  <dt>Company</dt><dd><a href="/edgar/company/{{ company.cik }}">{{ company.name }}</a> (CIK {{ company.cik }})</dd>
+</dl>
+
+<p>
+  <a class="button-usa" href="/edgar/filing/{{ company.cik }}/{{ filing.accession }}/document">
+    Open Primary Document</a>
+</p>
+
+{% if variants|length > 1 %}
+<h2>Amendments and Variants</h2>
+<table class="data">
+  <thead><tr><th>Form</th><th>Filing Date</th><th>Accession No.</th></tr></thead>
+  <tbody>
+    {% for v in variants %}
+    <tr>
+      <td>{% if v.id == filing.id %}<strong>{{ v.form }}</strong>{% else %}
+        <a href="/edgar/filing/{{ company.cik }}/{{ v.accession }}">{{ v.form }}</a>{% endif %}</td>
+      <td>{{ v.filed }}</td>
+      <td>{{ v.accession }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} — EDGAR Filings — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/search-filings">Search Filings</a> &rsaquo;
+<a href="/search-filings/cik-lookup?company={{ company.name }}">Company Search</a> &rsaquo; {{ company.name }}</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{{ company.name }}</h1>
+  <p class="meta">CIK {{ company.cik }} &middot; Ticker {{ company.ticker }} &middot;
+  {{ company.exchange_list()|join(', ') }}</p>
+</div>
+
+<dl class="facts">
+  <dt>SIC</dt><dd>{{ company.sic }} — {{ company.sic_description }}</dd>
+  <dt>State of Incorporation</dt><dd>{{ company.state }}</dd>
+  <dt>Fiscal Year End</dt><dd>{{ company.fiscal_year_end }}</dd>
+  <dt>Category</dt><dd>{{ company.category }}</dd>
+</dl>
+
+<div class="sidebox">
+  <h2>My Watchlist</h2>
+  {% if current_user.is_authenticated %}
+    <form method="post" action="/account/watchlist/toggle">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="cik" value="{{ company.cik }}">
+      <input type="hidden" name="back" value="/edgar/company/{{ company.cik }}">
+      {% if on_watchlist %}
+      <button class="usa secondary" type="submit">Remove from Watchlist</button>
+      {% else %}
+      <button class="usa" type="submit">Add to Watchlist</button>
+      {% endif %}
+    </form>
+  {% else %}
+  <p><a href="/login?next=/edgar/company/{{ company.cik }}">Log in</a> to add
+  {{ company.name }} to your watchlist.</p>
+  {% endif %}
+</div>
+
+<form class="filter-bar" method="get" action="/edgar/company/{{ company.cik }}">
+  <div>
+    <label for="type">Filing Type</label>
+    <select id="type" name="type">
+      <option value="">All forms</option>
+      {% for f in all_forms %}
+      <option value="{{ f }}" {% if f == form %}selected{% endif %}>{{ f }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="dateb">Prior to (YYYYMMDD)</label>
+    <input type="text" id="dateb" name="dateb" value="{{ dateb }}" placeholder="e.g. 20260101">
+  </div>
+  <button class="usa" type="submit">Filter Filings</button>
+  <span class="count">{{ total }} filing{{ '' if total == 1 else 's' }}</span>
+</form>
+
+<table class="data">
+  <thead>
+    <tr><th>Filings</th><th>Format</th><th>Description</th><th>Filing Date</th><th>File/Film Number</th></tr>
+  </thead>
+  <tbody>
+    {% for f in filings %}
+    <tr>
+      <td>{{ f.form }}</td>
+      <td><a href="/edgar/filing/{{ company.cik }}/{{ f.accession }}">Documents</a></td>
+      <td>{{ f.primary_desc or f.form }}<br>
+          <span class="meta">Acc-no: {{ f.accession }}{% if f.items %} &middot; Items {{ f.items }}{% endif %}</span></td>
+      <td>{{ f.filed }}</td>
+      <td>{{ f.file_num or '' }} {{ f.film_num or '' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/edgar/company/{{ company.cik }}?type={{ form }}&dateb={{ dateb }}&page={{ page - 1 }}">&laquo; Previous</a>
+  {% endif %}
+  <span class="current">Page {{ page }}</span>
+  {% if page * per_page < total %}
+  <a href="/edgar/company/{{ company.cik }}?type={{ form }}&dateb={{ dateb }}&page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}

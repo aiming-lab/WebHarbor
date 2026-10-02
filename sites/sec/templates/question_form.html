@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Investor Question Form — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/submit-tip-or-complaint">Submit a Tip or Complaint</a> &rsaquo;
+Ask a Question</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Investor Question Form</h1>
+  <p class="lede">Submit investor-related questions, comments, or suggestions to the
+  SEC's Office of Investor Education and Assistance.</p>
+</div>
+<div class="form-page">
+  {% if errors %}
+  <div class="errors">
+    <strong>Please correct the following:</strong>
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form method="post" action="/submit-tip-or-complaint/report-problem-sec-or-self-regulatory-organization">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset>
+      <legend>About you</legend>
+      <label for="name">Your full name</label>
+      <input type="text" id="name" name="name" value="{{ form.get('name', '') }}" required>
+      <label for="email">Your email address</label>
+      <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
+    </fieldset>
+    <fieldset>
+      <legend>Your question</legend>
+      <label for="topic">Topic</label>
+      <select id="topic" name="topic" required>
+        <option value="">-Select one-</option>
+        {% for t in ['investment professional', 'brokerage account', 'mutual funds or ETFs',
+                     'retirement accounts', 'municipal securities', 'crypto assets',
+                     'EDGAR and company filings', 'enforcement matter', 'other'] %}
+        <option value="{{ t }}" {% if form.get('topic') == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+      <label for="question">Your question</label>
+      <span class="hint">At least 20 characters.</span>
+      <textarea id="question" name="question" required>{{ form.get('question', '') }}</textarea>
+    </fieldset>
+    <button class="usa" type="submit">Submit Question</button>
+  </form>
+</div>
+{% endblock %}

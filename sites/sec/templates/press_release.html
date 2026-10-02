@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ pr.title }} — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/newsroom">Newsroom</a> &rsaquo;
+<a href="/newsroom/press-releases">Press Releases</a> &rsaquo; {{ pr.release_no }}</div>
+{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <h1>{{ pr.title }}</h1>
+  <p class="meta">Press Release &middot; {{ pr.date }} &middot; Release No. {{ pr.release_no }}</p>
+</div>
+<div class="prose">
+  {% for para in (pr.body or '').split('\n\n') %}
+  <p>{{ para }}</p>
+  {% endfor %}
+</div>
+{% if related %}
+<div class="resources">
+  <h2>Related Press Releases</h2>
+  <ul>
+    {% for other in related %}
+    <li><a href="/newsroom/press-releases/{{ other.slug }}">{{ other.title }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

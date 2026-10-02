@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Resources for Investors — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; Resources for Investors</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Resources for Investors</h1>
+  <p class="lede">{{ pages.resources_intro }}</p>
+</div>
+<div class="card-horz">
+  <img src="/static/images/upstream/investorgov-oiea.jpg" alt="Investor.gov Photo">
+  <div class="card-horz__container">
+    <h2>{{ pages.resources_hero.title }}</h2>
+    <p>{{ pages.resources_hero.body }}</p>
+  </div>
+</div>
+<section class="home-grid">
+  {% for card in pages.resources_cards %}
+  <div class="sidebox">
+    <h2>{{ card.title }}</h2>
+    <p>{{ card.description }}</p>
+    {% if 'alerts' in card.title.lower() %}
+    <p><a class="button-usa" href="/resources-investors/investor-alerts-bulletins">View Investor Alerts and Bulletins</a></p>
+    {% elif 'Complaint' in card.title %}
+    <p><a class="button-usa" href="/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional">File a Complaint</a></p>
+    {% elif 'Question' in card.title %}
+    <p><a class="button-usa" href="/submit-tip-or-complaint/report-problem-sec-or-self-regulatory-organization">Ask a Question</a></p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+<div class="card-horz">
+  <img src="/static/images/upstream/military-savings-graphic.png" alt="Saving and investing">
+  <div class="card-horz__container">
+    <h2>{{ pages.check_professional.title }}</h2>
+    <p>{{ pages.check_professional.body }}</p>
+    <div class="card-horz__footer">
+      <a href="/fast-answers">FAST Answers</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

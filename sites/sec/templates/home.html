@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}SEC.gov — U.S. Securities and Exchange Commission{% endblock %}
+{% block content %}
+<div class="home-hero">
+  <div class="home-hero__main">
+    <h1>{{ home.hero.intro or "We make markets work better." }}</h1>
+    <p class="lede">Founded to help our country respond to the Great Depression, we're the agency
+    that protects investors from misconduct, promotes fairness &amp; efficiency in the securities
+    markets, and facilitates capital formation for those looking to hire, innovate, and grow.</p>
+    <div class="card-horz">
+      <img src="/static/images/upstream/innovation-exemption-thumbnail.png"
+           alt="{{ home.material_matters.alt or 'Material Matters' }}">
+      <div class="card-horz__container">
+        <h2>{{ home.material_matters.title }}</h2>
+        <p>{{ home.material_matters.description }}</p>
+        <div class="card-horz__footer">
+          <a href="/newsroom/press-releases/{{ home.material_matters.cta_href.rsplit('/', 1)[-1] if home.material_matters.cta_href else '' }}">
+            {{ home.material_matters.cta_label or "CONTINUE READING" }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="home-hero__links">
+    <h2>Quick Links</h2>
+    <p>We work together to make a positive impact on America's economy, our capital markets, and people's lives.</p>
+    <ul>
+      {% for link in home.quick_links %}
+      <li><a href="{{ link.href if link.href.startswith('/') else '#' }}">{{ link.label }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="home-grid">
+  <section>
+    <h2>Latest News</h2>
+    <ul class="collection">
+      {% for pr in latest %}
+      <li>
+        <p class="taxonomy">Press Release</p>
+        <a href="/newsroom/press-releases/{{ pr.slug }}">{{ pr.title }}</a>
+        <p class="meta">{{ pr.date }} — Release No. {{ pr.release_no }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="more-link"><a href="/newsroom/press-releases">View All Latest News</a></p>
+  </section>
+  <section>
+    <h2>Upcoming Events</h2>
+    <ul class="collection">
+      {% for ev in home.upcoming_events %}
+      <li>
+        <p class="taxonomy">SEC Meetings and Other Events</p>
+        <a href="/newsroom">{{ ev.label }}</a>
+        <p class="meta">{{ ev.month }} {{ ev.day }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <h2>SEC Rulemaking</h2>
+    <p class="prose">The SEC engages in rulemaking through a transparent process guided by the
+    Administrative Procedure Act and informed by public comment. Members of the public are
+    invited to share comments on proposed rulemakings.</p>
+    <p class="more-link"><a href="/rules-regulations/rulemaking-activity">Submit a Comment</a></p>
+  </section>
+</div>
+
+<div class="teaser">
+  <img src="/static/images/upstream/sec-logo-investor-1x.png" alt="Investor.gov">
+  <p>{{ home.investor_teaser.text or "At Investor.gov, the SEC provides investors with the resources to make informed investment decisions." }}</p>
+  <ul>
+    {% for b in home.investor_teaser.bullets %}
+    <li>{{ b }}</li>
+    {% endfor %}
+  </ul>
+  <a class="cta" href="/resources-investors">Resources for Investors</a>
+</div>
+{% endblock %}

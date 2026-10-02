@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Newsroom — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; Newsroom</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Newsroom</h1>
+  <p class="lede">Press releases, speeches &amp; statements, and what's new from across the agency.</p>
+</div>
+<section class="home-grid">
+  <div>
+    <h2>Latest Press Releases</h2>
+    <ul class="collection">
+      {% for pr in latest %}
+      <li>
+        <p class="taxonomy">Press Release</p>
+        <a href="/newsroom/press-releases/{{ pr.slug }}">{{ pr.title }}</a>
+        <p class="meta">{{ pr.date }} — Release No. {{ pr.release_no }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="more-link"><a href="/newsroom/press-releases">View All Latest Press Releases</a></p>
+  </div>
+  <div>
+    <h2>Speeches &amp; Statements</h2>
+    <ul class="collection">
+      {% for s in speeches %}
+      <li>
+        <p class="taxonomy">{{ s.speaker }}</p>
+        <a href="/newsroom/speeches-statements">{{ s.title }}</a>
+        <p class="meta">{{ s.date }} — {{ s.kind }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="more-link"><a href="/newsroom/speeches-statements">View All Speeches &amp; Statements</a></p>
+  </div>
+</section>
+<h2>What's New</h2>
+<ul class="collection">
+  {% for w in whatsnew %}
+  <li>
+    <p class="taxonomy">{{ w.kind }}</p>
+    <a href="{{ w.href if w.href.startswith('/') else '#' }}">{{ w.title }}</a>
+    <p class="meta">{{ w.date }}</p>
+  </li>
+  {% endfor %}
+</ul>
+<p class="more-link"><a href="/newsroom/whats-new">View All What's New</a></p>
+{% endblock %}

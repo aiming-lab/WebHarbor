@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}EDGAR Company Search — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/search-filings">Search Filings</a> &rsaquo; CIK Lookup</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>EDGAR Company Search</h1>
+  <p class="lede">Companies with names matching your search. Click on CIK to view a company's filings.</p>
+</div>
+<form class="filter-bar" method="get" action="/search-filings/cik-lookup">
+  <div>
+    <label for="company">Company</label>
+    <input type="search" id="company" name="company" value="{{ q }}" placeholder="Company name, ticker or CIK">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  {% if q %}<span class="count">{{ rows|length }} result{{ '' if rows|length == 1 else 's' }}</span>{% endif %}
+</form>
+
+{% if q %}
+  {% if rows %}
+  <table class="data">
+    <thead>
+      <tr><th>CIK</th><th>Company</th><th>State</th><th>SIC</th></tr>
+    </thead>
+    <tbody>
+      {% for c in rows %}
+      <tr>
+        <td><a href="/edgar/company/{{ c.cik }}">{{ c.cik }}</a></td>
+        <td><a href="/edgar/company/{{ c.cik }}">{{ c.name }}</a><br>
+            <span class="meta">{{ c.ticker }}</span></td>
+        <td>{{ c.state }}</td>
+        <td>{{ c.sic }} — {{ c.sic_description }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="prose">No companies match "{{ q }}". Try a different name, ticker or CIK.</p>
+  {% endif %}
+{% else %}
+<p class="prose">Enter a company name, ticker symbol or CIK number to find its EDGAR filings.
+For example, try <strong>Apple</strong>, <strong>MSFT</strong>, or a ten-digit CIK such as
+<strong>0000320193</strong>.</p>
+{% endif %}
+{% endblock %}

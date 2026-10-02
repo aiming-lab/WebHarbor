@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 85 Flask mirror sites + control plane on :8101.
+# 153 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -435,8 +435,10 @@ RUN ( python3 /opt/check_asset_inventory.py /opt/WebSyn/yahoo_finance && \
     (cd /opt/WebSyn/steam && rm -rf instance instance_seed && PYTHONHASHSEED=0 python3 seed_data.py && mkdir -p instance_seed && cp instance/steam.db instance_seed/steam.db && rm -rf instance __pycache__) ) && \
     ( python3 /opt/check_asset_inventory.py /opt/WebSyn/trader_joes && \
     (cd /opt/WebSyn/trader_joes && rm -rf instance instance_seed && PYTHONHASHSEED=0 python3 seed_data.py && mkdir -p instance_seed && cp instance/trader_joes.db instance_seed/trader_joes.db && rm -rf instance __pycache__) ) && \
+    ( python3 /opt/check_asset_inventory.py /opt/WebSyn/sec && \
+    (cd /opt/WebSyn/sec && rm -rf instance instance_seed && PYTHONHASHSEED=0 python3 seed_data.py && mkdir -p instance_seed && cp instance/sec.db instance_seed/sec.db && rm -rf instance __pycache__) ) && \
     ( python3 /opt/check_seed_databases.py /opt/WebSyn )
 
-EXPOSE 8101 40000-40151
+EXPOSE 8101 40000-40152
 
 CMD ["/opt/websyn_start.sh"]

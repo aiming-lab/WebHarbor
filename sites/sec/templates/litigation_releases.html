@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Litigation Releases — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/enforcement-litigation">Enforcement &amp; Litigation</a> &rsaquo; Litigation Releases</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Litigation Releases</h1>
+  <p class="lede">The list below provides links to litigation releases concerning civil
+  actions brought by the Commission in federal court.</p>
+</div>
+<form class="filter-bar" method="get" action="/enforcement-litigation/litigation-releases">
+  <div>
+    <label for="q">Search respondents / release no.</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Asudani or LR-26662">
+  </div>
+  <div>
+    <label for="year">Search Year</label>
+    <select id="year" name="year">
+      <option value="">-View All-</option>
+      {% for y in years %}
+      <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} release{{ '' if total == 1 else 's' }}</span>
+</form>
+<table class="data">
+  <thead><tr><th>Date</th><th>Respondents</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.date }}</td>
+      <td><a href="/enforcement-litigation/litigation-releases/{{ r.slug }}">{{ r.respondents }}</a><br>
+        <span class="meta">Release No. {{ r.release_no }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/enforcement-litigation/litigation-releases?q={{ q }}&year={{ year }}&page={{ page - 1 }}">&laquo; Previous</a>
+  {% endif %}
+  <span class="current">Page {{ page }}</span>
+  {% if page * per_page < total %}
+  <a href="/enforcement-litigation/litigation-releases?q={{ q }}&year={{ year }}&page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}

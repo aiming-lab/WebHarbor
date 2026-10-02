@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Enforcement &amp; Litigation — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; Enforcement &amp; Litigation</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Enforcement &amp; Litigation</h1>
+  <p class="lede">The SEC protects investors by investigating and prosecuting violations of
+  the securities laws.</p>
+</div>
+<section class="home-grid">
+  {% for title, slug, blurb in landings %}
+  <div>
+    <h2>{{ title }}</h2>
+    <p class="prose">{{ blurb }}</p>
+    {% if slug != 'whistleblower' %}
+    <p><a class="button-usa" href="/enforcement-litigation/{{ slug }}">Browse {{ title }}</a></p>
+    {% else %}
+    <p><a class="button-usa" href="/enforcement-litigation/whistleblower-program">Whistleblower Program</a></p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

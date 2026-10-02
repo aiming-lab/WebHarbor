@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Subscribed' if ok else 'Subscription failed' }} — SEC.gov{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{{ 'You are signed up for email updates' if ok else 'We could not sign you up' }}</h1>
+</div>
+{% if ok %}
+<div class="confirm-box">
+  {% if existing %}
+  <p><strong>{{ email }}</strong> was already subscribed to SEC email updates.</p>
+  {% else %}
+  <p><strong>{{ email }}</strong> is now subscribed to SEC email updates.</p>
+  {% endif %}
+</div>
+{% else %}
+<div class="errors">
+  <p>The email address you entered does not appear to be valid. Go back and try again.</p>
+</div>
+{% endif %}
+<p><a class="button-usa" href="/">Return to SEC.gov</a></p>
+{% endblock %}

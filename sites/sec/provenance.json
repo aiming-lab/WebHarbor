@@ -1,0 +1,111 @@
+{
+ "site": "sec",
+ "upstream": "https://www.sec.gov/",
+ "captured_at": "2026-09-30",
+ "capture_window_utc": "2026-09-30T22:40:00Z to 2026-09-30T23:45:00Z (all captures timestamped per-file in scraped_data/captures/*.meta.json)",
+ "capture_method": "Every tracked record is a real upstream capture from www.sec.gov, data.sec.gov and efts.sec.gov fetched over plain HTTPS with a declared research User-Agent ('WebHarbor Mirror Research admin@webharbor.example') under the SEC fair-access policy (<= 2 req/s, well under the 10 req/s ceiling). 168 primary captures plus per-page captures for press releases, litigation release detail pages, administrative proceeding detail pages, FAST Answers and images; every capture carries a .meta.json sidecar with the exact URL, HTTP status, byte length and UTC timestamp. Zero synthesized records among the captured blocks; the two declared fixture blocks below are the only authored content.",
+ "waf_note": "investor.gov (which hosts the live Investor Alerts & Bulletins catalog and the FAST Answers glossary beyond the five pages still served by sec.gov) and help.sec.gov (the Salesforce-hosted form shell) block automated fetches from this network: investor.gov returns Akamai 403 on every path including its RSS feed; help.sec.gov serves only a JavaScript shell behind a certificate chain this environment cannot verify. Following the u_s_customs precedent, the mirror models those sections with deterministic authored fixtures (origin='fixture' in the DB, visibly tagged on the pages) and declares them here. Everything else is live upstream capture: www.sec.gov, data.sec.gov and efts.sec.gov all returned HTTP 200 for every request with no anti-bot challenge.",
+ "sources": {
+  "www.sec.gov/": {
+   "role": "homepage hero/quick links/Material Matters card/latest news/events/Investor.gov teaser",
+   "captures": 1
+  },
+  "www.sec.gov/newsroom/press-releases (pages 0-3) + 100 detail pages": {
+   "role": "100 press releases with title, Washington D.C. dateline, release number, full body paragraphs and related-release links",
+   "captures": 104
+  },
+  "www.sec.gov/enforcement-litigation/litigation-releases + 100 detail pages": {
+   "role": "100 litigation release rows (date, respondents, release no.) and all 100 real detail pages (case caption, court, full release text, related case documents)",
+   "captures": 101
+  },
+  "www.sec.gov/enforcement-litigation/administrative-proceedings + 11 detail pages": {
+   "role": "100 administrative proceeding rows (date, respondents, release no., file number) and the 11 real detail pages the live site still links (settled order summaries with penalties)",
+   "captures": 12
+  },
+  "www.sec.gov/enforcement-litigation/trading-suspensions": {
+   "role": "100 trading suspension rows (date, company, release no.)",
+   "captures": 1
+  },
+  "www.sec.gov/newsroom/speeches-statements": {
+   "role": "25 speeches & statements (title, speaker, type, date)",
+   "captures": 1
+  },
+  "www.sec.gov/newsroom/whats-new": {
+   "role": "20 what's-new rows (title, division/office, date)",
+   "captures": 1
+  },
+  "www.sec.gov/rules-regulations/rulemaking-activity": {
+   "role": "49 rulemaking rows (date, file no., title, status/releases)",
+   "captures": 1
+  },
+  "www.sec.gov/submit-filings/forms-index": {
+   "role": "24 SEC forms (form number, description, last updated, SEC number, filed-by/statute facets)",
+   "captures": 1
+  },
+  "www.sec.gov/answers/{proxy,pink,form8k,sec31,bestex}.htm": {
+   "role": "the five FAST Answers still served live by sec.gov (verbatim text, modified dates)",
+   "captures": 5
+  },
+  "www.sec.gov/resources-investors and related static pages": {
+   "role": "investor resources cards, submit-tip-or-complaint options, commissioners, enforcement/search-filings navigation",
+   "captures": 8
+  },
+  "data.sec.gov/submissions/CIK*.json": {
+   "role": "EDGAR submissions for 50 major companies (names, tickers, SIC, state, category, fiscal year end + a per-form-quota selection of 1,666 real filings: 10-K, 10-Q, 8-K, DEF 14A, Form 4, 144, 424B2, S-8, 13F-HR, 11-K, FWP, 25-NSE, S-4, 8-K/A and more, with accession numbers, filing dates, periods, items, primary documents and file/film numbers)",
+   "captures": 50
+  },
+  "efts.sec.gov/LATEST/search-index": {
+   "role": "8 real EDGAR full-text search API responses (artificial intelligence/cybersecurity incident/pandemic/supply chain/climate change/digital assets/bankruptcy across 8-K and 10-K) \u2014 80 real hits with scores, CIKs, display names, forms, file dates, accession numbers",
+   "captures": 8
+  },
+  "www.sec.gov/files/**": {
+   "role": "283 real case/form PDFs: 128 litigation documents (complaints, final judgments, consents), 20 administrative orders, 97 trading suspension releases, 38 SEC form PDFs (every forms-index row plus the classic Form 3/4/5/8-K etc.)",
+   "captures": 283
+  }
+ },
+ "media": {
+  "images": {
+   "count": 31,
+   "inventory": "asset_inventory.json",
+   "policy": "every file fetched from the upstream URL it renders at (SEC site chrome, seals, commissioner photos, section banners, topic and data-research cards); each image was re-fetched fresh at inventory time and verified byte-identical by sha256; no placeholders, no duplicates, no stretching"
+  },
+  "pdfs": {
+   "count": 283,
+   "policy": "the actual litigation, administrative, suspension and form PDFs served by www.sec.gov, sha256-pinned per file in asset_inventory.json; files above 2.5 MB were not captured and their links point upstream instead of the mirror"
+  }
+ },
+ "fixtures": {
+  "benchmark_users": [
+   {
+    "email": "alice.j@test.com",
+    "display": "Alice Johnson",
+    "fixture": "watchlist: Apple Inc. and Microsoft Corp; one filed investor complaint (IC-8F2A91C7) about Meridian Brokerage Services LLC"
+   },
+   {
+    "email": "bob.c@test.com",
+    "display": "Bob Chen",
+    "fixture": "watchlist: Tesla, Inc. and NVIDIA Corp; one filed TCR tip (TCR-3D61B0E5) about suspected insider trading"
+   },
+   {
+    "email": "carol.d@test.com",
+    "display": "Carol Davis",
+    "fixture": "watchlist: Amazon.com, Inc.; one investor question (Q-77C4A2D9) submitted to the OIEA help desk"
+   },
+   {
+    "email": "dana.k@test.com",
+    "display": "Dana Kim",
+    "fixture": "watchlist: Alphabet Inc. and Meta Platforms, Inc."
+   }
+  ],
+  "declared_content": "Two authored blocks are fixtures and are tagged as such both in the DB (origin='fixture') and on the rendered pages: (1) the ten additional FAST Answers modeling the classic investor.gov catalog the live SEC retired to the WAF-blocked glossary, and (2) the nine investor alerts/bulletins modeling the Investor Alerts catalog that lives on investor.gov. Every company, filing, litigation release, administrative proceeding, trading suspension, press release, speech, what's-new row, rulemaking item, form and FAST Answer these fixtures reference is a real captured upstream row, and every timestamp is a frozen constant. No fixture pretends to be a live capture.",
+  "note": "benchmark accounts follow the u_s_customs / zara / ziprecruiter fixture precedent; password TestPass123! with the frozen bcrypt hash so the seed DB is byte-reproducible"
+ },
+ "determinism": {
+  "seed": "PYTHONHASHSEED=0 python3 seed_data.py at image build time (also verified identical under PYTHONHASHSEED=42/7/12345: the seeder has no hash-order dependence)",
+  "password": "frozen bcrypt hash (TestPass123!)",
+  "index_note": "each table declares at most one secondary index so db.create_all() emits schema DDL in a fixed order (multi-index tables iterate a set and break byte-identity)",
+  "calibers": "two byte-stable seed calibers exist, both deterministic from the same tracked source data: the image build inside python:3.12-slim-bookworm produces sha256 59d95b8d5903063b0bbea21f38e57e31be4f06416d52cf397fa14f779e4d9e4b (verified byte-identical across independent Docker builds and asserted by /reset restoring instance/sec.db from it), and the same seeder under the host Python 3.12.3 produces the local dev caliber sha256 2d68d37888c2dc87cf4bd8766cc12a221966a64156ded693831e0f6de080e29e (byte-reproduced on demand, e.g. PYTHONHASHSEED=0 python3 seed_data.py)",
+  "tarball_seed_note": "the pinned asset tarball ships a convenience copy of the local caliber as instance_seed/sec.db; the Docker build deletes instance_seed/ and regenerates it deterministically, so that copy is build-time dead weight \u2014 annotated via sites/sec/.build-generated-seed",
+  "verified": "the earlier note here recorded sha256 88e6a2c4568e94a88911dce5e0be4997f4e612c64e7cdabb38406b1c728fb655 \u2014 a stale value from the early seed iteration before the EDGAR data rebuild; it is superseded by the two final calibers above"
+ }
+}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ alert.title }} — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/resources-investors">Resources for Investors</a> &rsaquo;
+<a href="/resources-investors/investor-alerts-bulletins">Investor Alerts and Bulletins</a> &rsaquo; {{ alert.title }}</div>
+{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <h1>{{ alert.title }}</h1>
+  <p class="meta">{{ 'Investor Alert' if alert.kind == 'alert' else 'Investor Bulletin' }}
+  &middot; {{ alert.date }}</p>
+</div>
+<div class="prose">
+  {% for para in (alert.body or '').split('\n\n') %}
+  <p>{{ para }}</p>
+  {% endfor %}
+</div>
+<p class="meta">This item is an authored fixture in the offline research mirror
+(origin: {{ alert.origin }}); the live SEC investor alerts are published on investor.gov.</p>
+{% endblock %}

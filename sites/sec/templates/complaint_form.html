@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Report a Problem with an Investment Account — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/submit-tip-or-complaint">Submit a Tip or Complaint</a> &rsaquo;
+Report a Problem with an Investment Account or Financial Professional</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Investor Complaint Form</h1>
+  <p class="lede">Our Investor Complaint form enables you to provide information about an
+  issue you may be having with your investment account or the firm/individual managing it.</p>
+</div>
+<div class="form-page">
+  {% if errors %}
+  <div class="errors">
+    <strong>Please correct the following:</strong>
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form method="post" action="/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset>
+      <legend>About you</legend>
+      <label for="name">Your full name</label>
+      <input type="text" id="name" name="name" value="{{ form.get('name', '') }}" required>
+      <label for="email">Your email address</label>
+      <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
+      <label for="your_role">Who are you in this complaint?</label>
+      <select id="your_role" name="your_role" required>
+        <option value="">-Select one-</option>
+        {% for r in ['individual investor', 'representative of an investor',
+                     'financial professional', 'other'] %}
+        <option value="{{ r }}" {% if form.get('your_role') == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+    <fieldset>
+      <legend>What is the problem?</legend>
+      <label for="issue_type">Type of problem</label>
+      <select id="issue_type" name="issue_type" required>
+        <option value="">-Select one-</option>
+        {% for t in ['unauthorized trading', 'unsuitable investment recommendation',
+                     'excessive fees or churning', 'failure to follow instructions',
+                     'unresolved trade error', 'account transfer problems',
+                     'misrepresentation or omission', 'product or disclosure problem',
+                     'other'] %}
+        <option value="{{ t }}" {% if form.get('issue_type') == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+    <fieldset>
+      <legend>Who is the complaint about?</legend>
+      <label for="subject_firm">Name of the firm or individual involved</label>
+      <input type="text" id="subject_firm" name="subject_firm" value="{{ form.get('subject_firm', '') }}" required>
+      <label for="subject_person">Individual at the firm (if known)</label>
+      <input type="text" id="subject_person" name="subject_person" value="{{ form.get('subject_person', '') }}">
+      <label for="subject_ticker">Ticker symbol involved (if any)</label>
+      <input type="text" id="subject_ticker" name="subject_ticker" value="{{ form.get('subject_ticker', '') }}">
+      <label for="address">Address of the firm or individual</label>
+      <input type="text" id="address" name="address" value="{{ form.get('address', '') }}">
+      <label for="phone">Phone number of the firm or individual</label>
+      <input type="tel" id="phone" name="phone" value="{{ form.get('phone', '') }}">
+    </fieldset>
+    <fieldset>
+      <legend>What happened?</legend>
+      <label for="details">Describe your complaint</label>
+      <span class="hint">Explain the events in the order they happened, including dates,
+      dollar amounts, and any documents you have.</span>
+      <textarea id="details" name="details">{{ form.get('details', '') }}</textarea>
+    </fieldset>
+    <button class="usa" type="submit">Submit Complaint</button>
+  </form>
+</div>
+{% endblock %}

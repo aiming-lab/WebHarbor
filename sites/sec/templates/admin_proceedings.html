@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Administrative Proceedings — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/enforcement-litigation">Enforcement &amp; Litigation</a> &rsaquo; Administrative Proceedings</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Administrative Proceedings</h1>
+  <p class="lede">A chronological list of orders by the Commission instituting both litigated
+  and settled administrative proceedings.</p>
+</div>
+<form class="filter-bar" method="get" action="/enforcement-litigation/administrative-proceedings">
+  <div>
+    <label for="q">Search respondents / release no. / file no.</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Eagle Bancorp or 3-20963">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} proceeding{{ '' if total == 1 else 's' }}</span>
+</form>
+<table class="data">
+  <thead><tr><th>Date</th><th>Respondents</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.date }}</td>
+      <td>
+        {% if r.slug %}
+        <a href="/enforcement-litigation/administrative-proceedings/{{ r.slug }}">{{ r.respondents }}</a>
+        {% else %}
+        {{ r.respondents }}
+        {% endif %}<br>
+        <span class="meta">Release No. {{ r.release_no }}{% if r.file_number %} &middot; File Number: {{ r.file_number }}{% endif %}</span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/enforcement-litigation/administrative-proceedings?q={{ q }}&page={{ page - 1 }}">&laquo; Previous</a>
+  {% endif %}
+  <span class="current">Page {{ page }}</span>
+  {% if page * per_page < total %}
+  <a href="/enforcement-litigation/administrative-proceedings?q={{ q }}&page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}

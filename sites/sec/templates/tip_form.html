@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Report Possible Securities Law Violations — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/submit-tip-or-complaint">Submit a Tip or Complaint</a> &rsaquo;
+Report Possible Securities Law Violations</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Report Possible Securities Law Violations</h1>
+  <p class="lede">Use this Tips, Complaints &amp; Referrals (TCR) form to confidentially
+  submit information about suspected securities law violations.</p>
+</div>
+<div class="form-page">
+  {% if errors %}
+  <div class="errors">
+    <strong>Please correct the following:</strong>
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form method="post" action="/submit-tip-or-complaint/report-possible-securities-law-violations">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset>
+      <legend>About you</legend>
+      <label for="name">Your full name</label>
+      <input type="text" id="name" name="name" value="{{ form.get('name', '') }}" required>
+      <label for="email">Your email address</label>
+      <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
+    </fieldset>
+    <fieldset>
+      <legend>About the suspected violation</legend>
+      <label for="violation_type">Type of possible violation</label>
+      <select id="violation_type" name="violation_type" required>
+        <option value="">-Select one-</option>
+        {% for v in ['fraud', 'Ponzi scheme', 'insider trading', 'market manipulation',
+                     'misappropriation', 'unregistered offering', 'false or misleading disclosures',
+                     'broker misconduct', 'investment adviser misconduct', 'other'] %}
+        <option value="{{ v }}" {% if form.get('violation_type') == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+      <label for="subject_firm">Firm involved (if any)</label>
+      <input type="text" id="subject_firm" name="subject_firm" value="{{ form.get('subject_firm', '') }}">
+      <label for="subject_person">Individual involved (if any)</label>
+      <input type="text" id="subject_person" name="subject_person" value="{{ form.get('subject_person', '') }}">
+      <label for="subject_ticker">Ticker symbol (if any)</label>
+      <input type="text" id="subject_ticker" name="subject_ticker" value="{{ form.get('subject_ticker', '') }}">
+      <label for="market">Market (if any)</label>
+      <select id="market" name="market">
+        <option value="">-Select one-</option>
+        {% for m in ['equities', 'options', 'fixed income', 'crypto assets', 'municipal securities',
+                     'securities-based swaps', 'other'] %}
+        <option value="{{ m }}" {% if form.get('market') == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+      <label for="details">Describe what happened</label>
+      <span class="hint">Include dates, amounts, and how you learned of the conduct
+      (at least 30 characters).</span>
+      <textarea id="details" name="details" required>{{ form.get('details', '') }}</textarea>
+    </fieldset>
+    <button class="usa" type="submit">Submit Tip</button>
+  </form>
+</div>
+{% endblock %}

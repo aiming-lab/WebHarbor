@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Investor Alerts and Bulletins — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/resources-investors">Resources for Investors</a> &rsaquo;
+Investor Alerts and Bulletins</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Investor Alerts and Bulletins</h1>
+  <p class="lede">The SEC issues investor alerts or bulletins as a service to investors,
+  typically warning them about the latest investment frauds and scams or educating them
+  about investment-related products or topics.</p>
+</div>
+<form class="filter-bar" method="get" action="/resources-investors/investor-alerts-bulletins">
+  <div>
+    <label for="kind">Type</label>
+    <select id="kind" name="kind">
+      <option value="">All</option>
+      <option value="alert" {% if kind == 'alert' %}selected{% endif %}>Alerts</option>
+      <option value="bulletin" {% if kind == 'bulletin' %}selected{% endif %}>Bulletins</option>
+    </select>
+  </div>
+  <div>
+    <label for="q">Search title</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Ponzi or fees">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} item{{ '' if total == 1 else 's' }}</span>
+</form>
+<ul class="collection">
+  {% for a in rows %}
+  <li>
+    <p class="taxonomy">{{ 'Investor Alert' if a.kind == 'alert' else 'Investor Bulletin' }}</p>
+    <a href="/resources-investors/investor-alerts-bulletins/{{ a.slug }}">{{ a.title }}</a>
+    <p class="meta">{{ a.date }}</p>
+    <p>{{ a.summary }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

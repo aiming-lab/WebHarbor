@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Trading Suspensions — SEC.gov{% endblock %}
+{% block breadcrumb %}
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/enforcement-litigation">Enforcement &amp; Litigation</a> &rsaquo; Trading Suspensions</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Trading Suspensions</h1>
+  <p class="lede">The SEC has the authority to suspend trading in a security for up to ten
+  business days when questions arise about a company's operations or disclosures.</p>
+</div>
+<form class="filter-bar" method="get" action="/enforcement-litigation/trading-suspensions">
+  <div>
+    <label for="q">Search company / release no.</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Happy City">
+  </div>
+  <button class="usa" type="submit">Search</button>
+  <span class="count">{{ total }} suspension{{ '' if total == 1 else 's' }}</span>
+</form>
+<table class="data">
+  <thead><tr><th>Date</th><th>Company</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.date }}</td>
+      <td>
+        {{ r.company }}<br>
+        {% set resources = r.resources | from_json %}
+        <span class="meta">Release No. {{ r.release_no }}</span>
+        {% for link in resources %}
+          {% if link.href.startswith('/') and link.href in archived_files %}
+          &middot; <a href="{{ link.href }}"><span class="pdf-badge">PDF</span>{{ link.label }}</a>
+          {% else %}
+          &middot; <a href="https://www.sec.gov{{ link.href }}"><span class="pdf-badge">PDF</span>{{ link.label }}</a>
+          {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/enforcement-litigation/trading-suspensions?q={{ q }}&page={{ page - 1 }}">&laquo; Previous</a>
+  {% endif %}
+  <span class="current">Page {{ page }}</span>
+  {% if page * per_page < total %}
+  <a href="/enforcement-litigation/trading-suspensions?q={{ q }}&page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}
