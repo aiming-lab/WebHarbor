@@ -34,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 153 sites today, scaling to 100+ together
+- **Community-driven** — 94 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -118,7 +118,7 @@ All registered websites and their default ports, in registration order from left
 | Red Bull | 40141 | dblp | 40142 | Microsoft Azure | 40143 |
 | FOX Sports | 40144 | Samsung | 40145 | NYSE | 40146 |
 | University of Michigan | 40147 | Stanford University | 40148 | Yahoo Finance | 40149 |
-| Steam | 40150 | Trader Joe's | 40151 |  |  |
+| Steam | 40150 | Trader Joe's | 40151 | SEC.gov | 40152 |
 
 ## 🤝 Contribute
 

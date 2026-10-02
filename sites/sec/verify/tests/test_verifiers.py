@@ -228,6 +228,33 @@ def test_corrupted_claim_fails(i, label, pattern):
         verify_lib.check_answer(corrupted, SPECS[i])
 
 
+def test_reversed_comparison_direction_fails():
+    """PR #350 r3: the comparison claim must bind entity AND direction —
+    'The 10-Q covers the longer period.' is the wrong direction and must
+    fail, not merely miss a 'longer' token."""
+    honest = verify_lib.norm(HONEST[0])
+    assert re.search(SPECS[0]['claims'][6][1], honest, re.I)
+    reversed_answer = honest.replace(
+        'the 10-k covers the longer period',
+        'the 10-q covers the longer period')
+    assert reversed_answer != honest
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_answer(reversed_answer, SPECS[0])
+
+
+def test_comparison_claim_rejects_10q_longer_attributions():
+    text = verify_lib.norm(
+        "Apple's most recent Form 10-K was filed 2025-10-31 with period of "
+        "report 2025-09-27 and accession number 0000320193-25-000079. The "
+        "most recent Form 10-Q was filed 2026-07-31 with period of report "
+        "2026-06-27 and accession number 0000320193-26-000020. The 10-Q "
+        "covers the longer period. Alice's watchlist now shows 3 companies.")
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_answer(text, SPECS[0])
+    forbidden = [p for _, p in SPECS[0]['forbidden']]
+    assert any(re.search(p, text, re.I) for p in forbidden)
+
+
 # forbidden-value injections: honest answer + one fabricated sentence
 INJECTIONS = {
     0: [" Alice's watchlist shows 2 companies on the watchlist."],
@@ -546,6 +573,63 @@ def test_rowid_reuse_delete_plus_insert_is_added_not_changed():
         '8': {'id': 8, 'user_id': 4, 'cik': '0001045810',
               'added_at': '2026-09-30'}}}
     verify_lib.check_state(initial, after, SPECS[15])
+
+
+# ------------------------------------------- state-change multiplicity (PR #350 r3)
+
+def test_duplicate_added_rows_are_not_one_addition():
+    """Two identical new watchlist rows must never satisfy 'exactly one'
+    required addition (minimal control for the check_state fix)."""
+    pre = {'id': 1, 'user_id': 1, 'cik': '0000320193',
+           'added_at': '2026-09-30'}
+    tesla = lambda i: {'id': i, 'user_id': 1, 'cik': '0001318605',
+                       'added_at': '2026-09-30'}
+    initial = {'watchlist_items': {'k0': dict(pre)}}
+    after = {'watchlist_items': {'k0': dict(pre), 'a0': tesla(2),
+                                 'a1': tesla(3)}}
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_state(initial, after, SPECS[0])
+
+
+def test_duplicate_removed_rows_are_not_one_removal():
+    """Removing the same content row twice must not satisfy a single
+    expected removal (task 15's Meta Platforms removal)."""
+    meta = lambda i: {'id': i, 'user_id': 4, 'cik': '0001326801',
+                      'added_at': '2026-09-30'}
+    initial = {'watchlist_items': {'m0': meta(6), 'm1': meta(9)}}
+    after = {'watchlist_items': {}}
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_state(initial, after, SPECS[15])
+
+
+def test_identical_rows_never_consume_two_expectations():
+    """Expected [Tesla, NVIDIA] with actual [Tesla, Tesla] must fail:
+    one-to-one consumption, not any-match."""
+    pre = {'id': 7, 'user_id': 4, 'cik': '0001326801',
+           'added_at': '2026-09-30'}
+    tesla = lambda i: {'id': i, 'user_id': 4, 'cik': '0001318605',
+                       'added_at': '2026-09-30'}
+    initial = {'watchlist_items': {'k0': dict(pre)}}
+    after = {'watchlist_items': {'k0': dict(pre), 'a0': tesla(10),
+                                 'a1': tesla(11)}}
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_state(initial, after, SPECS[15])
+
+
+def test_repeated_expectations_consume_repeated_rows():
+    """Positive control: an honest double addition of identical content
+    is accepted when the spec lists the expectation twice."""
+    pre = {'id': 1, 'user_id': 1, 'cik': '0000320193',
+           'added_at': '2026-09-30'}
+    tesla = lambda i: {'id': i, 'user_id': 1, 'cik': '0001318605',
+                       'added_at': '2026-09-30'}
+    spec = {'state': {'watchlist_items': {
+        'added': [dict(user_id=1, cik='0001318605',
+                       added_at='2026-09-30')] * 2}}}
+    initial = {'watchlist_items': {'k0': dict(pre)}}
+    after = {'watchlist_items': {'k0': dict(pre), 'a0': tesla(2),
+                                 'a1': tesla(3)}}
+    verify_lib.check_state(initial, after, spec)
 
 
 # ---------------------------------------------------------------- end-to-end no-ops

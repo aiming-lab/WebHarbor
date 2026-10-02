@@ -268,10 +268,44 @@ def row_matches(row, expect):
     return True
 
 
+def _consume_one_to_one(rows, expects, table, kind):
+    """Consume expected row matchers one-to-one against changed rows.
+
+    Multiplicity is load-bearing on both sides: ``rows`` carries one entry
+    per changed row (a content key repeated twice yields two entries) and
+    every entry must claim a distinct expected matcher (Kuhn's augmenting
+    path). A duplicated row can therefore never satisfy two expectations,
+    and two identical new rows are never accepted as a single required
+    addition (or removal)."""
+    if len(rows) != len(expects):
+        raise Fail(f'{kind}-row count mismatch in {table}: '
+                    f'{len(rows)} != {len(expects)}')
+    matched_to = [-1] * len(expects)   # expected index -> row index
+
+    def augment(r, seen):
+        for e, exp in enumerate(expects):
+            if seen[e] or not row_matches(rows[r], exp):
+                continue
+            seen[e] = True
+            if matched_to[e] == -1 or augment(matched_to[e], seen):
+                matched_to[e] = r
+                return True
+        return False
+
+    for r in range(len(rows)):
+        if not augment(r, [False] * len(expects)):
+            raise Fail(f'unexpected {kind} row in {table}: '
+                        + json.dumps(rows[r], default=str)[:300])
+
+
 def check_state(initial, after, spec):
     # Diff by content multiset, ignoring the volatile rowid column 'id':
     # the site reuses SQLite rowids after deletes, so PK-keyed diffs would
     # misclassify a delete+insert as a row mutation (seen in watchlist_items).
+    # Added/removed rows are expanded by the per-key integer count difference
+    # (a key added twice yields two entries) and then consumed one-to-one
+    # against the expected matchers, so state multiplicity is preserved:
+    # duplicating a changed row can never pass as the exact required delta.
     def counts(rows):
         c = {}
         for row in rows.values():
@@ -287,11 +321,9 @@ def check_state(initial, after, spec):
         a_rows = counts(after.get(table, {}))
         added, removed = [], []
         for k, (n, row) in a_rows.items():
-            if i_rows.get(k, (0,))[0] < n:
-                added.append(row)
+            added.extend([row] * max(n - i_rows.get(k, (0,))[0], 0))
         for k, (n, row) in i_rows.items():
-            if a_rows.get(k, (0,))[0] < n:
-                removed.append(row)
+            removed.extend([row] * max(n - a_rows.get(k, (0,))[0], 0))
         if added or removed:
             diffs[table] = {'added': added, 'removed': removed,
                             'changed': []}
@@ -300,24 +332,12 @@ def check_state(initial, after, spec):
         if table not in allowed:
             raise Fail('unexpected DB change in table ' + table + ': '
                       + json.dumps(delta, default=str)[:400])
-        for row in delta['added']:
-            if not any(row_matches(row, exp)
-                       for exp in allowed[table].get('added', [])):
-                raise Fail('unexpected added row in ' + table + ': '
-                           + json.dumps(row, default=str)[:300])
-        if len(delta['added']) != len(allowed[table].get('added', [])):
-            raise Fail(f'added-row count mismatch in {table}: '
-                       f"{len(delta['added'])} != "
-                       f"{len(allowed[table].get('added', []))}")
-        for row in delta['removed']:
-            if not any(row_matches(row, exp)
-                       for exp in allowed[table].get('removed', [])):
-                raise Fail('unexpected removed row in ' + table + ': '
-                           + json.dumps(row, default=str)[:300])
-        if len(delta['removed']) != len(allowed[table].get('removed', [])):
-            raise Fail(f'removed-row count mismatch in {table}: '
-                       f"{len(delta['removed'])} != "
-                       f"{len(allowed[table].get('removed', []))}")
+        _consume_one_to_one(delta['added'],
+                            allowed[table].get('added', []),
+                            table, 'added')
+        _consume_one_to_one(delta['removed'],
+                            allowed[table].get('removed', []),
+                            table, 'removed')
         if delta['changed']:
             raise Fail('unexpected row mutation in ' + table + ': '
                        + json.dumps(delta['changed'], default=str)[:300])

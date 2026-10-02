@@ -51,8 +51,8 @@ SPEC = {
    "0000320193-26-000020"
   ],
   [
-   "longer period",
-   "longer"
+   "10-K covers the longer period",
+   "10-?k(?:(?!10-?q)[^;]){0,24}longer|longer(?:(?!10-?q)[^;]){0,24}10-?k"
   ],
   [
    "watchlist count",
@@ -63,6 +63,10 @@ SPEC = {
   [
    "wrong watchlist count",
    "\\b2\\s+companies on (her|the) watchlist|\\b4\\s+compan"
+  ],
+  [
+   "reversed comparison direction",
+   "10-?q[^;]{0,12}longer|longer[^;]{0,15}10-?q"
   ]
  ],
  "state": {
