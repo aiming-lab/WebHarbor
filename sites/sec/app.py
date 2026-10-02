@@ -63,8 +63,11 @@ SOURCE = os.path.join(BASE_DIR, 'source_data')
 
 
 def _load(name):
-    with open(os.path.join(SOURCE, name), encoding='utf-8') as f:
-        return json.load(f)
+    """Runtime page content is frozen in the seed, never read from source JSON."""
+    content = db.session.get(PageContent, name)
+    if content is None:
+        raise RuntimeError(f'Missing seeded page content: {name}')
+    return content.payload
 
 
 # ------------------------------------------------------------- helpers --
@@ -164,6 +167,12 @@ def _template_globals():
 
 
 # ---------------------------------------------------------------- models --
+
+class PageContent(db.Model):
+    __tablename__ = 'page_content'
+    name = db.Column(db.String(100), primary_key=True)
+    payload = db.Column(db.JSON, nullable=False)
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

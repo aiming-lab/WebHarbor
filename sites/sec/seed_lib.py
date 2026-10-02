@@ -297,7 +297,13 @@ def seed_all(db):
     from app import (AdminProceeding, Company, Complaint, EmailSubscription,
                      FastAnswer, Filing, FtsDoc, FormIndex, InvestorAlert,
                      LitRelease, PressRelease, Question, Rulemaking, Speech,
-                     Tip, TradingSuspension, WhatsNew)
+                     Tip, TradingSuspension, WhatsNew, PageContent)
+
+    for name in ('home.json', 'site_pages.json', 'forms_index.json',
+                 'litigation_releases.json', 'litigation_details.json',
+                 'admin_proceedings.json', 'admin_details.json',
+                 'trading_suspensions.json'):
+        db.session.add(PageContent(name=name, payload=_load(name)))
 
     # ------------------------------------------------------------- companies
     for row in sorted(_load('edgar_companies.json'), key=lambda r: r['cik']):

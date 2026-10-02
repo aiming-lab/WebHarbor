@@ -47,50 +47,308 @@ import verify_lib  # noqa: E402
 # frozen ground truth from the reviewer's walks (round1 == round2 modulo
 # server-generated reference numbers)
 
-HONEST = {
-    0: "Apple's most recent Form 10-K was filed 2025-10-31 with period of report 2025-09-27 and accession number 0000320193-25-000079. The most recent Form 10-Q was filed 2026-07-31 with period of report 2026-06-27 and accession number 0000320193-26-000020. The 10-K covers the longer period. Alice's watchlist now shows 3 companies.",
-    1: "The artificial intelligence query limited to Form 10-K matches 10000 documents; the top result is Artificial Intelligence Technology Solutions Inc. (AITX) (CIK 0001498148) 10-K 2021-06-01 0001161697-21-000289 ex_99-1.htm. The same query limited to Form 8-K matches 10000 documents. Narrowed to filings from 2020-01-01 onward, the results table lists 7 documents. Apple's EDGAR company page lists 3 10-K filings; the newest one was filed 10-K Documents 10-K Acc-no: 0000320193-25-000079 2025-10-31 001-36743 251437791 and Apple's CIK is 0000320193. That 10-K's period of report is 2025-09-27.",
-    2: "Microsoft's CIK is 0000789019, its SIC code and description are 7372 \u2014 Services-Prepackaged Software, its state of incorporation is WA and its filer category is Large accelerated filer. Its most recent DEF 14A was filed 2025-10-21 with accession number 0001193125-25-245150. Microsoft has 6 8-K filings in this snapshot. Bob's watchlist now shows 3 companies.",
-    3: "Tesla's most recent Form 8-K was filed 2026-09-29 with items 1.01,1.02,2.03,9.01 and accession number 0001628280-26-063820, and its period of report is 2026-09-29. The next 8-K on the list is 8-K Documents 8-K Acc-no: 0001628280-26-049213 \u00b7 Items 2.02,9.01 2026-07-22 001-34756 261194091; its period of report is 2026-07-22. The two share items 9.01. The most recent 8-K's primary document page shows the filename tsla-20260929.htm. Tesla lists 5 Form 4 filings; the newest Form 4's period of report is 2026-09-05. Tesla lists 4 10-Q filings.",
-    4: "The Asudani litigation release is LR-26662, dated Sept. 30, 2026; the SEC filed in the S.D.N.Y. and the complaint says he traded ahead of the Supernus Pharmaceuticals, Inc.'s acquisition of Adamas Pharmaceuticals, Inc acquisition; the linked case document is labeled SEC Complaint and it opens. The Brown/Grant/Noble release is LR-26660 and Michael Noble's total payment is $1,074,984.36. The Trevon Brown administrative proceeding is release 34-106553 with file number 3-22766.",
-    5: "The settled order against Quillan Black and the other unregistered brokers is dated Sept. 30, 2026. The page lists 7 file numbers, and the civil penalties are $125,000 for Quillan Black and $85,000 for Tyler MacKechnie. 7 order PDFs are linked under Resources, the first labeled PDFOrder - Quillan Black. The TCR reference number is TCR-C7A3D494.",
-    6: "Happy City Holdings was suspended June 11, 2026 with release number 34-105675. The cold callers alert lists red flags including refuses to send written information, demands an immediate decision, promises guaranteed returns, or says the offer is 'confidential'. After pumping the price, fraudsters dump their shares at the inflated price, leaving investors with worthless or devalued stock. The complaint reference number is IC-881C3511.",
-    7: "The press release charging Meyer Global Management and its CEO is 2026-98, dated Sept. 30, 2026; the funds' investments included SpaceX and the forfeited SpaceX investment was $3,000,000. The veterans release is 2026-97, dated Sept. 30, 2026; it says the two individuals orchestrated a fraud scheme that raised more than $8.7 million from 35 investors. Searching press releases for Meyer shows 1 result. The litigation release for Owen E.H. Meyer is LR-26659 with respondents Owen E.H. Meyer and Meyer Global Management LLC.",
-    8: "Form 10-K: SEC1673 PDFAnnual report pursuant to Section 13 or 15(d) (PDF) Form 10-K Filed by: Public Companies Statute: Securities Exchange Act of 1934 Feb. 2025. Form 8-K: SEC873 PDFCurrent report pursuant to Section 13 or 15(d) (PDF) Form 8-K Filed by: Public Companies Statute: Securities Exchange Act of 1934 Feb. 2025. Form 1-A rows: ['SEC486 PDFRegulation A Offering Statement (PDF) Form 1-A Filed by: Small Businesses Statute: Securities Act of 1933 Feb. 2025']. Filtering to forms filed by Public Companies leaves 18 forms; the Securities Act of 1933 filter leaves 30 forms. The Form 10-K PDF (form10-k.pdf) is served by the mirror: True.",
-    9: "The Form 10-K FAST Answer says companies must file a 10-K within 60 to 90 days of the end of their fiscal year; its origin tag is fixture. The best execution answer says brokers must seek the best execution reasonably available for their customers' orders; origin captured. The Section 31 answer says the fee is based on the volume of securities that are sold on their markets; origin captured. The Ponzi answer says organizers often promise high returns with little or no risk; origin fixture. The Proxy Statement answer shows a modified date of 09/08/2011; origin captured.",
-    10: "The Ponzi schemes investor alert is dated Aug. 12, 2026; its three warning signs are high returns with little or no risk, overly consistent returns, and unregistered investments with unlicensed sellers. The fees and expenses bulletin says 1% annual fee difference can consume roughly a quarter of your final balance. It names fee types including sales loads, management expense ratios. The cold-callers alert lists red flags including refuses to send written information and demands an immediate decision. The municipal bond alert is dated Apr. 14, 2026 and describes risks including credit risk. Searching the catalog for risks shows 2 items. Filtering to bulletins shows 3 items; switching to alerts shows 6 items.",
-    11: "The Interval Fund Modernization proposed rule is dated Sept. 30, 2026, file number S7-2026-34, with release numbers 33-11444, 34-106534, IC-36351. Looking it up by its file number returns 1 result. Filtering to Proposed Rules shows 18 items; switching to Final Rules shows 28 items, and the Commission quorum requirement rule is dated Sept. 30, 2026 with release number 34-106537. The proposed rule about electronic delivery of information is file number S7-2026-25 dated July 16, 2026. Clearing the filters shows 49 rulemaking items.",
-    12: "From the newsroom, the latest press release is \"SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities\" with release number 2026-98; opened, it is dated Sept. 30, 2026 and the charged funds invested in SpaceX. Searching the speeches page for Trump returns 1 result: the staff statement on Trump Accounts by the Divisions of Investment Management and Corporation Finance, dated Sept. 30, 2026. On the What's New page, the first two litigation releases are Mukesh Asudani (Sept. 30, 2026) and Robert Bernardi and Sunil Chandra (Sept. 30, 2026). Searching press releases for Zoe Financial: the SEC charged the firm with failing to fully and fairly disclose material facts concerning conflicts of interest, release number 2026-94 dated Sept. 28, 2026. Footer signup confirmation: news.fan@example.com is now subscribed to SEC email updates.",
-    13: "The complaint reference number is IC-98C0B412, and My Account shows the new complaint against Granite Harbor Capital LLC.",
-    14: "The investor question reference number is Q-A58D6A8D. One red flag from the cold callers alert: it refuses to send written information, demands an immediate decision, promises guaranteed returns, or says the offer is 'confidential'. updates.carol@example.com is now subscribed to SEC email updates with the investor alerts topic.",
-    15: "Dana's watchlist now shows 3 companies: 0001652044 Alphabet Inc. GOOGL 2026-09-30  Remove; 0001318605 Tesla, Inc. TSLA 2026-09-30  Remove; 0001045810 NVIDIA CORP NVDA 2026-09-30  Remove.",
-    16: "Alphabet's CIK is 0001652044 and its SIC description is 7370 \u2014 Services-Computer Programming, Data Processing, Etc.. After signing out and back in, the watchlist still lists: 0001652044 Alphabet Inc. GOOGL 2026-09-30  Remove.",
-    17: "Goldman Sachs: CIK 0000886982, state of incorporation DE, SIC 6211 \u2014 Security Brokers, Dealers & Flotation Companies, filer category Large accelerated filer; 1 10-K filings, the newest filed 10-K Documents 10-K Acc-no: 0000886982-26-000091 2026-02-25 001-14965 26680257 with period of report 2025-12-31; 3 10-Q filings, the newest filed 10-Q Documents 10-Q Acc-no: 0000886982-26-000297 2026-08-03 001-14965 261234571. Microsoft: CIK 0000789019, state of incorporation WA, SIC 7372 \u2014 Services-Prepackaged Software, filer category Large accelerated filer; 3 10-K filings, the newest filed 10-K Documents 10-K Acc-no: 0001193125-26-323660 2026-07-29 001-37845 261217433 with period of report 2026-06-30; 4 10-Q filings, the newest filed 10-Q Documents 10-Q Acc-no: 0001193125-26-191507 2026-04-29 001-37845 26915896. Microsoft has more 10-K filings in this snapshot.",
-    18: "Two red flags from the crypto assets alert: guaranteed returns, celebrity endorsements, or exclusive access, and crypto assets, gift cards or wire transfers. Ponzi organizers often promise high returns with little or no risk. The digital assets query limited to Form 8-K matches 5501 documents; the top company is Volcon, Inc. (VLCN) (CIK 0001829794) 8-K 2025-07-17 0001683168-25-005160 volcon_ex9903.htm. The TCR reference number is TCR-E44AFABE.",
-    19: "Filtered to year 2026, the litigation releases page shows 100 releases. The Robert Bernardi and Sunil Chandra release is LR-26661, dated Sept. 30, 2026; it charges the former CEO and Vice President of GigaMedia Access Corporation. The OTC Link LLC administrative proceeding detail page is titled SEC Censures OTC Link LLC for Repeated Compliance Failures Related to Regulation SCI. In What's New, the first item listed is LR-26662 and the division shown for it is Enforcement.",
-}
-WALK_URLS = {
-    0: ["about:blank", "http://localhost:46131/", "http://localhost:46131/search-filings/cik-lookup?company=Apple", "http://localhost:46131/edgar/company/0000320193", "http://localhost:46131/edgar/company/0000320193?type=10-K&dateb=", "http://localhost:46131/edgar/filing/0000320193/0000320193-25-000079", "http://localhost:46131/edgar/company/0000320193?type=10-Q&dateb=", "http://localhost:46131/edgar/filing/0000320193/0000320193-26-000020", "http://localhost:46131/login", "http://localhost:46131/account", "http://localhost:46131/search-filings/cik-lookup?company=Tesla", "http://localhost:46131/edgar/company/0001318605"],
-    1: ["about:blank", "http://localhost:46131/", "http://localhost:46131/search-filings", "http://localhost:46131/edgar/full-text-search", "http://localhost:46131/edgar/full-text-search?q=artificial+intelligence&forms=10-K&datea=&dateb=", "http://localhost:46131/edgar/full-text-search?q=artificial+intelligence&forms=8-K&datea=&dateb=", "http://localhost:46131/edgar/full-text-search?q=artificial+intelligence&forms=10-K&datea=2020-01-01&dateb=", "http://localhost:46131/search-filings/cik-lookup?company=Apple", "http://localhost:46131/edgar/company/0000320193", "http://localhost:46131/edgar/company/0000320193?type=10-K&dateb=", "http://localhost:46131/edgar/filing/0000320193/0000320193-25-000079"],
-    2: ["about:blank", "http://localhost:46131/", "http://localhost:46131/search-filings/cik-lookup?company=Microsoft", "http://localhost:46131/edgar/company/0000789019", "http://localhost:46131/edgar/company/0000789019?type=DEF+14A&dateb=", "http://localhost:46131/edgar/filing/0000789019/0001193125-25-245150", "http://localhost:46131/edgar/company/0000789019?type=8-K&dateb=", "http://localhost:46131/login", "http://localhost:46131/account"],
-    3: ["about:blank", "http://localhost:46131/", "http://localhost:46131/search-filings/cik-lookup?company=Tesla", "http://localhost:46131/edgar/company/0001318605", "http://localhost:46131/edgar/company/0001318605?type=8-K&dateb=", "http://localhost:46131/edgar/filing/0001318605/0001628280-26-063820", "http://localhost:46131/edgar/filing/0001318605/0001628280-26-063820/document", "http://localhost:46131/edgar/filing/0001318605/0001628280-26-049213", "http://localhost:46131/edgar/company/0001318605?type=4&dateb=", "http://localhost:46131/edgar/filing/0001318605/0001104659-26-106432", "http://localhost:46131/edgar/company/0001318605?type=10-Q&dateb="],
-    4: ["about:blank", "http://localhost:46131/", "http://localhost:46131/enforcement-litigation", "http://localhost:46131/enforcement-litigation/litigation-releases", "http://localhost:46131/enforcement-litigation/litigation-releases?q=Asudani&year=", "http://localhost:46131/enforcement-litigation/litigation-releases/lr-26662", "http://localhost:46131/enforcement-litigation/litigation-releases?q=Noble&year=", "http://localhost:46131/enforcement-litigation/litigation-releases/lr-26660", "http://localhost:46131/enforcement-litigation/administrative-proceedings", "http://localhost:46131/enforcement-litigation/administrative-proceedings?q=Brown"],
-    5: ["about:blank", "http://localhost:46131/", "http://localhost:46131/enforcement-litigation", "http://localhost:46131/enforcement-litigation/administrative-proceedings", "http://localhost:46131/enforcement-litigation/administrative-proceedings?q=Black", "http://localhost:46131/enforcement-litigation/administrative-proceedings/34-106538-s", "http://localhost:46131/login", "http://localhost:46131/account", "http://localhost:46131/submit-tip-or-complaint", "http://localhost:46131/submit-tip-or-complaint/tcr-disclaimer", "http://localhost:46131/submit-tip-or-complaint/report-possible-securities-law-violations", "http://localhost:46131/submit-tip-or-complaint/confirmation/TCR-C7A3D494"],
-    6: ["about:blank", "http://localhost:46131/", "http://localhost:46131/enforcement-litigation", "http://localhost:46131/enforcement-litigation/trading-suspensions", "http://localhost:46131/enforcement-litigation/trading-suspensions?q=Happy+City", "http://localhost:46131/resources-investors", "http://localhost:46131/resources-investors/investor-alerts-bulletins", "http://localhost:46131/resources-investors/investor-alerts-bulletins/cold-call", "http://localhost:46131/fast-answers", "http://localhost:46131/fast-answers?q=pump", "http://localhost:46131/fast-answers/pump", "http://localhost:46131/submit-tip-or-complaint", "http://localhost:46131/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional", "http://localhost:46131/submit-tip-or-complaint/complaint-confirmation/IC-881C3511"],
-    7: ["about:blank", "http://localhost:46131/", "http://localhost:46131/newsroom", "http://localhost:46131/newsroom/press-releases/2026-98-sec-charges-meyer-global-management-its-ceo-defrauding-retail-investors-private-funds-held-interests", "http://localhost:46131/newsroom/press-releases", "http://localhost:46131/newsroom/press-releases?q=veterans", "http://localhost:46131/newsroom/press-releases/2026-97-sec-charges-two-individuals-orchestrating-fraud-scheme-targeted-veterans", "http://localhost:46131/newsroom/press-releases?q=Meyer", "http://localhost:46131/enforcement-litigation", "http://localhost:46131/enforcement-litigation/litigation-releases", "http://localhost:46131/enforcement-litigation/litigation-releases?q=Meyer&year="],
-    8: ["about:blank", "http://localhost:46131/", "http://localhost:46131/submit-filings/forms-index", "http://localhost:46131/submit-filings/forms-index?q=10-K&filed_by=&statute=", "http://localhost:46131/submit-filings/forms-index?q=8-K&filed_by=&statute=", "http://localhost:46131/submit-filings/forms-index?q=1-A&filed_by=&statute=", "http://localhost:46131/submit-filings/forms-index?q=&filed_by=Public+Companies&statute=", "http://localhost:46131/submit-filings/forms-index?q=&filed_by=&statute=Securities+Act+of+1933"],
-    9: ["about:blank", "http://localhost:46131/", "http://localhost:46131/fast-answers", "http://localhost:46131/fast-answers?q=10-K", "http://localhost:46131/fast-answers/form10k", "http://localhost:46131/fast-answers?q=best+execution", "http://localhost:46131/fast-answers/bestex", "http://localhost:46131/fast-answers?q=Section+31", "http://localhost:46131/fast-answers/sec31", "http://localhost:46131/fast-answers?q=Ponzi", "http://localhost:46131/fast-answers/ponzi", "http://localhost:46131/fast-answers?q=proxy", "http://localhost:46131/fast-answers/proxy"],
-    10: ["about:blank", "http://localhost:46131/", "http://localhost:46131/resources-investors", "http://localhost:46131/resources-investors/investor-alerts-bulletins", "http://localhost:46131/resources-investors/investor-alerts-bulletins/ponzi-schemes", "http://localhost:46131/resources-investors/investor-alerts-bulletins/fees", "http://localhost:46131/resources-investors/investor-alerts-bulletins/cold-call", "http://localhost:46131/resources-investors/investor-alerts-bulletins/municipal", "http://localhost:46131/resources-investors/investor-alerts-bulletins?kind=&q=risks", "http://localhost:46131/resources-investors/investor-alerts-bulletins?kind=bulletin&q=", "http://localhost:46131/resources-investors/investor-alerts-bulletins?kind=alert&q="],
-    11: ["about:blank", "http://localhost:46131/", "http://localhost:46131/rules-regulations/rulemaking-activity", "http://localhost:46131/rules-regulations/rulemaking-activity?q=Interval+Fund+Modernization&status=", "http://localhost:46131/rules-regulations/rulemaking-activity?q=S7-2026-34&status=", "http://localhost:46131/rules-regulations/rulemaking-activity?q=&status=Proposed+Rule", "http://localhost:46131/rules-regulations/rulemaking-activity?q=&status=Final+Rule", "http://localhost:46131/rules-regulations/rulemaking-activity?q=quorum&status=Final+Rule", "http://localhost:46131/rules-regulations/rulemaking-activity?q=electronic+delivery+of+information&status=", "http://localhost:46131/rules-regulations/rulemaking-activity?q=&status="],
-    12: ["about:blank", "http://localhost:46131/", "http://localhost:46131/newsroom", "http://localhost:46131/newsroom/press-releases/2026-98-sec-charges-meyer-global-management-its-ceo-defrauding-retail-investors-private-funds-held-interests", "http://localhost:46131/newsroom/speeches-statements", "http://localhost:46131/newsroom/speeches-statements?q=Trump", "http://localhost:46131/newsroom/whats-new", "http://localhost:46131/newsroom/press-releases", "http://localhost:46131/newsroom/press-releases?q=Zoe+Financial", "http://localhost:46131/newsroom/press-releases/2026-94-sec-charges-registered-investment-adviser-zoe-financial-failure-disclose-conflict-interest", "http://localhost:46131/subscribe"],
-    13: ["about:blank", "http://localhost:46131/", "http://localhost:46131/login", "http://localhost:46131/account", "http://localhost:46131/submit-tip-or-complaint", "http://localhost:46131/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional", "http://localhost:46131/submit-tip-or-complaint/complaint-confirmation/IC-98C0B412"],
-    14: ["about:blank", "http://localhost:46131/", "http://localhost:46131/login", "http://localhost:46131/account", "http://localhost:46131/submit-tip-or-complaint", "http://localhost:46131/submit-tip-or-complaint/report-problem-sec-or-self-regulatory-organization", "http://localhost:46131/submit-tip-or-complaint/question-confirmation/Q-A58D6A8D", "http://localhost:46131/resources-investors", "http://localhost:46131/resources-investors/investor-alerts-bulletins", "http://localhost:46131/resources-investors/investor-alerts-bulletins/cold-call", "http://localhost:46131/subscribe"],
-    15: ["about:blank", "http://localhost:46131/", "http://localhost:46131/login", "http://localhost:46131/account", "http://localhost:46131/search-filings/cik-lookup?company=Tesla", "http://localhost:46131/edgar/company/0001318605", "http://localhost:46131/search-filings/cik-lookup?company=NVIDIA", "http://localhost:46131/edgar/company/0001045810"],
-    16: ["about:blank", "http://localhost:46131/", "http://localhost:46131/signup", "http://localhost:46131/account", "http://localhost:46131/search-filings/cik-lookup?company=Alphabet", "http://localhost:46131/edgar/company/0001652044", "http://localhost:46131/login"],
-    17: ["about:blank", "http://localhost:46131/", "http://localhost:46131/search-filings/cik-lookup?company=Goldman+Sachs", "http://localhost:46131/edgar/company/0000886982", "http://localhost:46131/edgar/company/0000886982?type=10-K&dateb=", "http://localhost:46131/edgar/filing/0000886982/0000886982-26-000091", "http://localhost:46131/edgar/company/0000886982?type=10-Q&dateb=", "http://localhost:46131/search-filings/cik-lookup?company=Microsoft", "http://localhost:46131/edgar/company/0000789019", "http://localhost:46131/edgar/company/0000789019?type=10-K&dateb=", "http://localhost:46131/edgar/filing/0000789019/0001193125-26-323660", "http://localhost:46131/edgar/company/0000789019?type=10-Q&dateb="],
-    18: ["about:blank", "http://localhost:46131/", "http://localhost:46131/resources-investors", "http://localhost:46131/resources-investors/investor-alerts-bulletins", "http://localhost:46131/resources-investors/investor-alerts-bulletins/crypto-asset", "http://localhost:46131/fast-answers", "http://localhost:46131/fast-answers?q=Ponzi", "http://localhost:46131/fast-answers/ponzi", "http://localhost:46131/search-filings", "http://localhost:46131/edgar/full-text-search", "http://localhost:46131/edgar/full-text-search?q=digital+assets&forms=8-K&datea=&dateb=", "http://localhost:46131/submit-tip-or-complaint", "http://localhost:46131/submit-tip-or-complaint/tcr-disclaimer", "http://localhost:46131/submit-tip-or-complaint/report-possible-securities-law-violations", "http://localhost:46131/submit-tip-or-complaint/confirmation/TCR-E44AFABE"],
-    19: ["about:blank", "http://localhost:46131/", "http://localhost:46131/enforcement-litigation", "http://localhost:46131/enforcement-litigation/litigation-releases", "http://localhost:46131/enforcement-litigation/litigation-releases?q=&year=2026", "http://localhost:46131/enforcement-litigation/litigation-releases?q=Bernardi&year=2026", "http://localhost:46131/enforcement-litigation/litigation-releases/lr-26661", "http://localhost:46131/enforcement-litigation/administrative-proceedings", "http://localhost:46131/enforcement-litigation/administrative-proceedings?q=OTC+Link", "http://localhost:46131/enforcement-litigation/administrative-proceedings/34-106458-s", "http://localhost:46131/newsroom", "http://localhost:46131/newsroom/whats-new", "http://localhost:46131/enforcement-litigation/litigation-releases/lr-26662"],
-}
+HONEST = {0: 'Form 10-K: filing date 2025-10-31, period of report 2025-09-27, accession '
+    '0000320193-25-000079. Form 10-Q: filing date 2026-07-31, period of report 2026-06-27, '
+    'accession 0000320193-26-000020. The 10-K covers the longer period.',
+ 1: 'Form 10-K matches 10000 documents; the leading result is Artificial Intelligence Technology '
+    'Solutions Inc. (AITX) (CIK 0001498148) 10-K 2021-06-01 0001161697-21-000289 ex_99-1.htm. Form '
+    '8-K matches 10000 documents. Narrowed from 2020-01-01, the snapshot lists 7 documents.',
+ 2: "Microsoft's CIK is 0000789019, its SIC code and description are 7372 — Services-Prepackaged "
+    'Software, its state of incorporation is WA and its filer category is Large accelerated filer. '
+    'Its most recent DEF 14A was filed 2025-10-21 with accession number 0001193125-25-245150. '
+    "Microsoft has 6 8-K filings in this snapshot. Bob's watchlist now shows 3 companies.",
+ 3: 'Latest Form 8-K: filed 2026-09-29, period 2026-09-29, items 1.01,1.02,2.03,9.01, accession '
+    '0001628280-26-063820. Previous Form 8-K: filed 2026-07-22, period 2026-07-22, items '
+    '2.02,9.01, accession 0001628280-26-049213. Shared items: 9.01. Primary document filename: '
+    'tsla-20260929.htm.',
+ 4: 'The Brown/Grant/Noble litigation release is LR-26660. Michael Noble must pay a total of '
+    '$1,074,984.36. The Trevon Brown administrative proceeding is release 34-106553, file number '
+    '3-22766.',
+ 5: 'The settled order against Quillan Black and the other unregistered brokers is dated Sept. 30, '
+    '2026. The page lists 7 file numbers, and the civil penalties are $125,000 for Quillan Black '
+    'and $85,000 for Tyler MacKechnie. 7 order PDFs are linked under Resources, the first labeled '
+    'PDFOrder - Quillan Black. The TCR reference number is TCR-36E95B0B.',
+ 6: 'Happy City Holdings was suspended June 11, 2026 with release number 34-105675. The cold '
+    'callers alert lists red flags including refuses to send written information, demands an '
+    "immediate decision, promises guaranteed returns, or says the offer is 'confidential'. After "
+    'pumping the price, fraudsters dump their shares at the inflated price, leaving investors with '
+    'worthless or devalued stock. The complaint reference number is IC-CAB0076D.',
+ 7: 'The Meyer press release is 2026-98, dated Sept. 30, 2026. Investments included SpaceX; the '
+    'forfeited SpaceX investment was $3,000,000. Litigation release LR-26659 names Owen E.H. Meyer '
+    'and Meyer Global Management LLC as respondents.',
+ 8: 'SEC486\tPDFRegulation A Offering Statement (PDF) Form 1-A Filed by: Small Businesses Statute: '
+    'Securities Act of 1933\tFeb. 2025. SEC873\tPDFCurrent report pursuant to Section 13 or 15(d) '
+    '(PDF) Form 8-K Filed by: Public Companies Statute: Securities Exchange Act of 1934\tFeb. '
+    '2025. SEC1673\tPDFAnnual report pursuant to Section 13 or 15(d) (PDF) Form 10-K Filed by: '
+    'Public Companies Statute: Securities Exchange Act of 1934\tFeb. 2025. The mirror served all '
+    'three PDFs; downloaded form1a.pdf, form8-k.pdf, form10-k.pdf.',
+ 9: 'Form 10-K: A Form 10-K is the annual report that most reporting companies file with the SEC. '
+    "It gives a comprehensive summary of the company's business and financial condition, including "
+    'the audited financial statements. Companies must file a 10-K within 60 to 90 days of the end '
+    "of their fiscal year, depending on the size of the company. You can find a company's 10-K "
+    'filings using EDGAR company search; enter the company name or ticker and filter the filing '
+    'list to Form 10-K.\n'
+    '\n'
+    'Form 10-Q: A Form 10-Q is the quarterly report that reporting companies file with the SEC. It '
+    "includes unaudited financial statements and provides a continuing view of the company's "
+    'financial position during the year. Generally, companies must file a 10-Q within 40 to 45 '
+    'days of the end of each of the first three fiscal quarters. Search for a company in EDGAR and '
+    'filter its filings to Form 10-Q to see the quarterly reports it has filed.\n'
+    '\n'
+    'Proxy Statement: Proxy Statement The SEC requires that shareholders of a company whose '
+    'securities are registered under Section 12 of the Securities Exchange Act of 1934 receive a '
+    'proxy statement prior to a shareholder meeting, whether an annual or special meeting. The '
+    'information contained in the statement must be filed with the SEC before soliciting a '
+    'shareholder vote on the election of directors and the approval of other corporate action. '
+    'Solicitations, whether by management or shareholders, must disclose all important facts about '
+    'the issues on which shareholders are asked to vote. To see the information required in the '
+    'proxy statement, read the SEC\x92s proxy rules and view the requirements for Schedule 14A . '
+    'For more information about shareholder proposals, read the rule adopted by the SEC on May 21, '
+    '1998. http://www.sec.gov/answers/proxy.htm Home | Previous Page Modified: 09/08/2011',
+ 10: 'Ponzi Schemes: Ponzi schemes share three warning signs: high returns with little or no risk, '
+     'overly consistent returns, and unregistered investments with unlicensed sellers.\n'
+     '\n'
+     "Ponzi promoters rarely invest the money they raise. Instead they use new investors' cash to "
+     "pay 'returns' to earlier investors, which keeps the illusion of a profitable business "
+     'alive.\n'
+     '\n'
+     'Verify any promoter and any investment before you send money. Ask how the returns are '
+     "generated, request audited financials, and use the SEC's and FINRA's free tools to check "
+     'whether the seller is licensed and registered.\n'
+     '\n'
+     'If you suspect a Ponzi scheme, stop sending money immediately and file a complaint with the '
+     'SEC at sec.gov.\n'
+     '\n'
+     'Cold Callers: A cold call is an unsolicited phone call, email or message from someone you do '
+     'not know pitching an investment opportunity. Fraudsters use scripts designed to create '
+     'urgency and fear of missing out.\n'
+     '\n'
+     'Watch for these red flags: the caller refuses to send written information, demands an '
+     "immediate decision, promises guaranteed returns, or says the offer is 'confidential'.\n"
+     '\n'
+     "Before you invest with anyone who contacts you out of the blue, check the seller's "
+     "registration history using the SEC's investor tools, and never wire money to someone you "
+     'cannot verify.\n'
+     '\n'
+     'Report suspicious cold calls to the SEC through the online Tips, Complaints & Referrals '
+     'form.\n'
+     '\n'
+     "Crypto Assets: Fraudsters promote crypto asset 'investments' with claims of guaranteed "
+     'returns, celebrity endorsements, or exclusive access. These are hallmarks of a scam, not a '
+     'security.\n'
+     '\n'
+     'Crypto asset investments are often highly volatile, and many promoters are not registered '
+     'with the SEC or any regulator. Unregistered offerings carry no protections if something goes '
+     'wrong.\n'
+     '\n'
+     'Be suspicious of anyone who asks you to pay for an investment using crypto assets, gift '
+     'cards or wire transfers, or who recruits you to bring in friends for a bonus.\n'
+     '\n'
+     'Check whether a crypto asset offering is registered using EDGAR full-text search, and file a '
+     'tip with the SEC if you spot a scam.',
+ 11: 'Sept. 30, 2026 S7-2026-34 Interval Fund Modernization; Expansion of Multiple Share Class to '
+     'Registered Closed-End Management Investment Companies and Business Development Companies '
+     'Proposed Rule Interval Fund Modernization; Expansion of Multiple Share Class to Registered '
+     'Closed-End Management Investment Companies and Business Development Companies 33-11444, '
+     '34-106534, IC-36351. This is a proposed rule. Evan submitted his question under reference '
+     'Q-D9B4ED13.',
+ 12: 'SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private '
+     'Funds That Held Interests in SpaceX and Other Pre-IPO Securities; release 2026-98, dated '
+     'Sept. 30, 2026, concerns investments in SpaceX. Zoe Financial was charged with failing to '
+     'fully and fairly disclose material facts concerning conflicts of interest; release 2026-94, '
+     'dated Sept. 28, 2026. news.fan@example.com is now subscribed to press releases.',
+ 13: 'The complaint reference number is IC-FB3DAEB9, and My Account shows the new complaint '
+     'against Granite Harbor Capital LLC.',
+ 14: 'The investor question reference number is Q-E03D46FE. One red flag from the cold callers '
+     'alert: it refuses to send written information, demands an immediate decision, promises '
+     "guaranteed returns, or says the offer is 'confidential'. updates.carol@example.com is now "
+     'subscribed to SEC email updates with the investor alerts topic.',
+ 15: "Dana's watchlist now shows 3 companies: 0001652044 Alphabet Inc. GOOGL 2026-09-30  Remove; "
+     '0001318605 Tesla, Inc. TSLA 2026-09-30  Remove; 0001045810 NVIDIA CORP NVDA 2026-09-30  '
+     'Remove.',
+ 16: "Alphabet's CIK is 0001652044 and its SIC description is 7370 — Services-Computer "
+     'Programming, Data Processing, Etc.. After signing out and back in, the watchlist still '
+     'lists: 0001652044 Alphabet Inc. GOOGL 2026-09-30  Remove.',
+ 17: 'Goldman Sachs: CIK 0000886982, state of incorporation DE, SIC 6211 — Security Brokers, '
+     'Dealers & Flotation Companies, filer category Large accelerated filer; 1 10-K filings, the '
+     'newest filed 10-K Documents 10-K Acc-no: 0000886982-26-000091 2026-02-25 001-14965 26680257 '
+     'with period of report 2025-12-31; 3 10-Q filings, the newest filed 10-Q Documents 10-Q '
+     'Acc-no: 0000886982-26-000297 2026-08-03 001-14965 261234571. Microsoft: CIK 0000789019, '
+     'state of incorporation WA, SIC 7372 — Services-Prepackaged Software, filer category Large '
+     'accelerated filer; 3 10-K filings, the newest filed 10-K Documents 10-K Acc-no: '
+     '0001193125-26-323660 2026-07-29 001-37845 261217433 with period of report 2026-06-30; 4 10-Q '
+     'filings, the newest filed 10-Q Documents 10-Q Acc-no: 0001193125-26-191507 2026-04-29 '
+     '001-37845 26915896. Microsoft has more 10-K filings in this snapshot.',
+ 18: 'Two red flags from the crypto assets alert: guaranteed returns, celebrity endorsements, or '
+     'exclusive access, and crypto assets, gift cards or wire transfers. Ponzi organizers often '
+     'promise high returns with little or no risk. The TCR reference number is TCR-AED38B97.',
+ 19: 'Filtered to year 2026, the litigation releases page shows 100 releases. The Robert Bernardi '
+     'and Sunil Chandra release is LR-26661, dated Sept. 30, 2026; it charges the former CEO and '
+     'Vice President of GigaMedia Access Corporation. The OTC Link LLC administrative proceeding '
+     'detail page is titled SEC Censures OTC Link LLC for Repeated Compliance Failures Related to '
+     "Regulation SCI. In What's New, the first item listed is LR-26662 and the division shown for "
+     'it is Enforcement.'}
+WALK_URLS = {0: ['http://localhost:40152/',
+     'http://localhost:40152/search-filings/cik-lookup?company=Apple',
+     'http://localhost:40152/edgar/company/0000320193',
+     'http://localhost:40152/edgar/company/0000320193?type=10-K&dateb=',
+     'http://localhost:40152/edgar/filing/0000320193/0000320193-25-000079',
+     'http://localhost:40152/edgar/company/0000320193?type=10-Q&dateb=',
+     'http://localhost:40152/edgar/filing/0000320193/0000320193-26-000020'],
+ 1: ['http://localhost:40152/',
+     'http://localhost:40152/search-filings',
+     'http://localhost:40152/edgar/full-text-search',
+     'http://localhost:40152/edgar/full-text-search?q=artificial+intelligence&forms=10-K&datea=&dateb=',
+     'http://localhost:40152/edgar/full-text-search?q=artificial+intelligence&forms=8-K&datea=&dateb=',
+     'http://localhost:40152/edgar/full-text-search?q=artificial+intelligence&forms=10-K&datea=2020-01-01&dateb='],
+ 2: ['http://localhost:40152/',
+     'http://localhost:40152/search-filings/cik-lookup?company=Microsoft',
+     'http://localhost:40152/edgar/company/0000789019',
+     'http://localhost:40152/edgar/company/0000789019?type=DEF+14A&dateb=',
+     'http://localhost:40152/edgar/filing/0000789019/0001193125-25-245150',
+     'http://localhost:40152/edgar/company/0000789019?type=8-K&dateb=',
+     'http://localhost:40152/login',
+     'http://localhost:40152/account'],
+ 3: ['http://localhost:40152/',
+     'http://localhost:40152/search-filings/cik-lookup?company=Tesla',
+     'http://localhost:40152/edgar/company/0001318605',
+     'http://localhost:40152/edgar/company/0001318605?type=8-K&dateb=',
+     'http://localhost:40152/edgar/filing/0001318605/0001628280-26-063820',
+     'http://localhost:40152/edgar/filing/0001318605/0001628280-26-063820/document',
+     'http://localhost:40152/edgar/filing/0001318605/0001628280-26-049213'],
+ 4: ['http://localhost:40152/',
+     'http://localhost:40152/enforcement-litigation',
+     'http://localhost:40152/enforcement-litigation/litigation-releases',
+     'http://localhost:40152/enforcement-litigation/litigation-releases?q=Noble&year=',
+     'http://localhost:40152/enforcement-litigation/litigation-releases/lr-26660',
+     'http://localhost:40152/enforcement-litigation/administrative-proceedings',
+     'http://localhost:40152/enforcement-litigation/administrative-proceedings?q=Brown'],
+ 5: ['http://localhost:40152/',
+     'http://localhost:40152/enforcement-litigation',
+     'http://localhost:40152/enforcement-litigation/administrative-proceedings',
+     'http://localhost:40152/enforcement-litigation/administrative-proceedings?q=Black',
+     'http://localhost:40152/enforcement-litigation/administrative-proceedings/34-106538-s',
+     'http://localhost:40152/login',
+     'http://localhost:40152/account',
+     'http://localhost:40152/submit-tip-or-complaint',
+     'http://localhost:40152/submit-tip-or-complaint/tcr-disclaimer',
+     'http://localhost:40152/submit-tip-or-complaint/report-possible-securities-law-violations',
+     'http://localhost:40152/submit-tip-or-complaint/confirmation/TCR-36E95B0B'],
+ 6: ['http://localhost:40152/',
+     'http://localhost:40152/enforcement-litigation',
+     'http://localhost:40152/enforcement-litigation/trading-suspensions',
+     'http://localhost:40152/enforcement-litigation/trading-suspensions?q=Happy+City',
+     'http://localhost:40152/resources-investors',
+     'http://localhost:40152/resources-investors/investor-alerts-bulletins',
+     'http://localhost:40152/resources-investors/investor-alerts-bulletins/cold-call',
+     'http://localhost:40152/fast-answers',
+     'http://localhost:40152/fast-answers?q=pump',
+     'http://localhost:40152/fast-answers/pump',
+     'http://localhost:40152/submit-tip-or-complaint',
+     'http://localhost:40152/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional',
+     'http://localhost:40152/submit-tip-or-complaint/complaint-confirmation/IC-CAB0076D'],
+ 7: ['http://localhost:40152/',
+     'http://localhost:40152/newsroom',
+     'http://localhost:40152/newsroom/press-releases/2026-98-sec-charges-meyer-global-management-its-ceo-defrauding-retail-investors-private-funds-held-interests',
+     'http://localhost:40152/enforcement-litigation',
+     'http://localhost:40152/enforcement-litigation/litigation-releases',
+     'http://localhost:40152/enforcement-litigation/litigation-releases?q=Meyer&year=',
+     'http://localhost:40152/enforcement-litigation/litigation-releases/lr-26659'],
+ 8: ['http://localhost:40152/',
+     'http://localhost:40152/submit-filings/forms-index',
+     'http://localhost:40152/submit-filings/forms-index?q=1-A&filed_by=&statute=',
+     'http://localhost:40152/submit-filings/forms-index?q=8-K&filed_by=&statute=',
+     'http://localhost:40152/submit-filings/forms-index?q=10-K&filed_by=&statute='],
+ 9: ['http://localhost:40152/',
+     'http://localhost:40152/fast-answers',
+     'http://localhost:40152/fast-answers?q=10-K',
+     'http://localhost:40152/fast-answers/form10k',
+     'http://localhost:40152/fast-answers?q=10-Q',
+     'http://localhost:40152/fast-answers/form10q',
+     'http://localhost:40152/fast-answers?q=proxy',
+     'http://localhost:40152/fast-answers/proxy'],
+ 10: ['http://localhost:40152/',
+      'http://localhost:40152/resources-investors',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins/ponzi-schemes',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins/cold-call',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins/crypto-asset'],
+ 11: ['http://localhost:40152/',
+      'http://localhost:40152/rules-regulations/rulemaking-activity',
+      'http://localhost:40152/rules-regulations/rulemaking-activity?q=Interval+Fund+Modernization&status=',
+      'http://localhost:40152/submit-tip-or-complaint',
+      'http://localhost:40152/submit-tip-or-complaint/report-problem-sec-or-self-regulatory-organization',
+      'http://localhost:40152/submit-tip-or-complaint/question-confirmation/Q-D9B4ED13'],
+ 12: ['http://localhost:40152/',
+      'http://localhost:40152/newsroom',
+      'http://localhost:40152/newsroom/press-releases/2026-98-sec-charges-meyer-global-management-its-ceo-defrauding-retail-investors-private-funds-held-interests',
+      'http://localhost:40152/newsroom/press-releases',
+      'http://localhost:40152/newsroom/press-releases?q=Zoe+Financial',
+      'http://localhost:40152/newsroom/press-releases/2026-94-sec-charges-registered-investment-adviser-zoe-financial-failure-disclose-conflict-interest',
+      'http://localhost:40152/subscribe'],
+ 13: ['http://localhost:40152/',
+      'http://localhost:40152/login',
+      'http://localhost:40152/account',
+      'http://localhost:40152/submit-tip-or-complaint',
+      'http://localhost:40152/submit-tip-or-complaint/report-problem-investment-account-or-financial-professional',
+      'http://localhost:40152/submit-tip-or-complaint/complaint-confirmation/IC-FB3DAEB9'],
+ 14: ['http://localhost:40152/',
+      'http://localhost:40152/login',
+      'http://localhost:40152/account',
+      'http://localhost:40152/submit-tip-or-complaint',
+      'http://localhost:40152/submit-tip-or-complaint/report-problem-sec-or-self-regulatory-organization',
+      'http://localhost:40152/submit-tip-or-complaint/question-confirmation/Q-E03D46FE',
+      'http://localhost:40152/resources-investors',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins/cold-call',
+      'http://localhost:40152/subscribe'],
+ 15: ['http://localhost:40152/',
+      'http://localhost:40152/login',
+      'http://localhost:40152/account',
+      'http://localhost:40152/search-filings/cik-lookup?company=Tesla',
+      'http://localhost:40152/edgar/company/0001318605',
+      'http://localhost:40152/search-filings/cik-lookup?company=NVIDIA',
+      'http://localhost:40152/edgar/company/0001045810'],
+ 16: ['http://localhost:40152/',
+      'http://localhost:40152/signup',
+      'http://localhost:40152/account',
+      'http://localhost:40152/search-filings/cik-lookup?company=Alphabet',
+      'http://localhost:40152/edgar/company/0001652044',
+      'http://localhost:40152/login'],
+ 17: ['http://localhost:40152/',
+      'http://localhost:40152/search-filings/cik-lookup?company=Goldman+Sachs',
+      'http://localhost:40152/edgar/company/0000886982',
+      'http://localhost:40152/edgar/company/0000886982?type=10-K&dateb=',
+      'http://localhost:40152/edgar/filing/0000886982/0000886982-26-000091',
+      'http://localhost:40152/edgar/company/0000886982?type=10-Q&dateb=',
+      'http://localhost:40152/search-filings/cik-lookup?company=Microsoft',
+      'http://localhost:40152/edgar/company/0000789019',
+      'http://localhost:40152/edgar/company/0000789019?type=10-K&dateb=',
+      'http://localhost:40152/edgar/filing/0000789019/0001193125-26-323660',
+      'http://localhost:40152/edgar/company/0000789019?type=10-Q&dateb='],
+ 18: ['http://localhost:40152/',
+      'http://localhost:40152/resources-investors',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins',
+      'http://localhost:40152/resources-investors/investor-alerts-bulletins/crypto-asset',
+      'http://localhost:40152/fast-answers',
+      'http://localhost:40152/fast-answers?q=Ponzi',
+      'http://localhost:40152/fast-answers/ponzi',
+      'http://localhost:40152/submit-tip-or-complaint',
+      'http://localhost:40152/submit-tip-or-complaint/tcr-disclaimer',
+      'http://localhost:40152/submit-tip-or-complaint/report-possible-securities-law-violations',
+      'http://localhost:40152/submit-tip-or-complaint/confirmation/TCR-AED38B97'],
+ 19: ['http://localhost:40152/',
+      'http://localhost:40152/enforcement-litigation',
+      'http://localhost:40152/enforcement-litigation/litigation-releases',
+      'http://localhost:40152/enforcement-litigation/litigation-releases?q=&year=2026',
+      'http://localhost:40152/enforcement-litigation/litigation-releases?q=Bernardi&year=2026',
+      'http://localhost:40152/enforcement-litigation/litigation-releases/lr-26661',
+      'http://localhost:40152/enforcement-litigation/administrative-proceedings',
+      'http://localhost:40152/enforcement-litigation/administrative-proceedings?q=OTC+Link',
+      'http://localhost:40152/enforcement-litigation/administrative-proceedings/34-106458-s',
+      'http://localhost:40152/newsroom',
+      'http://localhost:40152/newsroom/whats-new',
+      'http://localhost:40152/enforcement-litigation/litigation-releases/lr-26662']}
 
 
 SPECS = {}
@@ -460,9 +718,16 @@ def _rows(spec_rows, **overrides):
                         'IC-9Z8Y7X6W' if col == 'reference'
                         and 'IC' in want['regex'] else (
                         'Q-9Z8Y7X6W' if col == 'reference' else
-                        ('x' * max(want.get('min_len', 1), 1))))
+                        ('Is Interval Fund Modernization in effect and how could it affect redemptions?' if col == 'question' else 'x' * max(want.get('min_len', 1), 1))))
                 elif 'min_len' in want:
-                    row[col] = 'x' * want['min_len']
+                    samples = {
+                        'bob.c@test.com': 'An unregistered broker offered me security-based swaps.',
+                        'maria.lopez@example.com': 'A stranger called pitching Happy City shares.',
+                        'alice.j@test.com': 'My broker traded without my authorization.',
+                        'carol.d@test.com': 'How can I check that an adviser is registered?',
+                        'jordan.lee@test.com': 'A stranger offered a crypto token guaranteed to double.',
+                    }
+                    row[col] = samples[expect['email']] if want.get('patterns') else 'x' * want['min_len']
                 elif 'bcrypt_password' in want:
                     row[col] = bcrypt.hashpw(
                         want['bcrypt_password'].encode(),
@@ -701,3 +966,10 @@ def test_replayed_initial_db_is_the_frozen_seed():
             db = Path(EVIDENCE) / 'runs' / round_ / f'{i:02d}' / 'initial.db'
             h = hashlib.sha256(db.read_bytes()).hexdigest()
             assert h == verify_lib.SEED_SHA256, (round_, i)
+
+
+def test_existing_record_identity_must_be_preserved():
+    initial = {'users': {'user': {'id': 1, 'email': 'alice.j@test.com'}}}
+    after = {'users': {'user': {'id': 99, 'email': 'alice.j@test.com'}}}
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_state(initial, after, {'state': {}})
