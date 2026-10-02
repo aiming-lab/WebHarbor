@@ -18,8 +18,9 @@ SUN 1:00pm ET at Highmark Stadium; Week 4 vs the New England Patriots (1-1,
 Read-only task.
 """
 from verify_lib import (Judge, check_read_only_db, check_trajectory_identity,
-                        contains_amount, contains_phrase, contains_record, contains_time,
-                        final_answer, navigated_to, run_verifier)
+                        contains_amount, contains_phrase, contains_record, contains_signed_number,
+                        contains_time, final_answer, navigated_to, number_bound_to,
+                        run_verifier, score_bound_to)
 
 TASK_ID = "NFL--4"
 TEAM = "Buffalo Bills"
@@ -71,18 +72,23 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"expected {PF} points scored and {PA} allowed")
     judge.check("answer_w1_final",
                 contains_phrase(answer, W1_FINAL[0])
-                and contains_amount(answer, W1_FINAL[1]) and contains_amount(answer, W1_FINAL[2]),
+                and score_bound_to(answer, ["w1", "week 1"], W1_FINAL[1], W1_FINAL[2],
+                                   [["w2", "week 2"]]),
                 f"expected the Week 1 final: won {W1_FINAL[1]}-{W1_FINAL[2]} at {W1_FINAL[0]}")
     judge.check("answer_w2_final",
                 contains_phrase(answer, W2_FINAL[0])
-                and contains_amount(answer, W2_FINAL[1]) and contains_amount(answer, W2_FINAL[2]),
+                and score_bound_to(answer, ["w2", "week 2"], W2_FINAL[1], W2_FINAL[2],
+                                   [["w1", "week 1"]]),
                 f"expected the Week 2 final: beat the {W2_FINAL[0]} {W2_FINAL[1]}-{W2_FINAL[2]}")
     for name, (w, l), diff, coach, stadium in NEXT_OPPONENTS:
         judge.check(f"answer_opponent_{name.lower()}",
                     contains_phrase(answer, name) and contains_record(answer, w, l),
                     f"expected {name} ({w}-{l})")
+        others = [[other] for other, *_rest in NEXT_OPPONENTS if other != name]
+        others += [["bills"], ["texans"], ["lions"]]
+        signed_ok = contains_signed_number(answer, diff) if diff < 0 else True
         judge.check(f"answer_opponent_{name.lower()}_diff",
-                    str(abs(diff)) in answer,
+                    number_bound_to(answer, [name], diff, others),
                     f"expected {name} point differential {diff:+d}")
         judge.check(f"answer_opponent_{name.lower()}_coach",
                     contains_phrase(answer, coach),

@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"min_leg_price": 56.0, "round_trip_total": 153.0, "cheapest_booking_price": 53.0, "airline": "United", "return_airline": "Emirates"}
@@ -31,9 +31,9 @@ def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "12-28", return_md="12-28"),
             "expected /flights search Edinburgh->Manchester depart 12-28 return 12-28")
     j.check("answer_lowest_price",
-            mentions_price(ans, GROUND_TRUTH["min_leg_price"])
-            or mentions_price(ans, GROUND_TRUTH["round_trip_total"])
-            or mentions_price(ans, GROUND_TRUTH["cheapest_booking_price"]),
+            bound_airline_price(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["min_leg_price"])
+            or bound_airline_price(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["round_trip_total"])
+            or bound_airline_price(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["cheapest_booking_price"]),
             f"expected $56 leg, $153 round-trip total, or the $53 cheapest "
             f"booking-site price; final={ans!r}")
     j.check("answer_airline_of_cheapest",

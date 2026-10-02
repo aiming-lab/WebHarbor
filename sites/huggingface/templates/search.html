@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container-wide page">
-    <form class="search-form" action="{{ url_for('search') }}" method="get">
+    <form class="search-form" action="/search/full-text" method="get">
         <input type="text" name="q" class="form-control form-control-lg" placeholder="Search models, datasets, spaces…" value="{{ q }}" autofocus>
         <input type="hidden" name="type" value="{{ kind }}">
         <input type="hidden" name="sort" value="{{ active_sort }}">
@@ -14,10 +14,10 @@
     </form>
 
     <div class="search-filters">
-        <a class="{% if kind == 'all' %}is-active{% endif %}" href="?q={{ q }}&type=all&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">All ({{ results|length }})</a>
-        <a class="{% if kind == 'model' %}is-active{% endif %}" href="?q={{ q }}&type=model&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">Models</a>
-        <a class="{% if kind == 'dataset' %}is-active{% endif %}" href="?q={{ q }}&type=dataset&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">Datasets</a>
-        <a class="{% if kind == 'space' %}is-active{% endif %}" href="?q={{ q }}&type=space&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">Spaces</a>
+        <a class="{% if kind == 'all' %}is-active{% endif %}" href="?q={{ q|urlencode }}&type=all&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">All ({{ results|length }})</a>
+        <a class="{% if kind == 'model' %}is-active{% endif %}" href="?q={{ q|urlencode }}&type=model&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">Models</a>
+        <a class="{% if kind == 'dataset' %}is-active{% endif %}" href="?q={{ q|urlencode }}&type=dataset&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">Datasets</a>
+        <a class="{% if kind == 'space' %}is-active{% endif %}" href="?q={{ q|urlencode }}&type=space&sort={{ active_sort }}{% if active_license %}&license={{ active_license }}{% endif %}{% if active_library %}&library={{ active_library }}{% endif %}">Spaces</a>
     </div>
 
     <div class="search-refine" style="display:flex;gap:12px;margin:12px 0;flex-wrap:wrap;align-items:center;">
@@ -62,7 +62,7 @@
             </select>
         </form>
         {% if active_license or active_library %}
-        <a class="muted" href="?q={{ q }}&type={{ kind }}&sort={{ active_sort }}" style="font-size:12px;">Clear filters</a>
+        <a class="muted" href="?q={{ q|urlencode }}&type={{ kind }}&sort={{ active_sort }}" style="font-size:12px;">Clear filters</a>
         {% endif %}
     </div>
 

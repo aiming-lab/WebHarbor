@@ -22,7 +22,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -31,14 +31,15 @@ def main():
     j = Judge('Amazon--17', a.no_llm)
     t, fa = grade_common(j, a)
     urls = __import__('verify_lib').step_urls(t)
-    BABY = [("johnson", 7.49), ("pampers", 8.99), ("gerber", 9.99), ("huggies", 4.99),
-            ("aveeno", 8.49), ("baby einstein", 9.99), ("fisher-price", 6.99),
-            ("fisher price", 6.99), ("tommee", 9.49)]
+    PRODUCTS = [(["johnson"], 7.49), (["pampers"], 8.99), (["gerber"], 9.99),
+                (["huggies"], 4.99), (["aveeno"], 8.49), (["baby einstein"], 9.99),
+                (["fisher-price", "fisher price"], 6.99), (["tommee"], 9.49)]
     j.check("nav_baby_deals",
             navigated_to(t, "baby") or navigated_to(t, "/deals"),
             f"urls={[u for u in urls if 'baby' in u.lower() or '/deals' in u][:4]}")
-    pairs = sorted({(tok, pr) for tok, pr in BABY
-                    if contains_any(fa, [tok]) and price_in(fa, pr)})
+    pairs = [(aliases[0], price) for aliases, price in PRODUCTS
+             if price_bound_to(fa, aliases, price,
+                               [other for other, _ in PRODUCTS if other != aliases])]
     j.check("answer_two_plus_products_priced", len(pairs) >= 2,
             f"correct (product, price) pairs={pairs}")
     j.check("answer_under_10_dollars",

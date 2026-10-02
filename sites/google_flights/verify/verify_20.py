@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_duration, run)
 
 
 GROUND_TRUTH = {"airline": "Alaska Airlines", "total_min": 960, "out_duration": 451, "shortest_ids": [126037], "return_airline": "British Airways"}
@@ -31,8 +31,9 @@ def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "03-05", return_md="03-12"),
             "expected /flights SFO->Berlin depart 03-05 return 03-12")
     opened = opened_flight_ids(traj)
-    time_reported = (mentions_duration(ans, GROUND_TRUTH["total_min"])
-                     or mentions_duration(ans, GROUND_TRUTH["out_duration"]))
+    time_reported = (
+        bound_airline_duration(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["total_min"])
+        or bound_airline_duration(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["out_duration"]))
     if not time_reported:
         # selection-evidence branch: the run opened the shortest option's
         # detail page, names its airline, and characterizes it as the shortest

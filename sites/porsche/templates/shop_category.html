@@ -23,6 +23,13 @@
         <option value="name" {% if sort == 'name' %}selected{% endif %}>Name A-Z</option>
       </select>
     </div>
+    <div class="filter-group sort-links">
+      <span class="filter-label">Quick sort:</span>
+      {% for key, text in [('featured','Featured'), ('price-asc','Price - low to high'), ('price-desc','Price - high to low'), ('name','Name A-Z')] %}
+      <a class="sort-link{% if sort == key %} active{% endif %}"
+         href="{{ url_for('shop_category', category_slug=category_slug, sort=key, brand=brand_f) }}">{{ text }}</a>
+      {% endfor %}
+    </div>
     <div class="filter-actions">
       <button class="btn btn-sm" type="submit">Apply</button>
       <a class="btn btn-sm btn-secondary" href="/shop/us/en-US/c/{{ category_slug }}">Reset</a>

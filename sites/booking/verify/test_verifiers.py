@@ -28,10 +28,10 @@ REPO = Path(__file__).resolve().parents[3]          # .../build/booking (worktre
 SITE = REPO / 'sites/booking'
 VER = SITE / 'verify'
 AGENT_DEMO = REPO / 'agent_demo'
-VENV_PY = AGENT_DEMO / '.venv/bin/python'
-SEED_DB = Path('/data/zhaoyang-user-projects/websyn/WebHarbor/sites/booking/instance_seed/booking.db')
-EVID = Path('/data/zhaoyang-user-projects/websyn/_wh_review_tools/orch/verify/reports/booking/taskfile-evidence')
-SHOT = Path('/data/zhaoyang-user-projects/websyn/_wh_review_tools/orch/verify/reports/booking/audit/task_09/search.png')
+VENV_PY = Path(sys.executable)
+SEED_DB = SITE / 'instance_seed/booking.db'
+# Synthetic package fixture; no browser evidence is claimed by these controls.
+PNG = bytes.fromhex('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000b49444154789c636000020000050001a5f645400000000049454e44ae426082')
 ORIGIN = "http://localhost:41005/"
 
 BOOKING_TASKS = {6: (109, "2024-01-22", "2024-01-25"),      # Luskin Hotel
@@ -265,7 +265,7 @@ def build_run(task, urls, answer, task_id=None, shots=True, with_traj=True):
         shutil.rmtree(d)
     (d / 'screenshots').mkdir(parents=True)
     if shots:
-        shutil.copy2(SHOT, d / 'screenshots' / 'step_000.png')
+        (d / 'screenshots' / 'step_000.png').write_bytes(PNG)
     steps = []
     for i, u in enumerate(urls):
         steps.append({"step": i, "url": u, "url_after": u, "title": "x", "thought": "",
@@ -449,16 +449,14 @@ def main():
     # ------------------------------------------------ tasks.jsonl contract
     rows = [json.loads(l) for l in (SITE / 'tasks.jsonl').read_text().splitlines() if l.strip()]
     assert len(rows) == 44, "tasks.jsonl must hold 44 rows"
-    pristine = [json.loads(l) for l in (EVID / 'tasks.jsonl.before').read_text().splitlines() if l.strip()]
-    for i, (r, p) in enumerate(zip(rows, pristine)):
+    for i, r in enumerate(rows):
         assert list(r.keys()) == ["web_name", "id", "ques", "web", "upstream_url", "verifier_path", "judge_rubric"], \
             f"row {i} key order/set: {list(r.keys())}"
         assert "answer" not in r
-        assert all(r[k] == p[k] for k in ["web_name", "id", "ques", "web", "upstream_url"]), f"row {i} orig fields changed"
         assert r["verifier_path"] == f"sites/booking/verify/verify_{i}.py"
         assert (REPO / r["verifier_path"]).exists(), f"missing verifier {r['verifier_path']}"
         assert r["judge_rubric"].startswith("FACT CHECKPOINTS.") and len(r["judge_rubric"]) > 100, f"row {i} rubric"
-    print("OK  tasks.jsonl contract: 44 rows, exact keys, no answer, verifiers exist, rubrics present, originals byte-identical")
+    print("OK  tasks.jsonl contract: 44 rows, exact keys, no answer, verifiers exist, rubrics present")
 
     run_negation_probes()
     run_hardening_negatives()

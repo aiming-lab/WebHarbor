@@ -18,7 +18,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (grade_common, navigated_any, norm, game_score_in,
+from verify_lib import (grade_common, navigated_any, norm, number_bound_to,
                         Judge, parse_args)
 
 APR9_GAMES = [
@@ -43,7 +43,8 @@ def main():
     matched = []
     for away, home, asc, hsc in APR9_GAMES:
         if (any(x in f for x in away) and any(x in f for x in home)
-                and game_score_in(fa, asc, hsc)):
+                and number_bound_to(fa, away, asc, [home])
+                and number_bound_to(fa, home, hsc, [away])):
             matched.append((away[0], home[0], asc, hsc))
     j.check("answer_five_yesterday_games", len(matched) >= 5,
             f"matched={len(matched)}/8: {matched}")

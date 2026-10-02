@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"first_pairs": [["ANA", 2365.0], ["ANA", 3300.0], ["Air Canada", 3255.0], ["Air France", 1840.0], ["American Airlines", 1455.0], ["British Airways", 1760.0], ["Cathay Pacific", 3165.0], ["Delta", 2970.0], ["Emirates", 2620.0], ["Emirates", 3485.0], ["Etihad", 3065.0], ["Frontier", 1870.0], ["Iberia", 1680.0], ["Iberia", 2485.0], ["JetBlue", 2980.0], ["Lufthansa", 1800.0], ["Qantas", 2295.0], ["Qatar Airways", 1700.0], ["Southwest", 2065.0], ["Southwest", 3105.0], ["Southwest", 3510.0], ["Spirit", 3525.0]], "min_first": 1455.0}
@@ -32,13 +32,14 @@ def main(j, traj, ans):
             nav_search(traj, FROM, TO, "12-19", return_md="12-26", cabin="First"),
             "expected /flights TLV->Venice 12-19/12-26 with First class selected")
     n = sum(1 for a, p in GROUND_TRUTH["first_pairs"]
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     says_first = "first" in ans.casefold()
     content = n >= 1 or configuration_reading(
         traj, ans, nav_search(traj, FROM, TO, "12-19", return_md="12-26", cabin="First"),
         [p for _a, p in GROUND_TRUTH["first_pairs"]],
         [a for a, _p in GROUND_TRUTH["first_pairs"]],
-        says_first)
+        says_first,
+        pairs=GROUND_TRUTH["first_pairs"])
     j.check("answer_selected_first_class_flight", content,
             f"{n} consistent (airline, first-class price) pairs, or a First-class "
             f"configuration answer with no contradicting facts; final={ans!r}")

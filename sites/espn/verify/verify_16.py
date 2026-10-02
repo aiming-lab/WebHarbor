@@ -21,7 +21,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_any, contains_all, contains_any,
-                        num_in, Judge, parse_args)
+                        record_bound_to, Judge, parse_args)
 
 def main():
     a = parse_args()
@@ -35,8 +35,10 @@ def main():
             contains_any(fa, ["laker", "los angeles"]) and
             contains_any(fa, ["celtic", "boston"]),
             "the December 25 game: Lakers vs Celtics")
-    celtics_rec = (num_in(fa, 64) and num_in(fa, 18)) or contains_any(fa, [".780", "780"])
-    lakers_rec = (num_in(fa, 47) and num_in(fa, 35)) or contains_any(fa, [".573", "573"])
+    celtics_rec = record_bound_to(
+        fa, ["boston celtics", "celtics"], 64, 18, [["lakers", "los angeles lakers"]])
+    lakers_rec = record_bound_to(
+        fa, ["los angeles lakers", "lakers"], 47, 35, [["celtics", "boston celtics"]])
     j.check("answer_standings", celtics_rec and lakers_rec,
             "current records: Celtics 64-18 (.780) and Lakers 47-35 (.573)")
     j.emit()

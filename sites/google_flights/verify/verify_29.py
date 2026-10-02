@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price_duration, run)
 
 
 GROUND_TRUTH = {"nonstop_triples": [["Spirit", 486.0, 398], ["Singapore Airlines", 292.0, 364], ["United", 306.0, 332], ["Turkish Airlines", 332.0, 369], ["Southwest", 343.0, 376], ["American Airlines", 370.0, 375], ["Japan Airlines", 372.0, 379], ["Turkish Airlines", 648.0, 344], ["Lufthansa", 721.0, 344], ["American Airlines", 752.0, 378]], "nonstop_count": 10}
@@ -31,8 +31,7 @@ def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "03-05", return_md="03-15"),
             "expected /flights Mexico City->Frankfurt depart 03-05 return 03-15")
     n = sum(1 for a, p, dur in GROUND_TRUTH["nonstop_triples"]
-            if mentions_airline(ans, a) and mentions_price(ans, p)
-            and mentions_duration(ans, dur))
+            if bound_airline_price_duration(ans, a, p, dur))
     j.check("answer_compares_nonstop_options", n >= 2,
             f"{n} consistent (airline, price, duration) triples of nonstop options; "
             f"final={ans!r}")

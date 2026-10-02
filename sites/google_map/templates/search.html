@@ -26,14 +26,14 @@
         {% set f_price = request.args.get('price_level', '') %}
         {% set f_active = f_hours or f_rating or f_price %}
         <div class="filter-chips">
-            <form method="GET" action="/search" class="chip-form">
+            <form method="GET" action="/maps/search/" class="chip-form" data-path-search="maps">
                 <input type="hidden" name="q" value="{{ q }}">
                 {% if request.args.get('sort') %}<input type="hidden" name="sort" value="{{ request.args.get('sort') }}">{% endif %}
 
                 <label class="chip {% if f_hours %}active{% endif %}" title="Hours">
                     <span class="chip-label">{% if f_hours == 'open_now' %}Open now{% elif f_hours == '24h' %}Open 24 hours{% else %}Hours{% endif %}</span>
                     <span class="chip-caret material-icons-outlined">arrow_drop_down</span>
-                    <select name="hours" onchange="this.form.submit()" aria-label="Hours filter">
+                    <select name="hours" onchange="this.form.requestSubmit()" aria-label="Hours filter">
                         <option value="" {% if not f_hours %}selected{% endif %}>Any time</option>
                         <option value="open_now" {% if f_hours == 'open_now' %}selected{% endif %}>Open now</option>
                         <option value="24h" {% if f_hours == '24h' %}selected{% endif %}>Open 24 hours</option>
@@ -43,7 +43,7 @@
                 <label class="chip {% if f_rating %}active{% endif %}" title="Rating">
                     <span class="chip-label">{% if f_rating %}{{ f_rating }}+{% else %}Rating{% endif %}</span>
                     <span class="chip-caret material-icons-outlined">arrow_drop_down</span>
-                    <select name="min_rating" onchange="this.form.submit()" aria-label="Rating filter">
+                    <select name="min_rating" onchange="this.form.requestSubmit()" aria-label="Rating filter">
                         <option value="" {% if not f_rating %}selected{% endif %}>Any rating</option>
                         <option value="2.0" {% if f_rating == '2.0' %}selected{% endif %}>2.0+</option>
                         <option value="2.5" {% if f_rating == '2.5' %}selected{% endif %}>2.5+</option>
@@ -57,7 +57,7 @@
                 <label class="chip {% if f_price %}active{% endif %}" title="Price">
                     <span class="chip-label">{% if f_price %}{{ f_price }}{% else %}Price{% endif %}</span>
                     <span class="chip-caret material-icons-outlined">arrow_drop_down</span>
-                    <select name="price_level" onchange="this.form.submit()" aria-label="Price filter">
+                    <select name="price_level" onchange="this.form.requestSubmit()" aria-label="Price filter">
                         <option value="" {% if not f_price %}selected{% endif %}>Any price</option>
                         <option value="$" {% if f_price == '$' %}selected{% endif %}>$ Inexpensive</option>
                         <option value="$$" {% if f_price == '$$' %}selected{% endif %}>$$ Moderate</option>
@@ -67,7 +67,7 @@
                 </label>
 
                 {% if f_active %}
-                    <a href="{{ url_for('search', q=q) }}" class="chip chip-clear" title="Clear filters">
+                    <a href="/maps/search/?q={{ q|urlencode }}" class="chip chip-clear" title="Clear filters">
                         <span class="material-icons-outlined" style="font-size:16px;">close</span>
                         <span>Clear</span>
                     </a>

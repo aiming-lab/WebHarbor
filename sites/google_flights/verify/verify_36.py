@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"under_pairs": [["Singapore Airlines", 65.0], ["Air Canada", 80.0], ["Air Canada", 100.0], ["JetBlue", 110.0], ["Air Canada", 117.0], ["Qantas", 128.0], ["Etihad", 132.0], ["Cathay Pacific", 135.0], ["Air Canada", 136.0], ["Qantas", 154.0], ["Qantas", 180.0], ["Cathay Pacific", 819.0]], "under_count": 12}
@@ -32,7 +32,7 @@ def main(j, traj, ans):
     j.check("nav_search_under1000_filter", nav_ok,
             "expected /flights HEL->DEL 03-28/04-04 with the max_price filter applied")
     n = sum(1 for a, p in GROUND_TRUTH["under_pairs"]
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     import re as _re
     says_under1000 = bool(_re.search(
         r"under\s*\$?\s*1,?000|below\s*\$?\s*1,?000|less than\s*\$?\s*1,?000"
@@ -41,7 +41,8 @@ def main(j, traj, ans):
         traj, ans, nav_ok,
         [p for _a, p in GROUND_TRUTH["under_pairs"]],
         [a for a, _p in GROUND_TRUTH["under_pairs"]],
-        says_under1000, extra_prices=(1000.0,))
+        says_under1000, extra_prices=(1000.0,),
+        pairs=GROUND_TRUTH["under_pairs"])
     j.check("answer_shows_under1000_options", content,
             f"{n} consistent (airline, price) pairs of the {len(GROUND_TRUTH['under_pairs'])} "
             f"options under $1000, or an under-$1000-configuration answer with no "

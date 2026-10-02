@@ -23,7 +23,8 @@ COPY assets-manifest.json /opt/assets-manifest.json
 COPY scripts/asset_state.py /opt/asset_state.py
 COPY scripts/check_seed_databases.py /opt/check_seed_databases.py
 RUN python3 /opt/asset_state.py verify /opt/WebSyn /opt/.assets-revision /opt/assets-manifest.json && \
-    python3 /opt/WebSyn/espn/check_added_assets.py
+    python3 /opt/WebSyn/espn/check_added_assets.py && \
+    python3 /opt/WebSyn/google_flights/check_airline_assets.py
 
 # IKEA's seed is reproducibly materialized from the tracked source catalog so code-only content fixes do not require an asset-repository write. Product images still come from the pinned asset bundle.
 RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instance

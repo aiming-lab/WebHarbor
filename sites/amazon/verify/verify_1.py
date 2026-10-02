@@ -18,7 +18,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -35,7 +35,10 @@ def main():
             or search_url_with(t, ["max_price=75"]),
             "IZOD product page or size/price-filtered search")
     j.check("answer_izod_swingflex", contains_any(fa, ["izod", "swingflex"]), f"final={fa[:200]!r}")
-    j.check("answer_lowest_price_52", price_in(fa, 52.00), f"final={fa[:200]!r}")
+    j.check("answer_lowest_price_52",
+            price_bound_to(fa, ["izod", "swingflex"], 52.00,
+                           [["classic", "pique"], ["under armour", "playoff"]]),
+            f"final={fa[:200]!r}")
     j.emit()
 
 

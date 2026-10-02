@@ -14,11 +14,13 @@ exactly the way agent_demo/eval_judge.py invokes the verifier.
 
 The seed DB fixture is fetched from the site container (docker cp) because the
 repository tracks no instance assets; set WH_CONTAINER to point at the site's
-container when it is not the default wh-ver-amazon.
+container when it is not the default wh-ver-amazon. When docker is unavailable
+the suite falls back to a synthetic DB with the tables the verifiers fingerprint.
 """
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sqlite3
 import subprocess
@@ -281,11 +283,43 @@ def run_verifier(task: int, run_dir: Path, initial_db: Path, after_db: Path):
 SEED_DB = None
 
 
+def _synthetic_seed(path: Path) -> None:
+    """Schema stub used when the site container is not available.
+
+    The cart-delta tests address users.email and cart_items columns; the
+    read-only tests bump products.price. Other benchmark tables only need to
+    exist so the fingerprint query can read them.
+    """
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT)")
+    con.execute("INSERT INTO users (id, email) VALUES (1, 'demo@amazon.com')")
+    con.execute("CREATE TABLE products (id INTEGER PRIMARY KEY, price REAL)")
+    con.execute("INSERT INTO products (id, price) VALUES (1, 10.0)")
+    con.execute(
+        "CREATE TABLE cart_items ("
+        "id INTEGER PRIMARY KEY, user_id INTEGER, product_id INTEGER, "
+        "quantity INTEGER, variant TEXT, added_at TEXT)")
+    for table in verify_lib.TABLES:
+        con.execute(f"CREATE TABLE IF NOT EXISTS {table} (id INTEGER PRIMARY KEY)")
+    con.commit()
+    con.close()
+
+
+def _load_seed_db() -> str:
+    container = os.environ.get("WH_CONTAINER", "wh-ver-amazon")
+    try:
+        return verify_lib.fetch_db(container, "instance_seed")
+    except (OSError, RuntimeError):
+        fd, path = tempfile.mkstemp(suffix="-amazon-seed.db")
+        os.close(fd)
+        _synthetic_seed(Path(path))
+        return path
+
+
 def seed_db(tmp: Path) -> Path:
     global SEED_DB
-    if SEED_DB is None:
-        SEED_DB = verify_lib.fetch_db(
-            __import__("os").environ.get("WH_CONTAINER", "wh-ver-amazon"), "instance_seed")
+    if SEED_DB is None or not Path(SEED_DB).exists():
+        SEED_DB = _load_seed_db()
     db = tmp / "seed_copy.db"
     shutil.copy2(SEED_DB, db)
     return db
@@ -491,6 +525,90 @@ class CartDeltaTests(unittest.TestCase):
                        "VALUES (?,?,1,'','2026-09-19 12:00:00')", (user_id, 84))
         result = self.execute_with_mutation(8, add_any)
         self.assertFalse(result["pass"], result)
+
+
+class PriceBindingTests(unittest.TestCase):
+    """Prices must belong to the product that owns them.
+
+    These answers keep every ground-truth number and every product name, but
+    attach a price to the wrong product (or embed it inside a larger amount).
+    A co-presence check accepts them; subject binding must not.
+    """
+
+    def test_price_in_rejects_cents_embedded_in_a_larger_amount(self):
+        self.assertFalse(verify_lib.price_in("The Blue Switch Lite is $164.99.", 64.99))
+        self.assertTrue(verify_lib.price_in("Velocity Green controller is $64.99.", 64.99))
+        self.assertTrue(verify_lib.price_in("Velocity Green controller is USD 64.99.", 64.99))
+
+    def test_price_in_rejects_nonzero_fraction_for_an_integral_price(self):
+        self.assertFalse(verify_lib.price_in("Evolv Shaman Climbing Shoes - $179.95.", 179.00))
+        self.assertTrue(verify_lib.price_in("Evolv Shaman Climbing Shoes - $179.00.", 179.00))
+        self.assertTrue(verify_lib.price_in("Evolv Shaman Climbing Shoes - $179.", 179.00))
+        self.assertTrue(verify_lib.price_in("Evolv Shaman is 179 dollars.", 179.00))
+
+    def test_price_in_accepts_thousands_separators(self):
+        self.assertTrue(verify_lib.price_in("The HP OMEN 25L costs $1,299.99.", 1299.99))
+        self.assertFalse(verify_lib.price_in("A distractor desktop is $2,299.99.", 1299.99))
+
+    def test_swapped_subject_prices_fail(self):
+        swapped = {
+            0: ("The qualifying controller is the Xbox Wireless Controller in Velocity "
+                "Green. It costs $164.99, is rated 4.7 stars with 28,430 reviews."),
+            1: ("The lowest-priced qualifying polo is the Women's IZOD SwingFlex Golf "
+                "Polo at $69.99. The Women's Classic Pique Golf Polo is $52.00."),
+            3: ("Sorted by price high to low, the first 3 results are: "
+                "1) Mammut 9.5 Crag Classic Climbing Rope 60m - $149.95, "
+                "2) Evolv Shaman Climbing Shoes - $219.95, "
+                "3) Petzl GriGri Plus Belay Device - $179.00."),
+            4: ("The cheapest 'Used - Good' Nintendo Switch Lite is the Gray one at "
+                "$164.99. The Yellow is $159.99 and the Blue is $149.99."),
+            13: ("Amazon Essentials Men's Big & Tall Fleece Hoodie - Black at $34.99 "
+                 "and Hanes Men's Big & Tall ComfortBlend EcoSmart Hoodie - Black at $29.99."),
+            17: ("Johnson's Baby Shampoo at $8.99 (was $12.99) and Pampers Swaddlers "
+                 "Sample Pack at $7.49 (was $14.99)."),
+            28: ("The IUGA Eco-Friendly Yoga Mat is 6mm thick, non-slip, and eco-friendly. "
+                 "The Gaiam Essentials mat costs $34.99."),
+            33: ("BLACK+DECKER BPACT08WT (8000 BTU, CEER 7.0) at $409.99, "
+                 "Midea (10000 BTU, CEER 8.0) at $329.99, and Honeywell MN10CESWW "
+                 "(10000 BTU, CEER 7.8) at $389.00. The spread is $80.00."),
+            40: ("The Gaiam Essentials Yoga Mat in Purple costs $24.99 and is available in "
+                 "10 colors in total, while another listing at $19.99 is a different mat. "
+                 "6mm thick, 4.7 stars. Return policy: 30-day free returns. "
+                 "Delivery policy: FREE delivery Wednesday, Apr 16."),
+        }
+        reasons = {
+            0: "answer_price_64_99",
+            1: "answer_lowest_price_52",
+            3: "answer_three_prices",
+            4: "answer_price_149_99",
+            13: "answer_both_prices",
+            17: "answer_two_plus_products_priced",
+            28: "answer_qualifying_mat",
+            33: "answer_three_prices_compared",
+            40: "answer_qualifying_mat",
+        }
+        grader = VerifierTests()
+        for task, answer in swapped.items():
+            with self.subTest(task=task):
+                result = grader.execute(task, answer=answer)
+                self.assertFalse(result["pass"], result)
+                self.assertEqual(result["returncode"], 1)
+                self.assertEqual(result.get("reason"), reasons[task], result)
+
+    def test_task3_fractional_tail_is_not_the_integral_price(self):
+        answer = ("Sorted by price high to low, the first 3 results are: "
+                  "1) Mammut 9.5 Crag Classic Climbing Rope 60m - $219.95, "
+                  "2) Evolv Shaman Climbing Shoes - $179.95, "
+                  "3) Petzl GriGri Plus Belay Device - $149.95.")
+        result = VerifierTests().execute(3, answer=answer)
+        self.assertFalse(result["pass"], result)
+        self.assertEqual(result.get("reason"), "answer_three_prices")
+
+    def test_sale_price_stays_bound_when_a_was_price_is_closer_to_the_name_than_another_product(self):
+        # The honest task-17 answer names sale prices with a farther struck-through
+        # "was" price in the same clause. That answer is the positive fixture.
+        result = VerifierTests().execute(17)
+        self.assertTrue(result["pass"], result)
 
 
 class ContractTests(unittest.TestCase):

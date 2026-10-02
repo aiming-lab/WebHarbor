@@ -20,7 +20,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -42,8 +42,11 @@ def main():
             contains_any(fa, ["black+decker", "black & decker", "black and decker", "black decker", "bpact08wt"])
             and contains_all(fa, ["midea"]) and contains_all(fa, ["honeywell"]),
             f"final={fa[:260]!r}")
+    decker = ["black+decker", "black & decker", "black and decker", "black decker", "bpact08wt"]
     j.check("answer_three_prices_compared",
-            price_in(fa, 329.99) and price_in(fa, 389.00) and price_in(fa, 409.99),
+            price_bound_to(fa, decker, 329.99, [["midea"], ["honeywell"]])
+            and price_bound_to(fa, ["midea"], 389.00, [decker, ["honeywell"]])
+            and price_bound_to(fa, ["honeywell"], 409.99, [decker, ["midea"]]),
             f"final={fa[:260]!r}")
     j.check("answer_energy_rating",
             contains_any(fa, ["ceer", "energy rating", "energy efficiency", "7.0", "8.0", "7.8"]),

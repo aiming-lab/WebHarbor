@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_duration, run)
 
 
 GROUND_TRUTH = {"min_duration": 454, "airline": "British Airways", "price": 542.0}
@@ -31,7 +31,7 @@ def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "03-03", return_md="03-10"),
             "expected /flights Stockholm->Toronto depart 03-03 return 03-10")
     j.check("answer_shortest_duration",
-            mentions_duration(ans, GROUND_TRUTH["min_duration"]),
+            bound_airline_duration(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["min_duration"]),
             f"expected 7h 34m / 454 minutes; final={ans!r}")
     j.check("answer_airline", mentions_airline(ans, GROUND_TRUTH["airline"]),
             f"expected airline British Airways; final={ans!r}")

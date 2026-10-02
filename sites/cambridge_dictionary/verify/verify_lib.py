@@ -89,26 +89,41 @@ def is_mirror_url(url):
     return parsed.scheme in ("http", "https") and _is_loopback_host(parsed.hostname)
 
 
+def search_evidence_url(url):
+    """Recognize canonical search routes without weakening the task's filters."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode, unquote
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return url
+    path = p.path
+    query = parse_qsl(p.query, keep_blank_values=True)
+    if p.path in ('/search/direct/', '/search/english/direct/', '/search/english-thesaurus/direct/'):
+        path = '/thesaurus' if 'english-thesaurus' in p.path else '/search'
+        return urlunsplit((p.scheme, p.netloc, path, urlencode(query), p.fragment))
+    return url
+
+
 def step_urls(traj):
     """Every URL recorded in the trajectory, in order (step url, url_after, start, final)."""
     urls = []
     for key in ("start_url", "final_url"):
         v = traj.get(key)
         if v:
-            urls.append(str(v))
+            urls.append(search_evidence_url(str(v)))
     for s in traj.get("steps") or []:
         if not isinstance(s, dict):
             continue
         for key in ("url", "url_after"):
             v = s.get(key)
             if v:
-                urls.append(str(v))
+                urls.append(search_evidence_url(str(v)))
     return urls
 
 
 def _url_path(url):
     try:
-        return urllib.parse.urlsplit(str(url or "")).path or "/"
+        return urllib.parse.urlsplit(search_evidence_url(str(url or ""))).path or "/"
     except Exception:
         return ""
 

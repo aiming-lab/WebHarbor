@@ -131,6 +131,24 @@ def final_answer(traj):
 
 
 # ---------------------------------------------------------------- navigation
+def search_evidence_url(url):
+    """Recognize canonical search routes without weakening the task's filters."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode, unquote
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return url
+    path = p.path
+    query = parse_qsl(p.query, keep_blank_values=True)
+    if p.path.startswith('/search/'):
+        path = '/search'
+        term = unquote(p.path[len('/search/'):])
+        if term:
+            query = [('q', term)] + [(k, v) for k, v in query if k != 'q']
+        return urlunsplit((p.scheme, p.netloc, path, urlencode(query), p.fragment))
+    return url
+
+
 def step_urls(traj):
     """Every recorded step URL (before + after the action) in chronological order."""
     out = []
@@ -138,7 +156,7 @@ def step_urls(traj):
         for field in ("url", "url_after"):
             u = s.get(field)
             if isinstance(u, str) and u:
-                out.append(u)
+                out.append(search_evidence_url(u))
     return out
 
 

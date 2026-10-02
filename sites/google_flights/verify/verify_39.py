@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_label_price, run)
 
 
 GROUND_TRUTH = {"tokyo_min": 385.0, "sapporo_min": 468.0, "cheaper_city": "Tokyo", "tokyo_airline": "Qantas", "sapporo_airline": "American Airlines"}
@@ -35,10 +35,14 @@ def main(j, traj, ans):
             "expected /flights Prague->Tokyo depart 03-20")
     j.check("nav_search_sapporo", nav_search(traj, FROM, TO_SAPPORO, "03-20"),
             "expected /flights Prague->Sapporo depart 03-20")
-    j.check("answer_tokyo_fare", mentions_price(ans, GROUND_TRUTH["tokyo_min"]),
-            f"expected the Tokyo lowest fare $385; final={ans!r}")
-    j.check("answer_sapporo_fare", mentions_price(ans, GROUND_TRUTH["sapporo_min"]),
-            f"expected the Sapporo lowest fare $468; final={ans!r}")
+    j.check("answer_tokyo_fare",
+            bound_label_price(ans, ["Tokyo"], GROUND_TRUTH["tokyo_min"],
+                               [["Sapporo", "Hokkaido"]]),
+            f"expected the Tokyo lowest fare $385 attributed to Tokyo; final={ans!r}")
+    j.check("answer_sapporo_fare",
+            bound_label_price(ans, ["Sapporo", "Hokkaido"], GROUND_TRUTH["sapporo_min"],
+                               [["Tokyo"]]),
+            f"expected the Sapporo lowest fare $468 attributed to Sapporo; final={ans!r}")
     low = ans.casefold()
     tokyo_cheaper = (("tokyo" in low) and re.search(
         r"(cheaper|less expensive|lower|more affordable|lowest|best price)[^.\n]{0,80}tokyo"

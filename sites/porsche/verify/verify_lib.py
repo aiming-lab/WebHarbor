@@ -67,7 +67,10 @@ SCHEMA_SHA256 = "16a849f316145a53f367590942964161fe6b34f2d25bfaf768f444f8142ee8b
 # that upstream extracted as finder-search query strings ("search?ORDERTYPE=…")
 # and therefore produced 404 model-detail links; the deterministic seed
 # rebuild normalizes them to real slugs (schema and counts are unchanged).
-SEED_ROWS_SHA256 = "1428172b717ca53259244f28270b571e35085c72cd5db80ce05e5af6b4a73e73"
+# r3: re-frozen after the dealers state normalization fix (4 rows state "Ga" ->
+# "GA", Georgia browse no longer split). Schema and all other rows unchanged;
+# new rows sha computed from the deterministic rebuild with PYTHONHASHSEED=0.
+SEED_ROWS_SHA256 = "b205cb076b09cc914988c6b7e45d8cf06779fb61dd4c34fabaf03b2088b58ff3"
 
 SEED_USERS = {
     "casey.taylor@test.com": ("Casey", "Taylor"),

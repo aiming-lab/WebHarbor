@@ -866,6 +866,7 @@ def booking_payment():
                                channel='MileagePlus', miles=-miles_needed)
                 db.session.add(act)
                 db.session.commit()
+                session['mytrips_auth'] = booking.confirmation
                 session.pop('cart', None)
                 session.pop('travelers', None)
                 session.pop('contact', None)
@@ -898,6 +899,7 @@ def booking_payment():
                         cart, travelers, contact, confirmation, award=False,
                         card_last4=number[-4:], card_type=ctype)
                     db.session.commit()
+                    session['mytrips_auth'] = booking.confirmation
                     session.pop('cart', None)
                     session.pop('travelers', None)
                     session.pop('contact', None)
@@ -1108,6 +1110,43 @@ def _bag_weight_limit(booking) -> int:
     return BAG_WEIGHT_LIMIT
 
 
+def _planned_seats(booking, leg, form, *, auto_assign=False):
+    """Validate the entire party before mutating ORM state or assigning seats."""
+    aircraft = leg.flight.aircraft
+    occupied = leg.flight.occupied_seats(leg.travel_date)
+    occupied.difference_update(pax.seat for pax in booking.passengers)
+    planned = []
+    reserved = set()
+    for pax in booking.passengers:
+        seat = form.get(f'seat_{pax.id}', '').strip().upper() or pax.seat
+        if seat:
+            if (not re.fullmatch(r'[1-9][0-9]?[A-Z]', seat)
+                    or seat[-1] not in aircraft.seat_letters
+                    or not 1 <= int(seat[:-1]) <= aircraft.seat_rows):
+                raise ValueError('That seat does not exist on this aircraft.')
+            if seat in occupied:
+                raise ValueError(f'Seat {seat} is already taken on this flight.')
+            if seat in reserved:
+                raise ValueError(f'Seat {seat} cannot be assigned to more than one traveler.')
+            reserved.add(seat)
+        planned.append((pax, seat))
+    if auto_assign:
+        # Reserve all explicit and retained choices first, including later travelers.
+        available = (f'{row}{letter}'
+                     for row in range(aircraft.first_rows + aircraft.premium_rows
+                                      + aircraft.economy_plus_rows + 1, aircraft.seat_rows + 1)
+                     for letter in aircraft.seat_letters
+                     if f'{row}{letter}' not in occupied | reserved)
+        for i, (pax, seat) in enumerate(planned):
+            if not seat:
+                seat = next(available, None)
+                if seat is None:
+                    raise ValueError('No available seats remain. Please contact United for assistance.')
+                reserved.add(seat)
+                planned[i] = (pax, seat)
+    return planned
+
+
 @app.route('/mytrips/<conf>/seats/<int:leg_id>', methods=['GET', 'POST'])
 def seat_selection(conf, leg_id):
     booking = _authorized_trip(conf)
@@ -1117,21 +1156,15 @@ def seat_selection(conf, leg_id):
     flight = leg.flight
     aircraft = flight.aircraft
     if request.method == 'POST':
-        occupied_now = flight.occupied_seats(leg.travel_date)
-        for pax in booking.passengers:
-            seat = request.form.get(f'seat_{pax.id}', '').strip().upper()
-            if not seat:
+        try:
+            planned = _planned_seats(booking, leg, request.form)
+        except ValueError as exc:
+            flash(str(exc))
+            return redirect(url_for('seat_selection', conf=conf, leg_id=leg_id))
+        for pax, seat in planned:
+            if not seat or seat == pax.seat:
                 continue
-            row = int(re.sub(r'\D', '', seat) or 0)
-            if not re.fullmatch(r'[1-9][0-9]?[A-Z]', seat) or seat[-1] not in aircraft.seat_letters or not (1 <= row <= aircraft.seat_rows):
-                flash('That seat does not exist on this aircraft.')
-                break
-            # the seat map marks frozen-snapshot occupancy; an occupied seat
-            # must be rejected exactly as the map page promises (review parity
-            # with the check-in flow's validation)
-            if seat in occupied_now and seat != pax.seat:
-                flash(f'Seat {seat} is already taken on this flight.')
-                break
+            row = int(seat[:-1])
             fee = 0.0
             premium_start = aircraft.first_rows + aircraft.premium_rows + 1
             premium_end = premium_start + aircraft.economy_plus_rows
@@ -1276,28 +1309,13 @@ def checkin_flow(conf):
     for pax in booking.passengers:
         occupied.discard(pax.seat)
     if request.method == 'POST':
-        for pax in booking.passengers:
-            seat = request.form.get(f'seat_{pax.id}', '').strip().upper().upper()
-            if seat:
-                if not re.fullmatch(r'[1-9][0-9]?[A-Z]', seat) or seat[-1] not in aircraft.seat_letters or \
-                        not (1 <= int(re.sub(r'\D', '', seat)) <= aircraft.seat_rows):
-                    flash('Enter a valid seat like 21C.')
-                    return redirect(url_for('checkin_flow', conf=booking.confirmation))
-                if seat in flight.occupied_seats(first_leg.travel_date):
-                    flash(f'Seat {seat} is already taken on this flight.')
-                    return redirect(url_for('checkin_flow', conf=booking.confirmation))
-                pax.seat = seat
-            if not pax.seat:
-                # assign the first free economy seat deterministically
-                for row in range(aircraft.first_rows + aircraft.premium_rows + 1,
-                                 aircraft.seat_rows + 1):
-                    for letter in aircraft.seat_letters:
-                        candidate = f'{row}{letter}'
-                        if candidate not in flight.occupied_seats(first_leg.travel_date):
-                            pax.seat = candidate
-                            break
-                    if pax.seat:
-                        break
+        try:
+            planned = _planned_seats(booking, first_leg, request.form, auto_assign=True)
+        except ValueError as exc:
+            flash(str(exc))
+            return redirect(url_for('checkin_flow', conf=booking.confirmation))
+        for pax, seat in planned:
+            pax.seat = seat
             pax.checked_in = True
             pax.boarding_group = boarding_group(booking.cabin, current_user.tier
                                                  if current_user.is_authenticated

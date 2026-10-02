@@ -20,7 +20,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -38,7 +38,10 @@ def main():
             "price/bestseller filter or one of the two product pages")
     j.check("answer_amazon_essentials", contains_all(fa, ["amazon essentials"]), f"final={fa[:200]!r}")
     j.check("answer_hanes", contains_all(fa, ["hanes"]), f"final={fa[:200]!r}")
-    j.check("answer_both_prices", price_in(fa, 29.99) and price_in(fa, 34.99), f"final={fa[:200]!r}")
+    j.check("answer_both_prices",
+            price_bound_to(fa, ["amazon essentials"], 29.99, [["hanes"]])
+            and price_bound_to(fa, ["hanes"], 34.99, [["amazon essentials"]]),
+            f"final={fa[:200]!r}")
     j.emit()
 
 

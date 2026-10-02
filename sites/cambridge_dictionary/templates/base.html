@@ -64,7 +64,7 @@
         </span>
       </a>
       {% set _is_thes = 'thesaurus' in (request.endpoint or '') %}
-      <form action="{{ url_for('thesaurus_search') if _is_thes else url_for('search') }}" method="GET" class="search-form" autocomplete="off">
+      <form action="{{ '/search/english-thesaurus/direct/' if _is_thes else '/search/direct/' }}" method="GET" class="search-form" autocomplete="off">
         <div class="search-tabs">
           <a href="{{ url_for('index') }}" class="stab {% if request.endpoint in ['index','word_detail','search'] %}active{% endif %}">Dictionary</a>
           <a href="{{ url_for('thesaurus_search') }}" class="stab {% if 'thesaurus' in (request.endpoint or '') %}active{% endif %}">Thesaurus</a>
@@ -72,6 +72,7 @@
           <a href="{{ url_for('grammar_index') }}" class="stab {% if 'grammar' in (request.endpoint or '') %}active{% endif %}">Grammar</a>
         </div>
         <div class="search-input-wrap">
+          <input type="hidden" name="datasetsearch" value="{{ 'english-thesaurus' if _is_thes else 'english' }}">
           <input type="text" name="q" id="searchInput" class="search-input"
                  placeholder="{{ ui.search_placeholder }}"
                  value="{{ request.args.get('q','') }}">

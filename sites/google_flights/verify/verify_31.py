@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"most_stops": 3, "options": [["Lufthansa", 1238.0, 1134], ["Iberia", 857.0, 940]]}
@@ -31,7 +31,7 @@ def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "03-25"),
             "expected /flights Auckland->Honolulu depart 03-25")
     n = sum(1 for a, p, dur in GROUND_TRUTH["options"]
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     j.check("answer_displays_most_stops_option", n >= 1,
             f"{n} consistent (airline, price) pairs among the {len(GROUND_TRUTH['options'])} "
             f"3-stop options; final={ans!r}")

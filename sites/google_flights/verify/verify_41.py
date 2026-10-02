@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"one_stop_pairs": [["Alaska Airlines", 4049.0], ["Qatar Airways", 2189.0], ["Iberia", 3292.0], ["Delta", 2151.0], ["Lufthansa", 3342.0], ["Air France", 3952.0], ["Cathay Pacific", 2105.0], ["KLM", 4235.0], ["British Airways", 3391.0], ["Air Canada", 4690.0]], "one_stop_count": 10, "direct_booking_pairs": [["Qatar Airways", 2080.0], ["Delta", 2043.0], ["Lufthansa", 3175.0], ["Air France", 3754.0], ["Cathay Pacific", 2000.0], ["KLM", 3981.0], ["British Airways", 3221.0]]}
@@ -33,7 +33,7 @@ def main(j, traj, ans):
             "expected /flights HKG->Glacier National Park 03-08 with Business class")
     accepted = GROUND_TRUTH["one_stop_pairs"] + GROUND_TRUTH["direct_booking_pairs"]
     n = sum(1 for a, p in accepted
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     j.check("answer_selects_1stop_ticket", n >= 1,
             f"{n} consistent (airline, business-class price) pairs of the "
             f"{len(GROUND_TRUTH['one_stop_pairs'])} 1-stop tickets (results-page fare) or "

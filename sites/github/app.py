@@ -3,6 +3,7 @@ GitHub Mirror - Flask Application
 A faithful reproduction of GitHub's design and features.
 """
 import os
+from urllib.parse import quote
 import json
 import re
 import math
@@ -438,23 +439,17 @@ def inject_globals():
 # ─── External github.com redirect middleware ───
 # Some WebVoyager agents hallucinate real github.com URLs even though the task
 # is hosted locally. If such a request ever reaches this Flask app (via
-# /etc/hosts, proxy, or host header), rewrite it to the local equivalent so the
-# agent lands on usable content instead of `about:blank`.
+# /etc/hosts, proxy, or host header), keep serving the local route instead of
+# bouncing to a hardcoded localhost port.
 @app.before_request
 def _redirect_external_github():
-    host = (request.host or '').lower()
-    # If the request arrives with a real github.com Host header, 307-redirect
-    # to the local mirror path preserving the URL path & query string.
-    if 'github.com' in host and 'localhost' not in host and '127.0.0.1' not in host:
-        target = request.full_path.rstrip('?') or '/'
-        # Strip leading /https:/github.com/ or similar, keep the path portion.
-        return redirect(f"http://localhost:40006{target}", code=302)
+    # Requests reaching this mirror are already local, regardless of Host.
     # Some agents also type URLs like /https://github.com/foo/bar into the bar.
     path = request.path or ''
     m = re.match(r'^/(https?:)?/*github\.com/(.*)$', path)
     if m:
         rest = m.group(2) or ''
-        new_path = '/' + rest
+        new_path = '/' + quote(rest.lstrip('/\\'), safe="/:@!$&'()*+,;=-._~")
         qs = request.query_string.decode('utf-8', errors='ignore')
         if qs:
             new_path += '?' + qs

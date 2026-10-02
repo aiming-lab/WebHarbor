@@ -20,7 +20,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, contains_all, contains_any,
-                        num_in, Judge, parse_args)
+                        record_bound_to, Judge, parse_args)
 
 EAST_TEAMS = ["boston celtics", "new york knicks", "philadelphia 76ers",
               "toronto raptors", "brooklyn nets", "cleveland cavaliers",
@@ -34,8 +34,9 @@ def main():
     t, fa = grade_common(j, a)
     j.check("nav_nba_standings", navigated_to(t, "/nba/standings"),
             "the task requires the NBA standings page")
+    others = [[tm] for tm in EAST_TEAMS if "celtics" not in tm]
     j.check("answer_celtics_best_record",
-            contains_any(fa, ["celtics", "boston"]) and num_in(fa, 64) and num_in(fa, 18),
+            record_bound_to(fa, ["boston celtics", "celtics"], 64, 18, others),
             "Eastern Conference best record: Celtics 64-18")
     east = [tm for tm in EAST_TEAMS if tm in fa.lower()]
     j.check("answer_east_breadth", len(east) >= 6,

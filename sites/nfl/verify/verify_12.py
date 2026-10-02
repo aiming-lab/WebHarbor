@@ -19,8 +19,9 @@ favorite_team flips NYJ -> MIA; nothing else changes.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_precise_delta,
                         check_trajectory_identity,
-                        contains_phrase, contains_record, contains_time, final_answer,
-                        navigated_to, navigated_to_path, run_verifier, user_by_email)
+                        contains_phrase, contains_record, contains_signed_number, contains_time,
+                        final_answer, navigated_to, navigated_to_path, number_bound_to,
+                        run_verifier, user_by_email)
 
 TASK_ID = "NFL--12"
 DAVID_EMAIL = "david.k@test.com"
@@ -82,7 +83,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_w3_network", contains_phrase(answer, NETWORK),
                 f"expected the Week 3 network {NETWORK}")
     judge.check("answer_point_differential",
-                "-36" in answer.replace(" ", "") or "36" in answer,
+                number_bound_to(answer, ["differential"], -36),
                 "expected point differential -36")
     # DB after-state: exactly David's favorite team changes
     david = user_by_email(after_db, DAVID_EMAIL)

@@ -118,14 +118,20 @@ function likeComment(commentId, btn) {
 }
 
 // --- Share ---
-function copyShareUrl() {
+function copyShareUrl(btn) {
+    var shareUrl = (btn && btn.getAttribute && btn.getAttribute('data-share-url'))
+        || window.BBC_ARTICLE_SHARE_URL;
+    if (!shareUrl) {
+        showToast('Could not copy link', 'error');
+        return;
+    }
     if (navigator.clipboard) {
         navigator.clipboard
-            .writeText(window.location.href)
+            .writeText(shareUrl)
             .then(() => showToast('Article link copied', 'success'))
             .catch(() => showToast('Could not copy link', 'error'));
     } else {
-        showToast(window.location.href, 'info');
+        showToast(shareUrl, 'info');
     }
 }
 

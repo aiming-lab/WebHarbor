@@ -20,7 +20,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (grade_common, navigated_any, contains_any, num_in,
+from verify_lib import (grade_common, navigated_any, contains_any, number_bound_to,
                         pos_in, Judge, parse_args)
 
 TOP_SCORERS = [
@@ -44,7 +44,8 @@ def main():
             "must open a game page, the scoreboard/schedule, or a player profile")
     matched = []
     for names, pts, team_toks, positions in TOP_SCORERS:
-        if (any(n in fa.lower() for n in names) and num_in(fa, pts)
+        others = [other for other, _pts, _team, _pos in TOP_SCORERS if other is not names]
+        if (number_bound_to(fa, names, pts, others)
                 and any(x in fa.lower() for x in team_toks) and pos_in(fa, positions)):
             matched.append(names[0])
     j.check("answer_gamehigh_scorer", len(matched) >= 1,

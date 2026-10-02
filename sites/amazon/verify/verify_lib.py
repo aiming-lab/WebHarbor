@@ -129,6 +129,24 @@ def final_answer(traj):
 
 
 # ---------------------------------------------------------------- navigation
+def search_evidence_url(url):
+    """Recognize canonical search routes without weakening the task's filters."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode, unquote
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return url
+    path = p.path
+    query = parse_qsl(p.query, keep_blank_values=True)
+    if p.path == '/s':
+        path = '/search'
+        term = (next((v for k, v in query if k == 'q'), '')
+                or next((v for k, v in query if k == 'k'), ''))
+        query = [('q', term)] + [(k, v) for k, v in query if k not in ('q', 'k')]
+        return urlunsplit((p.scheme, p.netloc, path, urlencode(query), p.fragment))
+    return url
+
+
 def step_urls(traj):
     """Every recorded step URL (before + after the action) in chronological order."""
     out = []
@@ -136,7 +154,7 @@ def step_urls(traj):
         for field in ("url", "url_after"):
             u = s.get(field)
             if isinstance(u, str) and u:
-                out.append(u)
+                out.append(search_evidence_url(u))
     return out
 
 
@@ -185,17 +203,286 @@ def contains_any(final, tokens):
     return any(norm(t) in f for t in tokens)
 
 
+def _strip_thousands(text):
+    """Drop commas that group thousands ($1,299.99). A comma decimal (64,99)
+    has only two digits after it and is left alone."""
+    return re.sub(r"(?<=\d),(?=\d{3}\b)", "", text or "")
+
+
 def price_in(final, price):
-    """True when the answer mentions the given price, with the cents part when
-    it is not integral: 64.99 matches '$64.99' / '64.99' / 'USD 64.99';
-    179.00 matches '179.00', '$179', '179 dollars', or bare '179'."""
-    f = norm(final)
+    """True when the answer mentions the given price as its own amount.
+
+    64.99 matches '$64.99' / '64.99' / 'USD 64.99' and does not match '$164.99'.
+    179.00 matches '179.00', '$179', '179 dollars', or bare '179', and does not
+    match '$179.95'. 1299.99 matches '$1,299.99'."""
+    raw = norm(final)
+    f = _strip_thousands(raw)
     if abs(price - round(price)) > 1e-9:
         txt = f"{price:.2f}"
         alt = txt.replace(".", ",")
-        return txt in f or alt in f or txt.rstrip("0").rstrip(".") in f
+        return bool(re.search(r"(?<![\d.])" + re.escape(txt) + r"(?![\d])", f)
+                    or re.search(r"(?<![\d.])" + re.escape(alt) + r"(?![\d])", raw))
     whole = str(int(round(price)))
-    return bool(re.search(r"(?<![\d.])" + whole + r"(?![\d])", f)) or f"{whole}.00" in f
+    return bool(re.search(
+        r"(?<![\d.])" + whole + r"(?:\.00)?(?![\d])(?!\.\d*[1-9])", f))
+
+
+# --------------------------------------------- subject binding (mutual nearest)
+#
+# A price belongs to a product only when the two mentions are mutually nearest
+# within _PRICE_BIND_WINDOW: the price's nearest product label is that product,
+# and that label's nearest price is this price. Co-presence anywhere in the
+# answer is not attribution, so swapping two products' prices does not still
+# count. Spec numbers (9.5 mm rope, 60m, 8000 BTU, 4.7 stars, 10 colors) are
+# not prices; a price is a $ amount, an amount written with cents, or
+# "N dollars".
+
+_PRICE_BIND_WINDOW = 240
+_DOLLAR_RE = re.compile(r"(?:\$|\busd\s*)\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?(?![\d]|\.\d)")
+_CENTS_RE = re.compile(
+    r"(?<![\d.$])(\d{1,3}(?:,\d{3})+|\d+)\.(\d{2,})(?![\d])")
+_DOLLARS_WORD_RE = re.compile(
+    r"(?<![\d.$])(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{2}))?\s+dollars?\b", re.I)
+
+
+def _num_eq(a, b):
+    try:
+        return abs(float(a) - float(b)) < 1e-6
+    except (TypeError, ValueError):
+        return False
+
+
+def _gap(a, b):
+    if a[1] <= b[0]:
+        return b[0] - a[1]
+    if b[1] <= a[0]:
+        return a[0] - b[1]
+    return 0
+
+
+def _overlaps(start, end, spans):
+    return any(not (end <= s or e <= start) for s, e in spans)
+
+
+def _price_value(whole, cents):
+    raw = whole.replace(",", "")
+    return float(f"{raw}.{cents}") if cents is not None else float(raw)
+
+
+# List items are separated by commas, semicolons, or "and" outside parentheses.
+# A comma between digits is a thousands separator, not a boundary. Commas inside
+# "(8000 BTU, CEER 7.0)" or "(was $9.99)" stay in the product's clause.
+_THRESHOLD_RE = re.compile(
+    r"\bbetween\s+\$\s*\d[\d,]*(?:\.\d{2})?\s+and\s+\$\s*\d[\d,]*(?:\.\d{2})?"
+    r"|(?:\b(?:under|below|over|above|at least|less than|more than|up to)\s+)"
+    r"\$\s*\d[\d,]*(?:\.\d{2})?"
+    r"|\$\s*\d[\d,]*(?:\.\d{2})?\s*(?:-|to)\s*\$\s*\d[\d,]*(?:\.\d{2})?",
+    re.I,
+)
+
+
+# Prefer each sentence or table row when attaching values to subjects.
+# Commas and conjunctions remain soft boundaries for multi-fact prose.
+_STATEMENT_END = re.compile(r"\n|[!?]|\.(?!\d)(?=\s|$)")
+_NEGATED = re.compile(r"\b(?:not(?!\s+only\b)|never|isn't|isnt|wasn't|wasnt|aren't|arent)\b", re.I)
+
+
+class _BindingClauses(list):
+    def __init__(self, ranges, text):
+        super().__init__(ranges)
+        self.text = text
+        self.boundaries = list(_STATEMENT_END.finditer(text))
+
+    def same_statement(self, a, b):
+        low, high = sorted((a[0], b[0]))
+        return not any(low < m.start() < high for m in self.boundaries)
+
+    def affirmative(self, label, value):
+        start, end = min(label[0], value[0]), max(label[1], value[1])
+        # Include a negator directly before the subject/value as well as one
+        # between them, but not a separate earlier clause.
+        prefix = self.text[:start]
+        prefix = re.split(r"[;,:\n.!?]", prefix)[-1]
+        prefix = re.split(r"\band\b", prefix)[-1]
+        return not _NEGATED.search(prefix + self.text[start:end])
+
+
+def _clause_ranges(text):
+    text = text or ""
+    ranges = []
+    last = 0
+    depth = 0
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")" and depth:
+            depth -= 1
+        elif depth == 0 and (ch in ",;" or text.startswith("and", i)):
+            if ch in ",;":
+                if ch == ",":
+                    before = text[i - 1] if i else ""
+                    after = text[i + 1] if i + 1 < len(text) else ""
+                    if before.isdigit() and after.isdigit():
+                        i += 1
+                        continue
+                ranges.append((last, i))
+                last = i + 1
+            elif (i == 0 or not text[i - 1].isalnum()) and (
+                    i + 3 == len(text) or not text[i + 3].isalnum()):
+                ranges.append((last, i))
+                last = i + 3
+                i += 3
+                continue
+        i += 1
+    ranges.append((last, len(text)))
+    return _BindingClauses(ranges or [(0, 0)], text)
+
+
+def _clause_index(pos, ranges):
+    for index, (start, end) in enumerate(ranges):
+        if start <= pos < end:
+            return index
+    return max(0, len(ranges) - 1)
+
+
+def _touches_clause(span, clauses, origin):
+    start, end = clauses[origin]
+    return span[0] < end and span[1] > start
+
+
+def _nearest(span, others, window, clauses, prefer):
+    """Nearest span of the preferred side.
+
+    Catalog answers read 'product at $price', so a product prefers the price
+    that follows it and a price prefers the product that precedes it. That
+    keeps 'Honeywell ... at $409.99. The BLACK+DECKER is the cheapest' on
+    Honeywell even when the later name is closer to the amount. Same-clause
+    spans beat other clauses. The other side is used only when the preferred
+    side has nothing, so '$29.99 Amazon Essentials' still binds.
+    """
+    local = [other for other in others
+             if clauses.same_statement(span, other) and _gap(span, other) <= window]
+    others = local or others
+    origin = _clause_index(span[0], clauses)
+    buckets = {key: [] for key in (
+        "in_follow", "in_precede", "out_follow", "out_precede")}
+    for other in others:
+        if other[0] == span[0] and other[1] == span[1]:
+            continue
+        gap = _gap(span, other)
+        if gap > window:
+            continue
+        if other[0] >= span[1]:
+            side = "follow"
+        elif other[1] <= span[0]:
+            side = "precede"
+        else:
+            continue
+        same = (_touches_clause(other, clauses, origin)
+                or _touches_clause(span, clauses, _clause_index(other[0], clauses)))
+        same = same and clauses.same_statement(span, other)
+        buckets[("in_" if same else "out_") + side].append(((gap, other[0]), other))
+    if prefer == "follow":
+        order = ("in_follow", "in_precede", "out_follow", "out_precede")
+    else:
+        order = ("in_precede", "in_follow", "out_precede", "out_follow")
+    for key in order:
+        if buckets[key]:
+            return min(buckets[key], key=lambda item: item[0])[1]
+    return None
+
+
+def _binds(label, value, value_spans, labels, window, clauses):
+    nearest = _nearest(label, value_spans, window, clauses, "follow")
+    if nearest is None or not _num_eq(nearest[2], value):
+        return False
+    if not clauses.affirmative(label, nearest):
+        return False
+    back = _nearest(nearest, labels, window, clauses, "precede")
+    return back is not None and back[0] == label[0] and back[1] == label[1]
+
+
+def _threshold_ranges(text):
+    return [(m.start(), m.end()) for m in _THRESHOLD_RE.finditer(text or "")]
+
+
+def _price_spans(text):
+    spans = []
+    occupied = []
+    thresholds = _threshold_ranges(text)
+    for pattern in (_DOLLAR_RE, _DOLLARS_WORD_RE, _CENTS_RE):
+        for match in pattern.finditer(text or ""):
+            start, end = match.start(), match.end()
+            if _overlaps(start, end, occupied) or _overlaps(start, end, thresholds):
+                continue
+            occupied.append((start, end))
+            spans.append((start, end, _price_value(match.group(1), match.group(2))))
+    return spans
+
+
+def _label_spans(text, aliases, competitor_groups):
+    entries = [(alias, "target") for alias in aliases if alias]
+    for index, group in enumerate(competitor_groups):
+        for alias in group:
+            if alias:
+                entries.append((alias, f"c{index}"))
+    entries.sort(key=lambda item: len(item[0]), reverse=True)
+    spans = []
+    for alias, tag in entries:
+        for match in re.finditer(r"\b" + re.escape(alias) + r"\b", text or "", re.I):
+            if _overlaps(match.start(), match.end(), [(s, e) for s, e, _ in spans]):
+                continue
+            spans.append((match.start(), match.end(), tag))
+    return spans
+
+
+def price_bound_to(final, aliases, price, competitor_groups=()):
+    """True when `price` is mutually nearest to this product, not merely
+    co-present with its name. `aliases` name the product; each competitor
+    group is the alias list of another product."""
+    text = "\n".join(norm(line) for line in (final or "").splitlines())
+    labels = _label_spans(text, aliases, competitor_groups)
+    prices = _price_spans(text)
+    clauses = _clause_ranges(text)
+    targets = [span for span in labels if span[2] == "target"]
+    return any(_binds(label, price, prices, labels, _PRICE_BIND_WINDOW, clauses)
+               for label in targets)
+
+
+def _color_count_spans(text):
+    found = []
+    occupied = []
+    patterns = (
+        re.compile(r"(\d+)\s+colors?\b"),
+        re.compile(r"colors?\s*[:=]\s*(\d+)"),
+        re.compile(r"(\d+)\s+color\s+options\b"),
+    )
+    for pattern in patterns:
+        for match in pattern.finditer(text or ""):
+            start, end = match.start(1), match.end(1)
+            if _overlaps(start, end, occupied):
+                continue
+            occupied.append((start, end))
+            found.append((start, end, float(match.group(1))))
+    return found
+
+
+def price_and_count_bound_to(final, aliases, price, count, competitor_groups=()):
+    """One mention of the product owns both this price and this color count."""
+    text = "\n".join(norm(line) for line in (final or "").splitlines())
+    labels = _label_spans(text, aliases, competitor_groups)
+    prices = _price_spans(text)
+    counts = _color_count_spans(text)
+    clauses = _clause_ranges(text)
+    targets = [span for span in labels if span[2] == "target"]
+    window = _PRICE_BIND_WINDOW
+    return any(
+        _binds(label, price, prices, labels, window, clauses)
+        and _binds(label, count, counts, labels, window, clauses)
+        for label in targets
+    )
 
 
 def first_mention(final, tokens):

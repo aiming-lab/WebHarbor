@@ -835,7 +835,7 @@ def browse(category_slug):
 
 @app.route('/search')
 def search():
-    q = request.args.get('q', '').strip()
+    q = (request.args.get('q') or request.args.get('query') or '').strip()
     level = request.args.get('level', '')
     course_type = request.args.get('type', '')
     duration = request.args.get('duration', '')

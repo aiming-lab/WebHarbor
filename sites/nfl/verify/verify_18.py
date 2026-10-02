@@ -1,7 +1,7 @@
 """Verify NFL--18: Which division leaders look strongest and weakest by point differential? Compare the two extremes using their divisions, records, points scored and allowed, then assess their next two matchups each using the opponents, kickoff times and stadiums from their schedules and game centers.
 
 Expected facts below are from the captured site fixture."""
-from verify_lib import Judge, check_read_only_db, check_trajectory_identity, contains_amount, contains_phrase, contains_record, contains_time, final_answer, navigated_to, run_verifier
+from verify_lib import Judge, check_read_only_db, check_trajectory_identity, contains_phrase, contains_record, contains_time, final_answer, navigated_to, number_bound_to, run_verifier
 TASK_ID = 'NFL--18'
 BEST_TEAM = '49ers'
 BEST_DIVISION = 'NFC WEST'
@@ -25,12 +25,22 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check('answer_best_team_49ers', contains_phrase(answer, BEST_TEAM), 'expected the 49ers as the best point-differential leader')
     judge.check('answer_best_division', contains_phrase(answer, BEST_DIVISION), 'expected NFC West (rendered upper-case)')
     judge.check('answer_best_record', contains_record(answer, *BEST_RECORD), 'expected 2-0')
-    judge.check('answer_best_points', BEST_PF in answer and BEST_PA in answer and (BEST_DIFF in answer), f'expected {BEST_PF} scored, {BEST_PA} allowed (+{BEST_DIFF})')
+    judge.check('answer_best_points',
+                number_bound_to(answer, [BEST_TEAM], int(BEST_PF), [[WORST_TEAM]])
+                and number_bound_to(answer, [BEST_TEAM], int(BEST_PA), [[WORST_TEAM]])
+                and number_bound_to(answer, [BEST_TEAM], int(BEST_DIFF), [[WORST_TEAM]]),
+                f'expected {BEST_PF} scored, {BEST_PA} allowed (+{BEST_DIFF}) on the {BEST_TEAM}')
     judge.check('answer_worst_leader_eagles', contains_phrase(answer, WORST_TEAM), 'expected the Eagles as the worst point-differential leader')
-    judge.check('answer_worst_differential', WORST_DIFF in answer, f'expected the +{WORST_DIFF} differential')
+    judge.check('answer_worst_differential',
+                number_bound_to(answer, [WORST_TEAM], int(WORST_DIFF), [[BEST_TEAM]]),
+                f'expected the +{WORST_DIFF} differential on the {WORST_TEAM}')
     for tag, coach, stadium, opponent, kickoff in EXTREMES:
         judge.check(f'answer_{tag}_next_game', contains_phrase(answer, opponent) and contains_time(answer, kickoff), f'expected the next game vs the {opponent} at {kickoff} ET')
-    judge.check('worst_division_points', contains_phrase(answer, 'NFC East') and '48' in answer and '42' in answer, 'Eagles: NFC East, 48 points for and 42 against')
+    judge.check('worst_division_points',
+                contains_phrase(answer, 'NFC East')
+                and number_bound_to(answer, [WORST_TEAM], 48, [[BEST_TEAM]])
+                and number_bound_to(answer, [WORST_TEAM], 42, [[BEST_TEAM]]),
+                'Eagles: NFC East, 48 points for and 42 against')
     for slug, opponent, time, venue in (
         ('broncos-at-49ers-2026-reg-4', 'Broncos', '16:25', "Levi's"),
         ('rams-at-eagles-2026-reg-4', 'Rams', '13:00', 'Lincoln Financial Field'),

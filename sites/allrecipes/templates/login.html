@@ -4,7 +4,7 @@
 <div class="form-page">
     <h1>Log In</h1>
     <p class="form-subtitle">Welcome back to Allrecipes</p>
-    <form method="POST" action="{{ url_for('login') }}">
+    <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="email">Email Address</label>

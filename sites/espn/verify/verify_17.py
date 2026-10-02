@@ -15,7 +15,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, contains_all, contains_any,
-                        num_in, Judge, parse_args)
+                        number_bound_to, Judge, parse_args)
 
 def main():
     a = parse_args()
@@ -24,10 +24,10 @@ def main():
     j.check("nav_bpi", navigated_to(t, "/nba/bpi"),
             "the task targets the NBA Basketball Power Index page")
     j.check("answer_first_celtics",
-            contains_any(fa, ["celtic", "boston"]) and num_in(fa, 10.5),
+            number_bound_to(fa, ["celtics", "boston"], 10.5, [["spurs", "san antonio"]]),
             "first place: Boston Celtics, BPI 10.5")
     j.check("answer_last_spurs",
-            contains_any(fa, ["spur", "san antonio"]) and num_in(fa, 0.9),
+            number_bound_to(fa, ["spurs", "san antonio"], 0.9, [["celtics", "boston"]]),
             "last place: San Antonio Spurs, BPI 0.9")
     j.emit()
 

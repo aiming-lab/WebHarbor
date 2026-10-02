@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"nonstop_count": 62, "pairs": [["Qatar Airways", 486.0], ["Emirates", 583.0], ["ANA", 553.0], ["Air Canada", 334.0], ["Japan Airlines", 729.0], ["British Airways", 438.0], ["Lufthansa", 633.0], ["Japan Airlines", 304.0], ["Air France", 765.0], ["British Airways", 348.0], ["JetBlue", 734.0], ["Spirit", 683.0], ["ANA", 461.0], ["Air France", 513.0], ["Southwest", 637.0], ["Spirit", 652.0], ["Singapore Airlines", 492.0], ["Etihad", 707.0], ["Qantas", 771.0], ["Lufthansa", 466.0], ["Japan Airlines", 789.0], ["Alaska Airlines", 651.0], ["Air France", 751.0], ["Air Canada", 498.0], ["Iberia", 707.0], ["Alaska Airlines", 674.0], ["Delta", 1015.0], ["Qatar Airways", 1017.0], ["JetBlue", 422.0], ["United", 1092.0], ["Qatar Airways", 575.0], ["Southwest", 406.0], ["Southwest", 700.0], ["Spirit", 534.0], ["Frontier", 489.0], ["KLM", 791.0], ["Qatar Airways", 836.0], ["KLM", 678.0], ["Air France", 595.0], ["Air France", 643.0], ["American Airlines", 736.0], ["Cathay Pacific", 545.0], ["Emirates", 1101.0], ["Frontier", 1186.0], ["Qatar Airways", 1246.0], ["ANA", 1004.0], ["American Airlines", 822.0], ["Southwest", 964.0], ["Japan Airlines", 662.0], ["Alaska Airlines", 468.0], ["United", 1153.0], ["Qatar Airways", 1198.0], ["JetBlue", 864.0], ["JetBlue", 692.0], ["Delta", 681.0], ["Cathay Pacific", 649.0], ["Delta", 672.0], ["American Airlines", 1206.0], ["Lufthansa", 858.0], ["United", 1371.0], ["ANA", 1067.0], ["Southwest", 745.0]]}
@@ -32,14 +32,15 @@ def main(j, traj, ans):
             nav_search(traj, FROM, TO, "12-26", max_stops=0),
             "expected /flights NYC->London 12-26 with the Nonstop-only filter applied")
     n = sum(1 for a, p in GROUND_TRUTH["pairs"]
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     content = n >= 3
     if not content:
         content = configuration_reading(
             traj, ans, nav_search(traj, FROM, TO, "12-26", max_stops=0),
             [p for _a, p in GROUND_TRUTH["pairs"]],
             [a for a, _p in GROUND_TRUTH["pairs"]],
-            mentions_stops(ans, 0))
+            mentions_stops(ans, 0),
+            pairs=GROUND_TRUTH["pairs"])
     j.check("answer_presents_nonstop_options", content,
             f"{n} consistent (airline, price) pairs of the {len(GROUND_TRUTH['pairs'])} "
             f"nonstop options, or a nonstop-configuration answer with no contradicting "

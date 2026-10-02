@@ -109,7 +109,7 @@ NAV = {
 # the browser audit; they are the checks' target facts, not the task answers).
 POS = {
     0: "The lowest-price option is United UA316 at $56 one-way ($153 round trip with the Emirates return leg).",
-    1: "There are 23 flights from Chicago to Paris on Feb 17, including American Airlines $656, ANA $349, British Airways $422, Delta $492 and Emirates $520.",
+    1: "There are 23 flights from Chicago to Paris on Feb 17, including American Airlines $656, Japan Airlines $349, Lufthansa $422, Singapore Airlines $492 and Qantas $520.",
     2: "The lowest fare from JFK to Heathrow on Jan 22 is $255 on British Airways BA4390.",
     3: "The flight with the lowest CO2 emissions is Iberia IB7027 at 90 kg CO2.",
     4: "Nonstop options include Qatar Airways $486, Emirates $583, ANA $553 and Air Canada $334.",
@@ -317,6 +317,39 @@ def test_task40_single_destination_insufficient(tmp_root):
         f"a legitimate multi-destination answer must PASS: rc={rc} verdict={verdict}"
 
 
+# Right catalog numbers attributed to the wrong subject. Each sentence used to
+# PASS because the grader only required the airline and the amount to appear
+# somewhere, not on the same fact.
+SWAPPED_SUBJECT = {
+    0: "Emirates at $56 one-way; United also serves the Edinburgh to Manchester route.",
+    1: ("There are 23 flights from Chicago to Paris on Feb 17, including "
+        "American Airlines $656, ANA $349, British Airways $422, Delta $492 "
+        "and Emirates $520."),
+    3: "Air Canada is 90 kg CO2; Iberia also flies Calgary to New York.",
+    4: ("Nonstop options include Qatar Airways $334, Emirates $486, ANA $583 "
+        "and Air Canada $553."),
+    5: ("Flights include Alaska Airlines $303, Qatar Airways $670, Spirit $823 "
+        "and ANA $518 on Dec 20, returning Dec 23."),
+    9: ("Frontier offers a 13h 6m total journey nonstop; other options like "
+        "Japan Airlines take 14h with 1 stop."),
+    15: ("Nonstop options: Frontier $823 13h 10m, Cathay Pacific $1,020 13h 55m, "
+         "Qatar Airways $1,208 12h 51m."),
+    18: "The 12h 30m flight is ANA; United also serves New York to Tokyo.",
+    33: "Air France has the lowest emissions at 924 kg CO2; another option emits 471 kg.",
+    39: "Tokyo is cheaper: $468 to Tokyo versus $385 to Sapporo.",
+    40: "I recommend Miami from $246, Cancun from $89 and Boston from $89.",
+}
+
+
+@pytest.mark.parametrize("n", sorted(SWAPPED_SUBJECT))
+def test_swapped_subject_binding_fails(tmp_root, n):
+    run_dir = make_run(tmp_root, f"swap-{n}", NAV[n], SWAPPED_SUBJECT[n])
+    rc, verdict = run_verifier(n, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"task {n} must FAIL when the right number is bound to the wrong subject: " \
+        f"rc={rc} verdict={verdict}"
+
+
 def test_task41_dual_business_price_reading(tmp_root):
     """Acceptor Difference 1: the mirror shows TWO business prices for the same
     1-stop flight — the results-page fare and the detail-page booking-sites
@@ -390,3 +423,10 @@ def test_clear_cdp_state_fails_closed_without_cdp():
          "--cdp_url", "http://127.0.0.1:59999"],
         capture_output=True, text=True, timeout=60)
     assert proc.returncode == 2, proc.stdout + proc.stderr
+
+
+def test_task40_two_cities_with_multiple_fares_insufficient(tmp_root):
+    answer = "London from $420 or London from $421; Tokyo from $363 or Tokyo from $621."
+    run_dir = make_run(tmp_root, "neg-40-two-cities-multiple-fares", NAV[40], answer)
+    rc, verdict = run_verifier(40, run_dir)
+    assert rc == 1 and not verdict["pass"], verdict

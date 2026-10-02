@@ -329,9 +329,12 @@ def fetch_seed_db(tmp: Path) -> Path:
     """Real instance_seed from the container when possible, else synthetic schema."""
     container = os.environ.get("WH_CONTAINER", "wh-ver-espn")
     out = tmp / "espn_seed.db"
-    r = subprocess.run(["docker", "cp", f"{container}:/opt/WebSyn/espn/instance_seed/espn.db", str(out)],
-                       capture_output=True, text=True)
-    if r.returncode == 0 and out.exists():
+    try:
+        r = subprocess.run(["docker", "cp", f"{container}:/opt/WebSyn/espn/instance_seed/espn.db", str(out)],
+                           capture_output=True, text=True)
+    except OSError:
+        r = None
+    if r is not None and r.returncode == 0 and out.exists():
         return out
     con = sqlite3.connect(out)
     for t in verify_lib.TABLES:
@@ -533,6 +536,66 @@ def _add_rework_tests():
         rc, verdict = self.grade(33, run)
         self.assertEqual(rc, 0, f"honest retrospective answer must PASS: {verdict}")
 
+    def swapped_subject_fails(self, task, answer):
+        paths = POSITIVE[task][0]
+        run = make_run(self.tmp, task, paths, answer)
+        rc, verdict = self.grade(task, run)
+        self.assertNotEqual(
+            rc, 0,
+            f"task {task} must FAIL when the right number is on the wrong subject: {verdict}")
+        self.assertFalse(verdict["pass"], verdict)
+
+    def test_swapped_subject_standings_record(self):
+        # 64-18 is the Celtics' record, stated on the Heat, with enough East teams.
+        self.swapped_subject_fails(0, (
+            "Eastern Conference teams include the Boston Celtics, New York Knicks, "
+            "Philadelphia 76ers, Toronto Raptors, Brooklyn Nets, and Cleveland Cavaliers. "
+            "The Miami Heat lead the East at 64-18."))
+
+    def test_swapped_subject_yesterday_scores(self):
+        # Each game's real scoreline is present, attached to a different game.
+        self.swapped_subject_fails(4, (
+            "Yesterday's NBA finals: Indiana Pacers 109 - Milwaukee Bucks 121; "
+            "Golden State Warriors 102 - Denver Nuggets 108; "
+            "New York Knicks 114 - Miami Heat 119; "
+            "Dallas Mavericks 118 - Phoenix Suns 125; "
+            "Atlanta Hawks 110 - Cleveland Cavaliers 128."))
+
+    def test_swapped_subject_gamehigh_points(self):
+        self.swapped_subject_fails(5, (
+            "Nikola Jokic scored 35 points for the Denver Nuggets at center, while "
+            "Giannis Antetokounmpo plays for the Milwaukee Bucks at power forward."))
+
+    def test_swapped_subject_scoring_leaders(self):
+        self.swapped_subject_fails(8, (
+            "The top three scoring leaders: Joel Embiid (Philadelphia 76ers) at 30.4 PPG, "
+            "Luka Doncic (Dallas Mavericks) at 34.7 PPG, and Giannis Antetokounmpo "
+            "(Milwaukee Bucks) at 33.9 PPG."))
+
+    def test_swapped_subject_conference_records(self):
+        self.swapped_subject_fails(16, (
+            "The marquee game was Boston Celtics at Los Angeles Lakers. "
+            "The Celtics are 47-35 (.573); the Lakers are 64-18 (.780)."))
+
+    def test_swapped_subject_bpi(self):
+        self.swapped_subject_fails(17, (
+            "The Boston Celtics are in first place with a BPI of 0.9, and the "
+            "San Antonio Spurs are in last place with a BPI of 10.5."))
+
+    def test_swapped_subject_west_leaders(self):
+        self.swapped_subject_fails(20, (
+            "In the Western Conference, Domantas Sabonis (Sacramento Kings) averages "
+            "9.8 rebounds per game, and Luka Doncic (Dallas Mavericks) averages "
+            "13.6 assists per game."))
+
+    setattr(TestEspnVerifiers, "swapped_subject_fails", swapped_subject_fails)
+    setattr(TestEspnVerifiers, "test_swapped_subject_standings_record", test_swapped_subject_standings_record)
+    setattr(TestEspnVerifiers, "test_swapped_subject_yesterday_scores", test_swapped_subject_yesterday_scores)
+    setattr(TestEspnVerifiers, "test_swapped_subject_gamehigh_points", test_swapped_subject_gamehigh_points)
+    setattr(TestEspnVerifiers, "test_swapped_subject_scoring_leaders", test_swapped_subject_scoring_leaders)
+    setattr(TestEspnVerifiers, "test_swapped_subject_conference_records", test_swapped_subject_conference_records)
+    setattr(TestEspnVerifiers, "test_swapped_subject_bpi", test_swapped_subject_bpi)
+    setattr(TestEspnVerifiers, "test_swapped_subject_west_leaders", test_swapped_subject_west_leaders)
     setattr(TestEspnVerifiers, "test_rework_b35_no_opponent_pass", v35_no_opponent_pass)
     setattr(TestEspnVerifiers, "test_rework_b35_wrong_ticket_fail", v35_wrong_ticket_fail)
     setattr(TestEspnVerifiers, "test_rework_b35_wrong_date_fail", v35_wrong_date_fail)

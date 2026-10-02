@@ -12,6 +12,7 @@ Adaptation of the mirror-web pattern to a news site:
   Subscription = Topic alerts (email-me-when-X-updates)
 """
 import os
+from urllib.parse import urlsplit
 import re
 import json
 import random
@@ -46,6 +47,20 @@ login_manager = LoginManager(app)
 login_manager.login_view = "login"
 login_manager.login_message = "Please sign in to continue."
 csrf = CSRFProtect(app)
+
+
+def bbc_article_share_url(article):
+    """Only share a recorded BBC source; never invent an upstream article."""
+    source = (article.source_url or '').strip()
+    try:
+        parsed = urlsplit(source)
+        if (parsed.scheme == 'https' and parsed.hostname in
+                {'bbc.com', 'www.bbc.com', 'bbc.co.uk', 'www.bbc.co.uk'}
+                and not parsed.username and not parsed.password):
+            return source
+    except ValueError:
+        pass
+    return None
 
 
 # =======================================================================
@@ -1068,6 +1083,7 @@ def article_detail(slug):
     return render_template(
         "article_detail.html",
         article=art,
+        article_share_url=bbc_article_share_url(art),
         article_gallery=article_gallery,
         related=related,
         more_articles=more_articles,

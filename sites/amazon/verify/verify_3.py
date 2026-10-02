@@ -19,7 +19,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -38,7 +38,12 @@ def main():
     j.check("answer_sorted_high_to_low", None not in (m_i, e_i, p_i) and m_i < e_i < p_i,
             "Mammut $219.95 -> Evolv $179.00 -> Petzl $149.95 order in the answer")
     j.check("answer_three_prices",
-            price_in(fa, 219.95) and price_in(fa, 179.00) and price_in(fa, 149.95),
+            price_bound_to(fa, ["mammut"], 219.95,
+                           [["evolv", "shaman"], ["petzl", "grigri", "gri gri"]])
+            and price_bound_to(fa, ["evolv", "shaman"], 179.00,
+                               [["mammut"], ["petzl", "grigri", "gri gri"]])
+            and price_bound_to(fa, ["petzl", "grigri", "gri gri"], 149.95,
+                               [["mammut"], ["evolv", "shaman"]]),
             f"final={fa[:260]!r}")
     j.emit()
 

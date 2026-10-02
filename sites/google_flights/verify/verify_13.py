@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"min_price": 298.0, "airline": "British Airways"}
@@ -30,7 +30,8 @@ TO = ["tokyo", "hnd", "nrt", "narita", "haneda", "tokyo narita", "tokyo haneda"]
 def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "01-10", return_md="01-24"),
             "expected /flights NYC->Tokyo depart 01-10 return 01-24")
-    j.check("answer_cheapest_price", mentions_price(ans, GROUND_TRUTH["min_price"]),
+    j.check("answer_cheapest_price",
+            bound_airline_price(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["min_price"]),
             f"expected $298; final={ans!r}")
     j.check("answer_airline", mentions_airline(ans, GROUND_TRUTH["airline"]),
             f"expected airline British Airways; final={ans!r}")

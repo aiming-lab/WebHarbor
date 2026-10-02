@@ -18,7 +18,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -35,7 +35,9 @@ def main():
     j.check("answer_gray", contains_all(fa, ["gray"]), f"final={fa[:200]!r}")
     j.check("answer_used_good_condition",
             contains_any(fa, ["used - good", "used good"]), f"final={fa[:200]!r}")
-    j.check("answer_price_149_99", price_in(fa, 149.99), f"final={fa[:200]!r}")
+    j.check("answer_price_149_99",
+            price_bound_to(fa, ["gray"], 149.99, [["yellow"], ["blue"]]),
+            f"final={fa[:200]!r}")
     j.emit()
 
 

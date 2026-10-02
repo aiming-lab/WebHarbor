@@ -131,6 +131,24 @@ def final_answer(traj):
 
 
 # ---------------------------------------------------------------- navigation
+def search_evidence_url(url):
+    """Recognize canonical search routes without weakening the task's filters."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode, unquote
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return url
+    path = p.path
+    query = parse_qsl(p.query, keep_blank_values=True)
+    if p.path.startswith('/search/_/q/'):
+        path = '/search'
+        term = unquote(p.path[len('/search/_/q/'):])
+        if term:
+            query = [('q', term)] + [(k, v) for k, v in query if k != 'q']
+        return urlunsplit((p.scheme, p.netloc, path, urlencode(query), p.fragment))
+    return url
+
+
 def step_urls(traj):
     """Every recorded step URL (before + after the action) in chronological order."""
     out = []
@@ -138,7 +156,7 @@ def step_urls(traj):
         for field in ("url", "url_after"):
             u = s.get(field)
             if isinstance(u, str) and u:
-                out.append(u)
+                out.append(search_evidence_url(u))
     return out
 
 
@@ -204,6 +222,200 @@ def num_in(final, number):
     (0.9 matches '0.9' but not '0x9'); 1 matches '1' / '1,' but not '13'."""
     f = norm(final)
     return bool(re.search(rf"(?<![\d.]){re.escape(str(number))}(?![\d])", f))
+
+
+# A stat counts for a team or player only when that subject is the nearest
+# label to the number (and the number is that label's nearest value). Listing
+# Embiid and 34.7 anywhere in the answer is not the same as Embiid's 34.7.
+_BIND_WINDOW = 240
+_RECORD_RE = re.compile(r"(?<![\d.])(\d{1,3})\s*-\s*(\d{1,3})(?![\d])")
+_ORDINAL_RE = re.compile(r"(?<![\d.])\d+\s*(?:st|nd|rd|th)\b")
+_NUMBER_RE = re.compile(r"(?<![a-z0-9.])(\d+(?:\.\d+)?|\.\d+)(?![a-z0-9])")
+_CLAUSE_SPLIT = re.compile(r",|;|\band\b")
+_MONTH_BEFORE_RE = re.compile(
+    r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?)\s*$"
+)
+
+
+def _num_eq(a, b):
+    try:
+        return abs(float(a) - float(b)) < 1e-6
+    except (TypeError, ValueError):
+        return False
+
+
+def _gap(a, b):
+    if a[1] <= b[0]:
+        return b[0] - a[1]
+    if b[1] <= a[0]:
+        return a[0] - b[1]
+    return 0
+
+
+def _overlaps(start, end, spans):
+    return any(not (end <= s or e <= start) for s, e in spans)
+
+
+# Prefer each sentence or table row when attaching values to subjects.
+# Commas and conjunctions remain soft boundaries for multi-fact prose.
+_STATEMENT_END = re.compile(r"\n|[!?]|\.(?!\d)(?=\s|$)")
+_NEGATED = re.compile(r"\b(?:not(?!\s+only\b)|never|isn't|isnt|wasn't|wasnt|aren't|arent)\b", re.I)
+
+
+class _BindingClauses(list):
+    def __init__(self, ranges, text):
+        super().__init__(ranges)
+        self.text = text
+        self.boundaries = list(_STATEMENT_END.finditer(text))
+
+    def same_statement(self, a, b):
+        low, high = sorted((a[0], b[0]))
+        return not any(low < m.start() < high for m in self.boundaries)
+
+    def affirmative(self, label, value):
+        start, end = min(label[0], value[0]), max(label[1], value[1])
+        # Include a negator directly before the subject/value as well as one
+        # between them, but not a separate earlier clause.
+        prefix = self.text[:start]
+        prefix = re.split(r"[;,:\n.!?]", prefix)[-1]
+        prefix = re.split(r"\band\b", prefix)[-1]
+        return not _NEGATED.search(prefix + self.text[start:end])
+
+
+def _clause_ranges(text):
+    ranges = []
+    last = 0
+    for match in _CLAUSE_SPLIT.finditer(text or ""):
+        if match.group() == ",":
+            before = text[match.start() - 1] if match.start() else ""
+            after = text[match.end()] if match.end() < len(text) else ""
+            if before.isdigit() and after.isdigit():
+                continue
+        ranges.append((last, match.start()))
+        last = match.end()
+    ranges.append((last, len(text or "")))
+    return _BindingClauses(ranges or [(0, 0)], text)
+
+
+def _clause_index(pos, ranges):
+    for index, (start, end) in enumerate(ranges):
+        if start <= pos < end:
+            return index
+    return max(0, len(ranges) - 1)
+
+
+def _nearest(span, others, window, clauses):
+    local = [other for other in others
+             if clauses.same_statement(span, other) and _gap(span, other) <= window]
+    others = local or others
+    origin = _clause_index(span[0], clauses)
+    in_clause = []
+    outside = []
+    for other in others:
+        if other[0] == span[0] and other[1] == span[1]:
+            continue
+        gap = _gap(span, other)
+        if gap > window:
+            continue
+        follows = 0 if other[0] >= span[1] else 1
+        item = ((gap, follows, other[0]), other)
+        if (_clause_index(other[0], clauses) == origin
+                and clauses.same_statement(span, other)):
+            in_clause.append(item)
+        else:
+            outside.append(item)
+    pool = in_clause if in_clause else outside
+    if not pool:
+        return None
+    return min(pool, key=lambda item: item[0])[1]
+
+
+def _value_eq(a, b):
+    if isinstance(a, tuple) or isinstance(b, tuple):
+        return a == b
+    return _num_eq(a, b)
+
+
+def _binds(label, value, value_spans, labels, clauses):
+    nearest = _nearest(label, value_spans, _BIND_WINDOW, clauses)
+    if nearest is None or not _value_eq(nearest[2], value):
+        return False
+    if not clauses.affirmative(label, nearest):
+        return False
+    back = _nearest(nearest, labels, _BIND_WINDOW, clauses)
+    return back is not None and back[0] == label[0] and back[1] == label[1]
+
+
+def _label_spans(text, groups):
+    """groups: [(tag, [aliases])]. Longer aliases win overlaps. Stems such as
+    'pacer' match 'pacers'."""
+    entries = []
+    for tag, aliases in groups:
+        for alias in aliases:
+            alias = norm(alias)
+            if alias:
+                entries.append((alias, tag))
+    entries.sort(key=lambda item: len(item[0]), reverse=True)
+    spans = []
+    for alias, tag in entries:
+        for match in re.finditer(r"(?<![a-z0-9])" + re.escape(alias), text):
+            if _overlaps(match.start(), match.end(), [(s, e) for s, e, _ in spans]):
+                continue
+            spans.append((match.start(), match.end(), tag))
+    return spans
+
+
+def _record_spans(text):
+    return [(m.start(), m.end(), (int(m.group(1)), int(m.group(2))))
+            for m in _RECORD_RE.finditer(text)]
+
+
+def _number_spans(text):
+    occupied = [(s, e) for s, e, _ in _record_spans(text)]
+    occupied += [(m.start(), m.end()) for m in _ORDINAL_RE.finditer(text)]
+    spans = []
+    for match in _NUMBER_RE.finditer(text):
+        start, end = match.start(1), match.end(1)
+        if _overlaps(start, end, occupied):
+            continue
+        if end < len(text) and text[end] == ":":
+            continue
+        if _MONTH_BEFORE_RE.search(text[max(0, start - 14):start]):
+            continue
+        raw = match.group(1)
+        if re.fullmatch(r"\d{4}", raw) and 1900 <= int(raw) <= 2100:
+            continue
+        try:
+            value = float(raw)
+        except ValueError:
+            continue
+        spans.append((start, end, value))
+    return spans
+
+
+def _bound_value(final, aliases, value, competitor_groups, value_spans):
+    text = "\n".join(norm(line) for line in (final or "").splitlines())
+    groups = [("target", list(aliases))]
+    for index, group in enumerate(competitor_groups or []):
+        groups.append((f"c{index}", list(group)))
+    labels = _label_spans(text, groups)
+    clauses = _clause_ranges(text)
+    targets = [span for span in labels if span[2] == "target"]
+    return any(_binds(label, value, value_spans(text), labels, clauses)
+               for label in targets)
+
+
+def number_bound_to(final, aliases, number, competitor_groups=()):
+    """`number` is mutually nearest to one of `aliases`, not to a competitor."""
+    return _bound_value(final, aliases, number, competitor_groups, _number_spans)
+
+
+def record_bound_to(final, aliases, wins, losses, competitor_groups=()):
+    """The record 'wins-losses' is mutually nearest to this team."""
+    return _bound_value(final, aliases, (int(wins), int(losses)),
+                        competitor_groups, _record_spans)
 
 
 def word_num_in(final, number, word=None):

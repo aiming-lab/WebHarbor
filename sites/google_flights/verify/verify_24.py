@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"nonstop_pairs": [["Air France", 578.0], ["Japan Airlines", 437.0], ["Qantas", 493.0], ["Air Canada", 517.0], ["Emirates", 525.0], ["Singapore Airlines", 552.0], ["JetBlue", 560.0], ["Air Canada", 577.0], ["United", 686.0], ["Japan Airlines", 837.0], ["Southwest", 829.0], ["Japan Airlines", 841.0], ["Lufthansa", 868.0]], "nonstop_count": 13}
@@ -31,7 +31,7 @@ def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "03-01", return_md="03-08"),
             "expected /flights Dubai->Rome depart 03-01 return 03-08")
     n = sum(1 for a, p in GROUND_TRUTH["nonstop_pairs"]
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     j.check("answer_selects_nonstop", n >= 1,
             f"{n} consistent nonstop (airline, price) pairs; final={ans!r}")
     j.check("answer_says_nonstop", mentions_stops(ans, 0),

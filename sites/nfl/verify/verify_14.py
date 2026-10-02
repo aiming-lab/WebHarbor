@@ -21,8 +21,9 @@ Chiefs and sinking Chargers in spotlight" by Kevin Patra, September 21, 2026.
 Read-only task.
 """
 from verify_lib import (Judge, check_read_only_db, check_trajectory_identity,
-                        contains_amount, contains_date, contains_phrase, contains_record,
-                        contains_time, final_answer, navigated_to, run_verifier)
+                        contains_date, contains_phrase, contains_record,
+                        contains_time, final_answer, navigated_to, number_bound_to,
+                        run_verifier, score_bound_to)
 
 TASK_ID = "NFL--14"
 TEAM = "Raiders"
@@ -76,18 +77,19 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"expected the {TEAM}")
     judge.check("answer_record_2_0", contains_record(answer, *RECORD),
                 f"expected the {RECORD[0]}-{RECORD[1]} record")
-    judge.check("answer_point_differential", str(DIFF) in answer,
-                f"expected the +{DIFF} point differential")
+    judge.check("answer_point_differential",
+                number_bound_to(answer, [TEAM], DIFF, [["dolphins"], ["chargers"], ["saints"]]),
+                f"expected the +{DIFF} point differential on the {TEAM}")
     judge.check("answer_division_rank",
                 contains_phrase(answer, RANK) and contains_phrase(answer, DIVISION),
                 "expected 2nd AFC West (rendered upper-case)")
     judge.check("answer_w1_final",
-                contains_amount(answer, W1_FINAL[0]) and contains_amount(answer, W1_FINAL[1]),
+                score_bound_to(answer, ["w1", "week 1"], *W1_FINAL, [["w2", "week 2"]]),
                 f"expected the Week 1 final {W1_FINAL[0]}-{W1_FINAL[1]}")
     judge.check("answer_w2_final",
-                contains_amount(answer, W2_FINAL[0]) and contains_amount(answer, W2_FINAL[1]),
+                score_bound_to(answer, ["w2", "week 2"], *W2_FINAL, [["w1", "week 1"]]),
                 f"expected the Week 2 final {W2_FINAL[0]}-{W2_FINAL[1]}")
-    judge.check("answer_bye_week_13", BYE in answer,
+    judge.check("answer_bye_week_13", number_bound_to(answer, ["bye"], int(BYE)),
                 "expected bye Week 13 (the schedule skips REG 13)")
     opponent, game_date, kickoff, lv_rec, lac_rec = POST_BYE
     judge.check("answer_postbye_opponent", contains_phrase(answer, opponent),

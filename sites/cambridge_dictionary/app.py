@@ -402,6 +402,8 @@ def word_detail(slug):
 
 
 @app.route('/search')
+@app.route('/search/direct/')
+@app.route('/search/english/direct/')
 def search():
     q = request.args.get('q', '').strip()
     search_type = request.args.get('type', 'dictionary')
@@ -511,6 +513,7 @@ def thesaurus_article(slug):
 
 
 @app.route('/thesaurus')
+@app.route('/search/english-thesaurus/direct/')
 def thesaurus_search():
     q = request.args.get('q', '').strip()
     if not q:

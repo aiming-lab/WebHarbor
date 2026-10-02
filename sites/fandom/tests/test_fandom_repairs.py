@@ -417,6 +417,31 @@ class FandomRepairTests(unittest.TestCase):
         self.assertEqual(self.module.wiki_excerpt("Read [[Tony_Stark|Tony Stark]]"), 'Read Tony Stark')
         self.assertIn(b'Category:Five-Star_Characters', self.client.get('/wiki/genshin/Special:Categories').data)
 
+    def test_recent_changes_label_reports_rows_shown_and_page_limit(self):
+        base = "/wiki/starwars/Special:RecentChanges"
+        html = self.client.get(base + "?hide_bot=1").get_data(as_text=True)
+        self.assertEqual(html.count('class="changes-row"'), 200)
+        self.assertIn("200 revisions shown on Wookieepedia, newest first (page limit 200).", html)
+        self.assertNotIn("Latest 200 edits", html)
+
+        m = self.module
+        with self.app.app_context():
+            wiki = m.Wiki.query.filter_by(slug="genshin").one()
+            expected = m.Revision.query.join(m.Article).filter(
+                m.Article.wiki_id == wiki.id,
+                m.Revision.minor.is_(False),
+                m.Revision.bot.is_(False),
+            ).count()
+        self.assertLess(expected, 200)
+        html = self.client.get(
+            "/wiki/genshin/Special:RecentChanges?hide_minor=1&hide_bot=1"
+        ).get_data(as_text=True)
+        self.assertEqual(html.count('class="changes-row"'), expected)
+        self.assertIn(
+            f"{expected} revisions shown on {wiki.name}, newest first (page limit 200).",
+            html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

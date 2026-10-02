@@ -24,6 +24,7 @@ import string
 import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlencode, urlsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, jsonify, abort, session, send_from_directory)
@@ -412,6 +413,27 @@ def ensure_default_lists(user):
     db.session.commit()
 
 
+def google_maps_place_url(place):
+    """Construct a supported Maps search URL without claiming a place ID."""
+    query = f"{place.name} {place.city.display_name if place.city else ''}".strip()
+    return 'https://www.google.com/maps/search/?' + urlencode({'api': '1', 'query': query})
+
+
+def display_place_website(place):
+    """Hide absent or placeholder business websites instead of inventing one."""
+    website = (place.website or '').strip()
+    try:
+        parsed = urlsplit(website)
+        host = parsed.hostname or ''
+        if (parsed.scheme in {'http', 'https'} and host
+                and host != 'example.com' and not host.endswith('.example.com')
+                and not parsed.username and not parsed.password):
+            return website
+    except ValueError:
+        pass
+    return None
+
+
 @app.context_processor
 def inject_globals():
     categories = Category.query.order_by(Category.id).all()
@@ -422,6 +444,8 @@ def inject_globals():
         "global_categories": categories,
         "global_saved_count": saved_count,
         "current_year": datetime.utcnow().year,
+        "display_place_website": display_place_website,
+        "google_maps_place_url": google_maps_place_url,
     }
 
 
@@ -1016,8 +1040,10 @@ def _apply_place_sort(results, sort):
 
 
 @app.route("/search")
-def search():
-    q = request.args.get("q", "").strip()
+@app.route("/maps/search/")
+@app.route("/maps/search/<path:maps_query>")
+def search(maps_query=""):
+    q = (maps_query or request.args.get("q", "")).strip()
     sort = request.args.get("sort", "")
     args = request.args
 

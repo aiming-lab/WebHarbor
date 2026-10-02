@@ -18,7 +18,8 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, bound_airline_duration,
+                        bound_airline_stops, run)
 
 
 GROUND_TRUTH = {"min_price": 56.0, "airline": "Delta", "durations": [91, 148], "stops": 0}
@@ -30,14 +31,17 @@ TO = ["paris", "cdg", "charles de gaulle"]
 def main(j, traj, ans):
     j.check("nav_search", nav_search(traj, FROM, TO, "01-25"),
             "expected /flights search London->Paris depart 01-25")
-    j.check("answer_cheapest_price", mentions_price(ans, GROUND_TRUTH["min_price"]),
+    j.check("answer_cheapest_price",
+            bound_airline_price(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["min_price"]),
             f"expected $56; final={ans!r}")
     j.check("answer_airline", mentions_airline(ans, GROUND_TRUTH["airline"]),
             f"expected airline Delta; final={ans!r}")
     j.check("answer_travel_time",
-            any(mentions_duration(ans, x) for x in GROUND_TRUTH["durations"]),
+            any(bound_airline_duration(ans, GROUND_TRUTH["airline"], x)
+                for x in GROUND_TRUTH["durations"]),
             f"expected 1h 31m or 2h 28m; final={ans!r}")
-    j.check("answer_layovers", mentions_stops(ans, GROUND_TRUTH["stops"]),
+    j.check("answer_layovers",
+            bound_airline_stops(ans, GROUND_TRUTH["airline"], GROUND_TRUTH["stops"]),
             f"the chosen flight is nonstop (no layovers); final={ans!r}")
 
 

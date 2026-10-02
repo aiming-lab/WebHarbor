@@ -14,7 +14,9 @@ DETERMINISTIC FIRST.
   3. Answer checks against ground truth HARDCODED in the per-task verifier:
      price/number mentions, airline mentions, duration mentions (Xh Ym),
      CO2 mentions, stops wording, consistent (airline, price[, duration])
-     pair/triple matching, and per-task verdict wording. All 42 google_flights
+     pair/triple matching bound to the named subject (a fare counts only when
+     it is mutually nearest that airline or city, not merely present somewhere),
+     and per-task verdict wording. All 42 google_flights
      tasks are read-only searches — there is no DB after-state to grade and
      NO LLM call anywhere; the verdict is a pure function of the run signature
      (initial state, after state, trajectory, final answer).
@@ -392,22 +394,354 @@ def mentions_stops(answer, n):
                for p in _stops_pats(n))
 
 
+# --------------------------------------------- subject binding (mutual nearest)
+#
+# A price, duration, CO2 figure, or stop count belongs to a named airline or
+# city only when the two mentions are mutually nearest within BIND_WINDOW:
+# the value's nearest label is that subject, and that label occurrence's
+# nearest value of the same kind is this value. Co-presence anywhere in the
+# answer is not attribution. One carrier therefore cannot claim every number
+# in the answer, and swapping two subjects' fares does not still count.
+
+BIND_WINDOW = 240
+
+_DOLLAR_RE = re.compile(r"\$\s*([\d,]+(?:\.\d+)?)")
+_BARE_NUM_RE = re.compile(r"(?<![\d.,])(\d[\d,]*(?:\.\d+)?)(?![\d.,])")
+_CO2_RE = re.compile(r"\b(\d+)\s*kg\b", re.I)
+_MONTH_BEFORE_RE = re.compile(
+    r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?)\s*$",
+    re.I,
+)
+
+
+def _num_eq(a, b):
+    try:
+        return abs(float(a) - float(b)) < 1e-6
+    except (TypeError, ValueError):
+        return False
+
+
+def _gap(a, b):
+    if a[1] <= b[0]:
+        return b[0] - a[1]
+    if b[1] <= a[0]:
+        return a[0] - b[1]
+    return 0
+
+
+def _overlaps(start, end, spans):
+    return any(not (end <= s or e <= start) for s, e in spans)
+
+
+# List items are separated by commas, semicolons, "and", or parentheses.
+# A comma between digits is a thousands separator ($1,020), not a boundary.
+_CLAUSE_SPLIT = re.compile(r",|;|\band\b|[()]", re.I)
+
+
+# Prefer each sentence or table row when attaching values to subjects.
+# Commas and conjunctions remain soft boundaries for multi-fact prose.
+_STATEMENT_END = re.compile(r"\n|[!?]|\.(?!\d)(?=\s|$)")
+_NEGATED = re.compile(r"\b(?:not(?!\s+only\b)|never|isn't|isnt|wasn't|wasnt|aren't|arent)\b", re.I)
+
+
+class _BindingClauses(list):
+    def __init__(self, ranges, text):
+        super().__init__(ranges)
+        self.text = text
+        self.boundaries = list(_STATEMENT_END.finditer(text))
+
+    def same_statement(self, a, b):
+        low, high = sorted((a[0], b[0]))
+        return not any(low < m.start() < high for m in self.boundaries)
+
+    def affirmative(self, label, value):
+        start, end = min(label[0], value[0]), max(label[1], value[1])
+        # Include a negator directly before the subject/value as well as one
+        # between them, but not a separate earlier clause.
+        prefix = self.text[:start]
+        prefix = re.split(r"[;,:\n.!?]", prefix)[-1]
+        prefix = re.split(r"\band\b", prefix)[-1]
+        return not _NEGATED.search(prefix + self.text[start:end])
+
+
+def _clause_ranges(text):
+    text = text or ""
+    ranges = []
+    last = 0
+    for match in _CLAUSE_SPLIT.finditer(text):
+        if match.group() == ",":
+            before = text[match.start() - 1] if match.start() else ""
+            after = text[match.end()] if match.end() < len(text) else ""
+            if before.isdigit() and after.isdigit():
+                continue
+        ranges.append((last, match.start()))
+        last = match.end()
+    ranges.append((last, len(text)))
+    return _BindingClauses(ranges or [(0, 0)], text)
+
+
+def _clause_index(pos, ranges):
+    for index, (start, end) in enumerate(ranges):
+        if start <= pos < end:
+            return index
+    return max(0, len(ranges) - 1)
+
+
+def _nearest(span, others, window, clauses):
+    """Nearest span of this kind. Spans in the same clause win over spans in
+    another clause, so 'Frontier $823 13h 55m, Cathay ...' keeps 13h 55m on
+    Frontier. A fact sitting in its own clause ('..., 18h 41m, 2 layovers')
+    may still attach to the nearest subject."""
+    local = [other for other in others
+             if clauses.same_statement(span, other) and _gap(span, other) <= window]
+    others = local or others
+    origin = _clause_index(span[0], clauses)
+    in_clause = []
+    outside = []
+    for other in others:
+        if other[0] == span[0] and other[1] == span[1]:
+            continue
+        gap = _gap(span, other)
+        if gap > window:
+            continue
+        # On a distance tie, prefer the token that follows (Airline $fare).
+        follows = 0 if other[0] >= span[1] else 1
+        item = ((gap, follows, other[0]), other)
+        if (_clause_index(other[0], clauses) == origin
+                and clauses.same_statement(span, other)):
+            in_clause.append(item)
+        else:
+            outside.append(item)
+    pool = in_clause if in_clause else outside
+    if not pool:
+        return None
+    return min(pool, key=lambda item: item[0])[1]
+
+
+def _binds(label, value, value_spans, labels, window, clauses):
+    """True when this label occurrence and a span equal to `value` are
+    mutually nearest among the given spans."""
+    nearest = _nearest(label, value_spans, window, clauses)
+    if nearest is None or not _num_eq(nearest[2], value):
+        return False
+    if not clauses.affirmative(label, nearest):
+        return False
+    back = _nearest(nearest, labels, window, clauses)
+    return back is not None and back[0] == label[0] and back[1] == label[1]
+
+
+def _airline_pattern(name):
+    if name == "United":
+        return r"\bUnited\b(?!\s+(?:States|Kingdom|Arab|Nations))"
+    return r"\b" + re.escape(name) + r"\b"
+
+
+def _airline_spans(answer):
+    text = answer or ""
+    found = []
+    for name in sorted(AIRLINES_UNIVERSE, key=len, reverse=True):
+        for match in re.finditer(_airline_pattern(name), text, re.I):
+            if _overlaps(match.start(), match.end(), [(s, e) for s, e, _ in found]):
+                continue
+            found.append((match.start(), match.end(), name))
+    return found
+
+
+def _duration_spans(answer):
+    text = answer or ""
+    spans = []
+    occupied = []
+    for match in _DUR_HM.finditer(text):
+        hours = int(match.group(1))
+        minutes = int(match.group(2)) if match.group(2) else 0
+        spans.append((match.start(), match.end(), hours * 60 + minutes))
+        occupied.append((match.start(), match.end()))
+    for match in _DUR_H.finditer(text):
+        if _overlaps(match.start(), match.end(), occupied):
+            continue
+        spans.append((match.start(), match.end(), int(match.group(1)) * 60))
+        occupied.append((match.start(), match.end()))
+    for match in _DUR_MIN.finditer(text):
+        if _overlaps(match.start(), match.end(), occupied):
+            continue
+        spans.append((match.start(), match.end(), int(match.group(1))))
+    return spans
+
+
+def _stop_spans(answer):
+    text = answer or ""
+    found = []
+    for n in range(0, 6):
+        for pat in _stops_pats(n):
+            for match in re.finditer(r"\b" + pat + r"\b", text, re.I):
+                found.append((match.start(), match.end(), n))
+    found.sort(key=lambda span: (span[0], -(span[1] - span[0])))
+    kept = []
+    for span in found:
+        if _overlaps(span[0], span[1], [(s, e) for s, e, _ in kept]):
+            continue
+        kept.append(span)
+    return kept
+
+
+def _co2_spans(answer):
+    return [(m.start(), m.end(), int(m.group(1)))
+            for m in _CO2_RE.finditer(answer or "")]
+
+
+def _preceded_by_month(text, start):
+    return _MONTH_BEFORE_RE.search(text[max(0, start - 14):start]) is not None
+
+
+def _price_spans(answer):
+    """Dollar amounts and bare fares. Flight codes, dates, times, durations,
+    stop counts, years, and 'N kg' emissions are not fares."""
+    text = answer or ""
+    spans = []
+    occupied = []
+    for match in _DOLLAR_RE.finditer(text):
+        spans.append((match.start(), match.end(), float(match.group(1).replace(",", ""))))
+        occupied.append((match.start(), match.end()))
+    skip = occupied + [(s, e) for s, e, _ in _duration_spans(text)]
+    skip += [(s, e) for s, e, _ in _stop_spans(text)]
+    skip += [(s, e) for s, e, _ in _co2_spans(text)]
+    for match in _BARE_NUM_RE.finditer(text):
+        start, end = match.start(1), match.end(1)
+        if _overlaps(start, end, skip):
+            continue
+        if start > 0 and (text[start - 1].isalpha() or text[start - 1] in ":/-"):
+            continue
+        if end < len(text) and text[end] in ":/-":
+            continue
+        if _preceded_by_month(text, start):
+            continue
+        raw = match.group(1).replace(",", "")
+        try:
+            value = float(raw)
+        except ValueError:
+            continue
+        if re.fullmatch(r"\d{4}", raw) and 1900 <= int(raw) <= 2100:
+            continue
+        spans.append((start, end, value))
+    return spans
+
+
+def _target_airline_spans(answer, airline):
+    labels = _airline_spans(answer)
+    wanted = (airline or "").casefold()
+    return labels, [span for span in labels if span[2].casefold() == wanted]
+
+
+def bound_airline_price(answer, airline, price, window=BIND_WINDOW):
+    """The price is mutually nearest to this airline (not merely co-present)."""
+    labels, targets = _target_airline_spans(answer, airline)
+    prices = _price_spans(answer)
+    clauses = _clause_ranges(answer)
+    return any(_binds(label, price, prices, labels, window, clauses) for label in targets)
+
+
+def bound_airline_duration(answer, airline, minutes, window=BIND_WINDOW):
+    labels, targets = _target_airline_spans(answer, airline)
+    durations = _duration_spans(answer)
+    clauses = _clause_ranges(answer)
+    return any(_binds(label, minutes, durations, labels, window, clauses) for label in targets)
+
+
+def bound_airline_co2(answer, airline, kg, window=BIND_WINDOW):
+    labels, targets = _target_airline_spans(answer, airline)
+    figures = _co2_spans(answer)
+    clauses = _clause_ranges(answer)
+    return any(_binds(label, kg, figures, labels, window, clauses) for label in targets)
+
+
+def bound_airline_stops(answer, airline, n, window=BIND_WINDOW):
+    labels, targets = _target_airline_spans(answer, airline)
+    stops = _stop_spans(answer)
+    clauses = _clause_ranges(answer)
+    return any(_binds(label, n, stops, labels, window, clauses) for label in targets)
+
+
+def bound_airline_price_duration(answer, airline, price, minutes, window=BIND_WINDOW):
+    """One occurrence of the airline is mutually nearest to both this price
+    and this duration. Two mentions of the same carrier cannot trade facts."""
+    labels, targets = _target_airline_spans(answer, airline)
+    prices = _price_spans(answer)
+    durations = _duration_spans(answer)
+    clauses = _clause_ranges(answer)
+    return any(
+        _binds(label, price, prices, labels, window, clauses)
+        and _binds(label, minutes, durations, labels, window, clauses)
+        for label in targets
+    )
+
+
+def bound_airline_duration_stops(answer, airline, minutes, stops, window=BIND_WINDOW):
+    labels, targets = _target_airline_spans(answer, airline)
+    durations = _duration_spans(answer)
+    stop_spans = _stop_spans(answer)
+    clauses = _clause_ranges(answer)
+    return any(
+        _binds(label, minutes, durations, labels, window, clauses)
+        and _binds(label, stops, stop_spans, labels, window, clauses)
+        for label in targets
+    )
+
+
+def bound_label_price(answer, aliases, price, competitor_groups, window=BIND_WINDOW):
+    """Bind a fare to a city (or other non-airline label). `aliases` are the
+    target's names; each competitor group is a list of alias strings."""
+    text = answer or ""
+    entries = [(alias, "target") for alias in aliases]
+    for index, group in enumerate(competitor_groups):
+        for alias in group:
+            entries.append((alias, f"c{index}"))
+    entries.sort(key=lambda item: len(item[0]), reverse=True)
+    spans = []
+    for alias, tag in entries:
+        for match in re.finditer(r"\b" + re.escape(alias) + r"\b", text, re.I):
+            if _overlaps(match.start(), match.end(), [(s, e) for s, e, _ in spans]):
+                continue
+            spans.append((match.start(), match.end(), tag))
+    prices = _price_spans(text)
+    clauses = _clause_ranges(text)
+    targets = [span for span in spans if span[2] == "target"]
+    return any(_binds(label, price, prices, spans, window, clauses) for label in targets)
+
+
+def _mutual_price_attributions(answer, window=BIND_WINDOW):
+    """(airline, price) pairs where one airline occurrence and one fare are
+    mutually nearest."""
+    labels = _airline_spans(answer)
+    prices = _price_spans(answer)
+    clauses = _clause_ranges(answer)
+    found = []
+    for label in labels:
+        nearest = _nearest(label, prices, window, clauses)
+        if nearest is None:
+            continue
+        back = _nearest(nearest, labels, window, clauses)
+        if back is not None and back[0] == label[0] and back[1] == label[1]:
+            found.append((label[2], nearest[2]))
+    return found
+
+
 def consistent_pairs(answer, rows, price_key="price"):
-    """Count GT rows whose airline AND price both appear in the answer."""
+    """Count GT rows whose airline is mutually nearest to that row's price."""
     n = 0
     for r in rows:
-        if mentions_airline(answer, r["airline"]) and mentions_price(answer, r[price_key]):
+        if bound_airline_price(answer, r["airline"], r[price_key]):
             n += 1
     return n
 
 
 def consistent_triples(answer, rows, price_key="price"):
-    """Count GT rows whose airline, price AND duration all appear."""
+    """Count GT rows whose airline occurrence owns both that price and duration."""
     n = 0
     for r in rows:
-        if (mentions_airline(answer, r["airline"])
-                and mentions_price(answer, r[price_key])
-                and mentions_duration(answer, r["duration_min"])):
+        if bound_airline_price_duration(
+                answer, r["airline"], r[price_key], r["duration_min"]):
             n += 1
     return n
 
@@ -444,19 +778,40 @@ def stated_prices_consistent(answer, allowed_prices, extra_prices=()):
 
 
 def configuration_reading(traj, ans, nav_ok, allowed_prices, allowed_airlines,
-                          wording_ok, extra_prices=()):
+                          wording_ok, extra_prices=(), pairs=None):
     """The task's search/filter configuration was performed on the mirror
     (navigation evidence) and characterized in the answer, and NOTHING the
     answer states about flights contradicts the ground truth: every stated
     price must be a ground-truth price, every named carrier must be part of
-    the task's carrier set. Answers that DO state flight facts are instead
-    graded by the content branch (consistent pairs/triples)."""
+    the task's carrier set.
+
+    When `pairs` is provided, a fare mutually attributed to a carrier must be
+    that carrier's ground-truth fare (threshold amounts in extra_prices are
+    not fares). Naming carriers and stating fares without a single bound
+    ground-truth pair is also a contradiction: the configuration fallback
+    must not accept a shuffled catalog."""
     if not nav_ok or not wording_ok:
         return False
     if not stated_prices_consistent(ans, allowed_prices, extra_prices):
         return False
     if foreign_airline_mentions(ans, allowed_airlines):
         return False
+    if pairs is not None:
+        if isinstance(extra_prices, (int, float)):
+            extra_prices = (extra_prices,)
+        extras = {float(e) for e in extra_prices}
+        for airline, price in _mutual_price_attributions(ans):
+            if any(_num_eq(price, extra) for extra in extras):
+                continue
+            if not any(airline == row_airline and _num_eq(price, row_price)
+                       for row_airline, row_price in pairs):
+                return False
+        stated = [span for span in _price_spans(ans)
+                  if not any(_num_eq(span[2], extra) for extra in extras)]
+        named = [airline for airline in allowed_airlines if mentions_airline(ans, airline)]
+        if stated and named and not any(
+                bound_airline_price(ans, airline, price) for airline, price in pairs):
+            return False
     return True
 
 

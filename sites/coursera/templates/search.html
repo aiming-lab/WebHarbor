@@ -10,8 +10,8 @@
     {% if free == '1' or credit == '1' or certificate == '1' or min_rating %}{% set active_count = active_count + 1 %}{% endif %}
     {% if sort and sort != 'popular' %}{% set active_count = active_count + 1 %}{% endif %}
 
-    <form id="filter-form" action="{{ url_for('search') }}" method="get" class="filter-pill-row">
-      <input type="hidden" name="q" value="{{ q }}">
+    <form id="filter-form" action="/search" method="get" class="filter-pill-row">
+      <input type="hidden" name="query" value="{{ q }}">
 
       {# ---- Filter & Sort master pill ---- #}
       <details class="filter-pill filter-pill-master {% if active_count %}filter-pill-active{% endif %}">
@@ -63,7 +63,7 @@
           </div>
 
           <div class="fp-footer">
-            <a href="{{ url_for('search') }}?q={{ q }}" class="fp-clear">Clear all</a>
+            <a href="/search?query={{ q|urlencode }}" class="fp-clear">Clear all</a>
             <button type="submit" class="btn-primary fp-view">View</button>
           </div>
         </div>
@@ -81,7 +81,7 @@
           </label>
           {% endfor %}
           <div class="fp-footer">
-            <a href="{{ url_for('search') }}?q={{ q }}&amp;sort={{ sort }}" class="fp-clear">Clear</a>
+            <a href="/search?query={{ q|urlencode }}&amp;sort={{ sort }}" class="fp-clear">Clear</a>
             <button type="submit" class="btn-primary fp-view">View</button>
           </div>
         </div>
@@ -100,7 +100,7 @@
           </label>
           {% endfor %}
           <div class="fp-footer">
-            <a href="{{ url_for('search') }}?q={{ q }}" class="fp-clear">Clear</a>
+            <a href="/search?query={{ q|urlencode }}" class="fp-clear">Clear</a>
             <button type="submit" class="btn-primary fp-view">View</button>
           </div>
         </div>
@@ -118,7 +118,7 @@
           </label>
           {% endfor %}
           <div class="fp-footer">
-            <a href="{{ url_for('search') }}?q={{ q }}" class="fp-clear">Clear</a>
+            <a href="/search?query={{ q|urlencode }}" class="fp-clear">Clear</a>
             <button type="submit" class="btn-primary fp-view">View</button>
           </div>
         </div>
@@ -134,7 +134,7 @@
             English
           </label>
           <div class="fp-footer">
-            <a href="{{ url_for('search') }}?q={{ q }}" class="fp-clear">Clear</a>
+            <a href="/search?query={{ q|urlencode }}" class="fp-clear">Clear</a>
             <button type="submit" class="btn-primary fp-view">View</button>
           </div>
         </div>
@@ -152,7 +152,7 @@
           </label>
           {% endfor %}
           <div class="fp-footer">
-            <a href="{{ url_for('search') }}?q={{ q }}" class="fp-clear">Clear</a>
+            <a href="/search?query={{ q|urlencode }}" class="fp-clear">Clear</a>
             <button type="submit" class="btn-primary fp-view">View</button>
           </div>
         </div>

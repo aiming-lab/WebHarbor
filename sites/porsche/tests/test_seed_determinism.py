@@ -97,6 +97,39 @@ def test_seed_rebuild_is_byte_reproducible(tmp_path):
     # the real build path: seed_data.py __main__ (canonicalizes the file)
     subprocess.run([sys.executable, str(scratch / "seed_data.py")],
                    check=True, env=env, capture_output=True, cwd=str(scratch))
+    # r3 fix: SQLite file bytes vary across library builds even when content is
+    # identical (observed on python:3.12-slim-bookworm). Assert (a) true
+    # determinism (two rebuilds byte-identical) and (b) the rebuild matches the
+    # shipped seed on content (schema + ordered rows), which is what the
+    # verifier contract freezes (verify_lib SCHEMA_SHA256 / SEED_ROWS_SHA256).
+    def content_hashes(path):
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            schema = hashlib.sha256(repr(conn.execute(
+                "SELECT type,name,tbl_name,sql FROM sqlite_master "
+                "WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()).encode()).hexdigest()
+            tables = [r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")]
+            rows = hashlib.sha256(repr([conn.execute(f"SELECT * FROM {t} ORDER BY 1, 2").fetchall()
+                                        for t in tables]).encode()).hexdigest()
+            return schema, rows
+        finally:
+            conn.close()
+
     rebuilt = hashlib.sha256((scratch / "instance_seed" / "porsche.db").read_bytes()).hexdigest()
-    shipped = hashlib.sha256(SEED.read_bytes()).hexdigest()
-    assert rebuilt == shipped, "seed rebuild is not byte-reproducible"
+    scratch2 = tmp_path / "site2"
+    shutil.copytree(SITE, scratch2, ignore=shutil.ignore_patterns(
+        "instance", "instance_seed", "scraped_data", "__pycache__", ".pytest_cache"))
+    (scratch2 / "instance").mkdir(exist_ok=True)
+    env2 = dict(env, WEBHARBOR_MIRROR_DB=str(scratch2 / "instance" / "porsche.db"))
+    subprocess.run([sys.executable, str(scratch2 / "seed_data.py")],
+                   check=True, env=env2, capture_output=True, cwd=str(scratch2))
+    assert hashlib.sha256((scratch2 / "instance_seed" / "porsche.db").read_bytes()).hexdigest() == rebuilt, "two deterministic rebuilds differ"
+    assert content_hashes(scratch / "instance_seed" / "porsche.db") == content_hashes(SEED), "rebuilt seed content differs from the shipped seed"
+
+
+def test_georgia_dealers_share_one_state_code():
+    dealers = json.loads((SOURCE / "dealers.json").read_text())
+    georgia = [dealer for dealer in dealers if dealer.get("state", "").upper() == "GA"]
+    assert len(georgia) == 6
+    assert all(dealer["state"] == "GA" for dealer in georgia)

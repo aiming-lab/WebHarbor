@@ -17,7 +17,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_any, contains_all, contains_any,
-                        num_in, Judge, parse_args)
+                        number_bound_to, Judge, parse_args)
 
 def main():
     a = parse_args()
@@ -27,11 +27,14 @@ def main():
             navigated_any(t, ["/stats/leaders", "/nba/players", "/nba/statistics",
                               "/nba/stats"]),
             "must open the NBA stats leaders page")
-    j.check("answer_embiid", contains_all(fa, ["embiid"]) and num_in(fa, 34.7),
+    j.check("answer_embiid",
+            number_bound_to(fa, ["embiid"], 34.7, [["doncic"], ["giannis", "antetokounmpo"]]),
             "No. 1: Joel Embiid 34.7 PPG")
-    j.check("answer_doncic", contains_all(fa, ["doncic"]) and num_in(fa, 33.9),
+    j.check("answer_doncic",
+            number_bound_to(fa, ["doncic"], 33.9, [["embiid"], ["giannis", "antetokounmpo"]]),
             "No. 2: Luka Doncic 33.9 PPG")
-    j.check("answer_giannis", contains_any(fa, ["giannis", "antetokounmpo"]) and num_in(fa, 30.4),
+    j.check("answer_giannis",
+            number_bound_to(fa, ["giannis", "antetokounmpo"], 30.4, [["embiid"], ["doncic"]]),
             "No. 3: Giannis Antetokounmpo 30.4 PPG")
     j.check("answer_teams",
             contains_any(fa, ["76er", "philadelphia", "sixers"])

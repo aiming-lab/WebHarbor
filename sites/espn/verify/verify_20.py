@@ -18,7 +18,7 @@ Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, contains_all, contains_any,
-                        num_in, Judge, parse_args)
+                        number_bound_to, Judge, parse_args)
 
 def main():
     a = parse_args()
@@ -27,10 +27,10 @@ def main():
     j.check("nav_west_filter", navigated_to(t, "conference=west"),
             "the leaders must be filtered to the Western Conference")
     j.check("answer_rebounds_leader",
-            contains_all(fa, ["sabonis"]) and num_in(fa, 13.6),
+            number_bound_to(fa, ["sabonis"], 13.6, [["doncic", "luka"]]),
             "West rebounds leader: Domantas Sabonis 13.6")
     j.check("answer_assists_leader",
-            contains_any(fa, ["doncic", "luka"]) and num_in(fa, 9.8),
+            number_bound_to(fa, ["doncic", "luka"], 9.8, [["sabonis"]]),
             "West assists leader: Luka Doncic 9.8")
     j.emit()
 

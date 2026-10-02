@@ -1,7 +1,7 @@
 """Verify NFL--10: Help me understand the Giants’ and Bears’ quarterback injury outlook after Week 2. Find the reports about the season-ending knee surgery and hamstring injury, identify each quarterback and team, and summarize the expected absence with the report’s author and publication date. Compare the Giants update with the earlier September 22 report, identifying that report by title.
 
 Expected facts below are from the captured site fixture."""
-from verify_lib import Judge, check_read_only_db, check_trajectory_identity, contains_all, contains_phrase, contains_record, final_answer, navigated_to, run_verifier
+from verify_lib import Judge, check_read_only_db, check_trajectory_identity, contains_all, date_bound_to, contains_phrase, contains_record, final_answer, navigated_to, run_verifier
 TASK_ID = 'NFL--10'
 GIANTS_QB = 'Jaxson Dart'
 GIANTS_ARTICLE = ('giants-qb-jaxson-dart-season-ending-knee-surgery', 'Giants QB Jaxson Dart to undergo season-ending knee surgery', 'Kevin Patra')
@@ -24,7 +24,10 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check('answer_bears_qb', contains_phrase(answer, BEARS_QB), f'expected {BEARS_QB}')
     judge.check('answer_bears_injury_outlook', 'hamstring' in answer.lower() and 'week to week' in answer.lower(), "expected the hamstring injury and the 'week to week' outlook")
     judge.check('answer_bears_article_author', contains_phrase(answer, BEARS_ARTICLE[2]), f'expected author {BEARS_ARTICLE[2]}')
-    judge.check('answer_publish_dates', 'sep' in answer.lower() and ('23' in answer or '21' in answer), 'expected the publish dates (Sep 23 / Sep 21, 2026)')
+    judge.check('answer_publish_dates',
+                date_bound_to(answer, ['Dart', 'Giants'], '2026-09-23', [['Williams', 'Bears']])
+                and date_bound_to(answer, ['Williams', 'Bears'], '2026-09-21', [['Dart', 'Giants']]),
+                'expected the publish dates (Sep 23 / Sep 21, 2026)')
     judge.check('answer_sep22_title', contains_phrase(answer, SEP22_TITLE[:70]), f'expected the exact Sep 22 title: {SEP22_TITLE!r}')
     check_read_only_db(judge, initial_db, after_db)
 if __name__ == '__main__':

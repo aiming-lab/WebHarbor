@@ -18,17 +18,10 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_label_price, run)
 
 
 GROUND_TRUTH = {"destinations": [["Miami", 89.0], ["Boston", 89.0], ["Toronto", 89.0], ["New York", 90.0], ["New York", 90.0], ["New York", 90.0], ["Los Angeles", 90.0], ["San Francisco", 90.0], ["Atlanta", 90.0], ["Dallas", 90.0], ["Vancouver", 92.0], ["Chicago", 93.0], ["Las Vegas", 93.0], ["Honolulu", 100.0], ["Denver", 117.0], ["Cancun", 246.0], ["Buenos Aires", 250.0], ["Rio de Janeiro", 268.0], ["Mexico City", 274.0], ["Paris", 289.0], ["Lima", 309.0], ["Tokyo", 363.0], ["London", 420.0], ["London", 421.0], ["Barcelona", 421.0], ["Amsterdam", 421.0], ["Dubai", 421.0], ["Rome", 422.0], ["Madrid", 423.0], ["Prague", 423.0], ["Doha", 424.0], ["Copenhagen", 426.0], ["Lisbon", 432.0], ["Marrakech", 437.0], ["Stockholm", 451.0], ["Berlin", 472.0], ["Venice", 480.0], ["Cape Town", 482.0], ["Milan", 489.0], ["Vienna", 497.0], ["Dublin", 505.0], ["Istanbul", 523.0], ["Athens", 529.0], ["Zurich", 569.0], ["Tokyo", 621.0], ["Singapore", 622.0], ["Hong Kong", 623.0], ["Bangkok", 623.0], ["Seoul", 625.0], ["Bali", 642.0], ["Beijing", 681.0], ["Shanghai", 727.0], ["Sydney", 841.0], ["Osaka", 859.0], ["Melbourne", 923.0]]}
-
-import re
-
-
-def _mentions_city(answer, city):
-    return re.search(r"\b" + re.escape(city) + r"\b", answer or "", re.I) is not None
-
 
 def main(j, traj, ans):
     ok_explore = False
@@ -41,10 +34,14 @@ def main(j, traj, ans):
             ok_explore = True
     j.check("nav_explore_seattle", ok_explore,
             "expected the /explore destinations page for origin SEA (Seattle)")
-    n = 0
-    for city, price in set(map(tuple, GROUND_TRUTH["destinations"])):
-        if _mentions_city(ans, city) and mentions_price(ans, price):
-            n += 1
+    catalog = set(map(tuple, GROUND_TRUTH["destinations"]))
+    cities = sorted({city for city, _price in catalog})
+    matched_cities = set()
+    for city, price in catalog:
+        competitors = [[other] for other in cities if other.casefold() != city.casefold()]
+        if bound_label_price(ans, [city], price, competitors):
+            matched_cities.add(city.casefold())
+    n = len(matched_cities)
     j.check("answer_recommends_destinations", n >= 3,
             f"{n} consistent (destination, from-price) recommendations; final={ans[:200]!r}")
 

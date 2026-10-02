@@ -22,7 +22,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, navigated_to, navigated_any, visited_product,
                         visited_root, search_url_with, contains_all, contains_any,
-                        price_in, first_mention, mentions_percent_for, count_claim,
+                        price_in, price_bound_to, first_mention, mentions_percent_for, count_claim,
                         extract_color_count_claim, Judge, parse_args)
 
 
@@ -36,7 +36,12 @@ def main():
              ("amazon basics", 18.99, "12mm")]
     j.check("nav_yoga_mat_search", navigated_to(t, "yoga"),
             f"urls={[u for u in urls if 'yoga' in u.lower()][:4]}")
-    matched = [c for c in CANDS if contains_any(fa, [c[0]]) and price_in(fa, c[1])]
+    groups = []
+    for name, _price, _thick in CANDS:
+        if [name] not in groups:
+            groups.append([name])
+    matched = [c for c in CANDS
+               if price_bound_to(fa, [c[0]], c[1], [g for g in groups if g != [c[0]]])]
     j.check("answer_qualifying_mat", bool(matched),
             f"matched={[(c[0], c[1]) for c in matched]} of {[(c[0], c[1]) for c in CANDS]}")
     j.check("answer_thickness_6mm_plus",

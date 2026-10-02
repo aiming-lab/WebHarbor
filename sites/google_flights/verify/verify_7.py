@@ -18,7 +18,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         mentions_co2, mentions_stops, consistent_pairs,
                         consistent_triples, mentions_airline_any, plain_numbers,
                         configuration_reading, foreign_airline_mentions,
-                        stated_prices_consistent, run)
+                        stated_prices_consistent, bound_airline_price, run)
 
 
 GROUND_TRUTH = {"qual_pairs": [["Singapore Airlines", 430.0], ["Frontier", 495.0], ["Lufthansa", 560.0], ["Cathay Pacific", 595.0], ["Delta", 630.0], ["Air France", 660.0], ["KLM", 865.0], ["Lufthansa", 895.0], ["KLM", 895.0], ["KLM", 1160.0], ["American Airlines", 1225.0]], "cap": 1320.0}
@@ -32,7 +32,7 @@ def main(j, traj, ans):
             nav_search(traj, FROM, TO, "12-25", return_md="12-28", cabin="First"),
             "expected /flights PHX->MIA 12-25/12-28 with First class selected")
     n = sum(1 for a, p in GROUND_TRUTH["qual_pairs"]
-            if mentions_airline(ans, a) and mentions_price(ans, p))
+            if bound_airline_price(ans, a, p))
     j.check("answer_shows_qualifying_tickets", n >= 3,
             f"{n} consistent (airline, first-class price) pairs of the "
             f"{len(GROUND_TRUTH['qual_pairs'])} tickets under $1320; final={ans!r}")

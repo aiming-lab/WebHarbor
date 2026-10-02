@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Booking.com mirror — Flask app with real scraped content."""
 import os
+from urllib.parse import quote, unquote
 import json
 import random
 import secrets
@@ -511,11 +512,27 @@ def inject_global():
         'saved_count': saved_count,
         'current_year': datetime.now().year,
         'csrf_token_value': generate_csrf(),
+        'current_relative_url': current_relative_url,
         'currency_code': currency_code,
         'currency_rate': CURRENCY_RATES[currency_code],
         'currency_symbol': CURRENCY_SYMBOLS[currency_code],
         'currency_rates': CURRENCY_RATES,
     }
+
+
+def current_relative_url():
+    path = quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
+
+
+def safe_redirect_target(target, default_endpoint='index'):
+    if isinstance(target, str) and target.startswith('/'):
+        decoded = unquote(target)
+        if (not decoded.startswith('//') and '\\' not in decoded
+                and not any(ord(c) < 32 or ord(c) == 127 for c in decoded)):
+            return target
+    return url_for(default_endpoint)
 
 
 @app.route('/set-currency', methods=['GET', 'POST'])
@@ -940,8 +957,9 @@ def _is_beach_relevant_city(city):
 
 
 @app.route('/search')
+@app.route('/searchresults.html')
 def search():
-    q = (request.args.get('q') or '').strip()
+    q = (request.args.get('q') or request.args.get('ss') or '').strip()
     dest = (request.args.get('dest') or request.args.get('destination') or '').strip()
     near = (request.args.get('near') or '').strip()
     city_id = request.args.get('city_id', type=int)
@@ -1274,7 +1292,7 @@ def login():
             login_user(user, remember=True)
             flash('Welcome back!', 'success')
             next_url = request.args.get('next')
-            return redirect(next_url or url_for('index'))
+            return redirect(safe_redirect_target(next_url))
         flash('Invalid email or password.', 'danger')
     return render_template('login.html', form=form)
 
@@ -1511,8 +1529,8 @@ def cart_add_form(property_id):
     db.session.add(item)
     db.session.commit()
     flash(f'{prop.name} added to your bag.', 'success')
-    redirect_to = request.form.get('next') or url_for('bag')
-    return redirect(redirect_to)
+    redirect_to = request.form.get('next')
+    return redirect(safe_redirect_target(redirect_to, 'bag'))
 
 
 @app.route('/cart/remove/<int:item_id>', methods=['POST'])
@@ -1573,8 +1591,8 @@ def saved_add_form(property_id):
         flash(f'{prop.name} saved to your wishlist.', 'success')
     else:
         flash(f'{prop.name} is already in your saved list.', 'info')
-    redirect_to = request.form.get('next') or url_for('saved')
-    return redirect(redirect_to)
+    redirect_to = request.form.get('next')
+    return redirect(safe_redirect_target(redirect_to, 'saved'))
 
 
 @app.route('/saved/toggle/<int:property_id>', methods=['POST'])
@@ -1594,7 +1612,7 @@ def saved_toggle_form(property_id):
             db.session.add(SavedProperty(user_id=current_user.id, property_id=property_id))
             db.session.commit()
             flash(f'{prop.name} saved.', 'success')
-    return redirect(request.form.get('next') or url_for('saved'))
+    return redirect(safe_redirect_target(request.form.get('next'), 'saved'))
 
 
 # =====================================================================

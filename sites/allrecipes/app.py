@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Allrecipes Mirror - Flask Application"""
 import os
+from urllib.parse import quote, unquote
 import re
 import json
 import random
@@ -230,7 +231,26 @@ def utility_processor():
                 user_id=current_user.id, recipe_id=recipe_id).first() is not None
         return False
 
-    return dict(recipe_box_count=recipe_box_count, is_in_recipe_box=is_in_recipe_box)
+    return dict(
+        recipe_box_count=recipe_box_count,
+        is_in_recipe_box=is_in_recipe_box,
+        current_relative_url=current_relative_url,
+    )
+
+
+def current_relative_url():
+    path = quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
+
+
+def safe_redirect_target(target, default_endpoint='index'):
+    if isinstance(target, str) and target.startswith('/'):
+        decoded = unquote(target)
+        if (not decoded.startswith('//') and '\\' not in decoded
+                and not any(ord(c) < 32 or ord(c) == 127 for c in decoded)):
+            return target
+    return url_for(default_endpoint)
 
 
 # ---------------------------------------------------------------------------
@@ -1113,7 +1133,7 @@ def login():
             login_user(user, remember=request.form.get('remember'))
             flash('Welcome back!', 'success')
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('index'))
+            return redirect(safe_redirect_target(next_page))
         flash('Invalid email or password.', 'danger')
     return render_template('login.html')
 
@@ -1275,8 +1295,8 @@ def save_to_recipe_box(recipe_id):
         flash(f'"{recipe.title}" saved to your Recipe Box.', 'success')
     else:
         flash(f'"{recipe.title}" is already in your Recipe Box.', 'info')
-    next_page = request.form.get('next') or request.referrer or url_for('recipe_box')
-    return redirect(next_page)
+    next_page = request.form.get('next')
+    return redirect(safe_redirect_target(next_page, 'recipe_box'))
 
 
 @app.route('/recipe-box/note/<int:item_id>', methods=['POST'])

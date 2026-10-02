@@ -7,7 +7,7 @@
 {% block content %}
 <div class="flights-hero">
   <div class="flights-search-box">
-    <form action="{{ url_for('flights_list') }}" method="GET" class="search-form" style="width:100%;display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:center;">
+    <form action="{{ url_for('flights_list') }}" method="GET" class="search-form flights-route-form">
       <input type="text" name="from" class="search-field" placeholder="From (IATA or city)" value="{{ origin_input or origin_iata }}" list="airport-list">
       <input type="text" name="to" class="search-field" placeholder="To (IATA or city)" value="{{ dest_input or dest_iata }}" list="airport-list">
       <input type="text" name="depart" class="search-field" value="{{ depart }}" placeholder="YYYY-MM-DD" maxlength="10" inputmode="numeric" pattern="\d{4}-\d{2}-\d{2}" autocomplete="off" data-datepicker="checkin" required>
@@ -22,7 +22,7 @@
 </div>
 
 <div class="flights-container">
-  <div class="flights-layout" style="display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start;">
+  <div class="flights-layout">
     <!-- Filter Sidebar -->
     <aside class="flights-sidebar" aria-label="Filter flights" style="background:white;border:1px solid var(--g-grey-200);border-radius:8px;padding:16px;position:sticky;top:16px;">
       <h2 style="font-family:var(--font-sans);font-size:16px;font-weight:500;margin-bottom:12px;">Filters</h2>
@@ -157,7 +157,12 @@
              data-flight-id="{{ f.id }}" data-price="{{ display_price }}" data-duration="{{ f.duration_minutes }}"
              data-stops="{{ f.stops }}" data-cabin="{{ f.cabin_class }}" data-airline="{{ f.airline }}">
             <div class="airline-logo">
-              <img src="{{ f.airline_logo }}" alt="{{ f.airline }}" onerror="this.style.display='none'">
+              {% set logo = airline_logo_url(f) %}
+              {% if logo %}
+              <img src="{{ logo }}" alt="{{ f.airline }}">
+              {% else %}
+              <span class="airline-logo-fallback" aria-hidden="true">{{ f.airline_code }}</span>
+              {% endif %}
             </div>
             <div class="flight-row-main">
               <div>

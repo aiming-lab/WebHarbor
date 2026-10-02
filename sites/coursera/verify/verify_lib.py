@@ -110,20 +110,37 @@ def is_mirror_url(url):
     return parsed.scheme in ("http", "https") and _is_loopback_host(parsed.hostname)
 
 
+def search_evidence_url(url):
+    """Recognize canonical search routes without weakening the task's filters."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode, unquote
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return url
+    path = p.path
+    query = parse_qsl(p.query, keep_blank_values=True)
+    if p.path == '/search' and any(k == 'query' for k, v in query):
+        term = (next((v for k, v in query if k == 'q'), '')
+                or next((v for k, v in query if k == 'query'), ''))
+        query = [('q', term)] + [(k, v) for k, v in query if k not in ('q', 'query')]
+        return urlunsplit((p.scheme, p.netloc, path, urlencode(query), p.fragment))
+    return url
+
+
 def step_urls(traj):
     """Every URL recorded in the trajectory, in order (start, final, per step)."""
     urls = []
     for key in ("start_url", "final_url"):
         v = traj.get(key)
         if v:
-            urls.append(str(v))
+            urls.append(search_evidence_url(str(v)))
     for s in traj.get("steps") or []:
         if not isinstance(s, dict):
             continue
         for key in ("url", "url_after"):
             v = s.get(key)
             if v:
-                urls.append(str(v))
+                urls.append(search_evidence_url(str(v)))
     return urls
 
 
