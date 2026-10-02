@@ -261,18 +261,13 @@ def _consume_one_to_one(rows, expects, table, kind):
 
 
 def check_state(initial, after, spec):
-    # Diff by content multiset, ignoring the volatile rowid column 'id':
-    # the site reuses SQLite rowids after deletes, so PK-keyed diffs would
-    # misclassify a delete+insert as a row mutation (seen in watchlist_items).
-    # Added/removed rows are expanded by the per-key integer count difference
-    # (a key added twice yields two entries) and then consumed one-to-one
-    # against the expected matchers, so state multiplicity is preserved:
-    # duplicating a changed row can never pass as the exact required delta.
+    # Compare complete rows as a multiset. A reused SQLite id with changed
+    # content is still one removed row and one added row; unchanged records
+    # retain their identity. Ignoring ids would conceal account/record moves.
     def counts(rows):
         c = {}
         for row in rows.values():
-            key = json.dumps({k: v for k, v in row.items() if k != 'id'},
-                             default=str, sort_keys=True)
+            key = json.dumps(row, default=str, sort_keys=True)
             c[key] = c.get(key, [0, row])
             c[key][0] += 1
         return c

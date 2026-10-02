@@ -966,3 +966,10 @@ def test_replayed_initial_db_is_the_frozen_seed():
             db = Path(EVIDENCE) / 'runs' / round_ / f'{i:02d}' / 'initial.db'
             h = hashlib.sha256(db.read_bytes()).hexdigest()
             assert h == verify_lib.SEED_SHA256, (round_, i)
+
+
+def test_existing_record_identity_must_be_preserved():
+    initial = {'users': {'user': {'id': 1, 'email': 'alice.j@test.com'}}}
+    after = {'users': {'user': {'id': 99, 'email': 'alice.j@test.com'}}}
+    with pytest.raises(verify_lib.Fail):
+        verify_lib.check_state(initial, after, {'state': {}})

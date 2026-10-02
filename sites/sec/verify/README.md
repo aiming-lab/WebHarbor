@@ -8,8 +8,9 @@ terminated trajectory, local URLs, before/after PNGs under `screenshots/`,
 
 The verifier checks the frozen build-generated seed (including page content),
 relevant visited surfaces, factual answer claims, and exact state differences.
-It ignores reused SQLite row IDs when comparing watchlist changes, but consumes
-row matchers one to one to preserve multiplicity. Submission references in the
+It compares complete rows as a multiset, detecting reused SQLite IDs as
+removals/additions while preserving existing record identities. It consumes row
+matchers one to one to preserve multiplicity. Submission references in the
 answer must match the newly saved records. Other users and unrelated tables
 must remain unchanged. Screenshots establish package integrity; their pixels
 are not automatically interpreted as proof of task completion.
