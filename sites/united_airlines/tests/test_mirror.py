@@ -216,6 +216,8 @@ def test_booking_with_card():
     assert booking.card_last4 == '4242'
     assert booking.total > 0
     assert len(booking.passengers) == 1
+    assert client.get(f'/mytrips/{conf}').status_code == 200
+    assert app.test_client().get(f'/mytrips/{conf}').status_code == 403
     assert Passenger.query.filter_by(booking_id=booking.id).first().first_name == 'John'
     r = client.get(f'/booking/confirmation/{conf}')
     assert r.status_code == 200
@@ -706,3 +708,97 @@ def test_baggage_calculator_applies_free_allowance_and_retains_inputs():
         soup = BeautifulSoup(response.data, 'html.parser')
         assert soup.select_one('.ua-total-row').get_text(' ', strip=True) == 'Total $' + total
         assert soup.select_one('select[name=tier] option[selected]')['value'] == tier
+
+
+# Party-level validation must finish before either route changes persisted state.
+import pytest
+
+
+@pytest.fixture
+def seat_party(monkeypatch):
+    booking = Booking.query.filter_by(confirmation='HD19RK').one()
+    first = booking.passengers[0]
+    saved = (first.seat, first.checked_in, first.boarding_group)
+    first.seat, first.checked_in, first.boarding_group = '', False, ''
+    second = Passenger(booking_id=booking.id, first_name='Alex', last_name='Thomas')
+    db.session.add(second)
+    db.session.commit()
+    db.session.expire(booking, ['passengers'])
+    monkeypatch.setattr(Flight, 'occupied_seats', lambda self, day: {'12C'})
+    browser = app.test_client()
+    browser.get('/mytrips?confirmation=HD19RK&lastname=Thomas')
+    yield browser, booking, first, second
+    db.session.rollback()
+    first.seat, first.checked_in, first.boarding_group = saved
+    db.session.delete(second)
+    db.session.commit()
+    db.session.expire(booking, ['passengers'])
+
+
+@pytest.mark.parametrize('checkin', [False, True])
+@pytest.mark.parametrize('bad', ['12A', '12C', '99Z', 'malformed'])
+def test_party_rejects_duplicate_occupied_invalid_atomically(seat_party, checkin, bad):
+    browser, booking, first, second = seat_party
+    path = (f'/checkin/{booking.confirmation}' if checkin else
+            f'/mytrips/{booking.confirmation}/seats/{booking.legs[0].id}')
+    response = browser.post(path, data={f'seat_{first.id}': '12A',
+                                       f'seat_{second.id}': bad}, follow_redirects=True)
+    assert response.status_code == 200
+    expected = (b'more than one traveler' if bad == '12A' else
+                b'already taken' if bad == '12C' else b'does not exist')
+    assert expected in response.data
+    # Commit again to detect mutations left pending by a rejected request.
+    db.session.commit()
+    db.session.expire_all()
+    assert [(p.seat, p.checked_in, p.boarding_group) for p in booking.passengers] == [
+        ('', False, ''), ('', False, '')]
+
+
+@pytest.mark.parametrize('checkin', [False, True])
+def test_party_retained_seat_blocks_duplicate_and_allows_swap(seat_party, checkin):
+    browser, booking, first, second = seat_party
+    first.seat, second.seat = '12A', '12B'
+    db.session.commit()
+    path = (f'/checkin/{booking.confirmation}' if checkin else
+            f'/mytrips/{booking.confirmation}/seats/{booking.legs[0].id}')
+    browser.post(path, data={f'seat_{second.id}': '12A'})
+    db.session.expire_all()
+    assert (first.seat, second.seat) == ('12A', '12B')
+    browser.post(path, data={f'seat_{first.id}': '12B', f'seat_{second.id}': '12A'})
+    db.session.expire_all()
+    assert (first.seat, second.seat) == ('12B', '12A')
+    assert (first.checked_in, second.checked_in) == (checkin, checkin)
+
+
+def test_party_automatic_checkin_assigns_distinct_seats(seat_party):
+    browser, booking, first, second = seat_party
+    response = browser.post(f'/checkin/{booking.confirmation}', follow_redirects=True)
+    assert response.status_code == 200
+    db.session.expire_all()
+    assert first.seat and second.seat and first.seat != second.seat
+    assert first.checked_in and second.checked_in
+
+
+def test_party_auto_reserves_later_explicit_choice(seat_party):
+    browser, booking, first, second = seat_party
+    aircraft = booking.legs[0].flight.aircraft
+    seat = f'{aircraft.first_rows + aircraft.premium_rows + aircraft.economy_plus_rows + 1}{aircraft.seat_letters[0]}'
+    browser.post(f'/checkin/{booking.confirmation}', data={f'seat_{second.id}': seat})
+    db.session.expire_all()
+    assert second.seat == seat and first.seat != seat and first.seat
+
+
+@pytest.mark.parametrize('remaining', [0, 1])
+def test_party_no_available_seats_does_not_check_in(seat_party, monkeypatch, remaining):
+    browser, booking, first, second = seat_party
+    aircraft = booking.legs[0].flight.aircraft
+    monkeypatch.setattr(Flight, 'occupied_seats', lambda self, day: {
+        f'{row}{letter}' for row in range(1, aircraft.seat_rows + 1)
+        for letter in aircraft.seat_letters} -
+        ({f'{aircraft.seat_rows}{aircraft.seat_letters[-1]}'} if remaining else set()))
+    response = browser.post(f'/checkin/{booking.confirmation}', follow_redirects=True)
+    assert b'No available seats remain' in response.data
+    db.session.commit()
+    db.session.expire_all()
+    assert not first.seat and not second.seat
+    assert not first.checked_in and not second.checked_in

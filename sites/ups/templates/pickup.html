@@ -66,9 +66,12 @@
       <input type="hidden" name="step" value="datetime">
       <h2 class="ups-stephead">Select Date &amp; Time</h2>
       <p class="ups-hint">UPS On-Call Pickup&reg; charges: Same-day pickup ({{ MIRROR_DATE }}): ${{ '%.2f'|format(fee_same) }} &middot;
-        Future-day pickup: ${{ '%.2f'|format(fee_future) }} &middot; Saturday stop charge: ${{ '%.2f'|format(fee_saturday) }} (in addition to the On-Call Pickup charge).</p>
+        Future-day pickup: ${{ '%.2f'|format(fee_future) }} &middot; Saturday pickup total: ${{ '%.2f'|format(fee_saturday) }} (including the On-Call Pickup charge and Saturday stop charge).</p>
       <label>Pickup Date <span class="ups-req">*</span></label>
       <select name="pickup_date" required>
+            {% if data.get('pickup_date') and data.get('pickup_date') not in pickup_dates %}
+            <option selected value="{{ data.get('pickup_date') }}">{{ data.get('pickup_date') }} (unavailable)</option>
+            {% endif %}
         <option value="">Select a date</option>
         <option value="2026-09-28" {{ 'selected' if data.get('pickup_date') == '2026-09-28' }}>Monday, September 28, 2026 (same-day)</option>
         <option value="2026-09-29" {{ 'selected' if data.get('pickup_date') == '2026-09-29' }}>Tuesday, September 29, 2026</option>
@@ -81,8 +84,11 @@
         <div class="ups-ctc-col">
           <label>Earliest Ready Time <span class="ups-req">*</span></label>
           <select name="earliest" required>
+            {% if data.get('earliest') and data.get('earliest') not in earliest_times %}
+            <option selected value="{{ data.get('earliest') }}">{{ data.get('earliest') }} (unavailable)</option>
+            {% endif %}
             <option value="">Select</option>
-            {% for t in ['8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'] %}
+            {% for t in earliest_times %}
             <option {{ 'selected' if data.get('earliest') == t }}>{{ t }}</option>
             {% endfor %}
           </select>
@@ -90,8 +96,11 @@
         <div class="ups-ctc-col">
           <label>Latest Available Time <span class="ups-req">*</span></label>
           <select name="latest" required>
+            {% if data.get('latest') and data.get('latest') not in latest_times %}
+            <option selected value="{{ data.get('latest') }}">{{ data.get('latest') }} (unavailable)</option>
+            {% endif %}
             <option value="">Select</option>
-            {% for t in ['12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM','8:00 PM'] %}
+            {% for t in latest_times %}
             <option {{ 'selected' if data.get('latest') == t }}>{{ t }}</option>
             {% endfor %}
           </select>

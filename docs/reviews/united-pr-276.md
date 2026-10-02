@@ -37,3 +37,25 @@ The complete **21-task** browser/verifier replay was not executed. The 10 existi
 2. **(MAJOR) Reserve automatic choices for subsequent travelers.** Once a seat is selected for one traveler, exclude it from the remaining travelers' choices. Add a multi-traveler automatic check-in regression.
 3. **(MAJOR) Make each seat-change submission atomic.** Apply and commit assignments only after every traveler has a valid choice. A later invalid seat must leave all passenger rows unchanged; cover this in both My trips and check-in.
 4. **(Verification pending) Complete environment acceptance.** Run a fresh Docker build, authenticated reset/reset-all with byte-identical seed checks, and the complete 21-task browser/verifier replay. Complete the upstream visual comparison before declaring full review PASS.
+
+## Follow-up implementation
+
+The original audit above describes the pre-fix snapshot. The continuation plans
+and validates every traveler's effective seat before mutating any passenger.
+Both My trips and check-in reject duplicate, occupied, and nonexistent seats;
+blank fields retain existing assignments. Automatic check-in reserves explicit
+and retained choices first, then assigns distinct available standard seats,
+rejecting the whole party when capacity is insufficient. Valid seat swaps work.
+
+A direct HTTP reproduction confirmed that My trips committed a partial update.
+Check-in's request teardown rolled its pending changes back; its earlier mutation
+was still unsafe for a reused session, and is eliminated by the same planner.
+
+Browser testing also found that a guest's Manage this trip link returned 403
+immediately after payment. Successful payment now authorizes that booking only
+in the purchasing session; a separate unauthenticated session is still rejected.
+
+This is a focused handler regression review. Existing task definitions, rubrics,
+verifiers, and HF archives are unchanged. Browser evidence and the combined
+build/reset results are recorded in the PR description and external review
+artifacts; the original full-site/upstream review limitations remain explicit.
