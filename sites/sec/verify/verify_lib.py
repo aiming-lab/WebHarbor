@@ -1,48 +1,5 @@
-#!/usr/bin/env python3
-"""verify_lib.py — deterministic verifier utilities for sec task
-verification (reviewer contract, orch/review/sec).
-
-Philosophy: DETERMINISTIC FIRST. No LLM call is load-bearing; every check is
-regex / token / SQLite after-state.
-
-  1. Package identity (fail-closed): task_id matches, ``terminated`` with
-     ``agent_done``, non-empty final answer, every recorded URL on the same
-     loopback origin AND port as ``start_url``, every referenced screenshot a
-     decodable PNG.
-  2. Seed identity gate (fail-closed): the initial DB snapshot must BE the
-     frozen in-image seed (file sha256 + per-table counts + schema digest +
-     rows digest). A run graded against a pre-mutated database fails here.
-  3. Navigation gates (anti knowledge-shortcut): the agent MUST have opened
-     the on-site surfaces the task names (company pages with their form
-     filters, full-text search, enforcement lists and detail pages, FAST
-     Answers, forms index, rulemaking, the tip/complaint/question forms,
-     account). A correct answer with no matching navigation is a
-     memory-recall shortcut = FAIL.
-  4. Answer check: affirmative token / phrase / number matching against
-     ground truth HARDCODED in each ``verify_<n>.py`` (never in tasks.jsonl),
-     plus ``forbidden`` patterns that reject fabricated values for question
-     points the rendered site does not carry and stale/wrong claims.
-  5. DB after-state: read-only tasks require every table row-identical to
-     the seed; stateful tasks require the exact allowed row delta and
-     nothing else. Runtime-generated reference numbers (TCR-*, IC-*, Q-*)
-     are checked for shape and linkage via regex matchers, never frozen
-     literals.
-
-Seed reproducibility: the sec seed is rebuilt deterministically inside the
-pinned image (PYTHONHASHSEED=0, frozen bcrypt benchmark password) by the
-real Dockerfile sec site block (469-asset inventory gate -> deterministic
-seed -> instance_seed freeze -> seed-database check). The review image
-(webharbor:sec-review, built independently by the reviewer from
-orch/contribute/sec @ e7067e37) reproduces the seed byte-identically with
-the contributor's declared in-image seed; every per-task reset snapshot is
-byte-identical.
-
-Input signature (per task):
-  --run_dir DIR        agent trajectory dir: trajectory.json + screenshots/
-  --initial_db PATH    initial-state SQLite DB (default: <run_dir>/initial.db)
-  --after_db PATH      after-state  SQLite DB (default: <run_dir>/after.db)
-Output: JSON {task_id, pass, reason, evidence[]} to stdout; exit 0 on PASS,
-1 on FAIL.
+"""Primary SEC grader: saved evidence, frozen seed, claims and exact state deltas.
+See README.md for its finite language coverage and integrity checks.
 """
 import argparse
 import hashlib
@@ -63,10 +20,10 @@ _TASKS = {json.loads(line)['id']: json.loads(line)['ques']
           for line in _TASKS_FILE.read_text().splitlines() if line.strip()}
 
 # ---- frozen seed identity (computed from the in-image instance_seed) -------
-SEED_SHA256 = "59d95b8d5903063b0bbea21f38e57e31be4f06416d52cf397fa14f779e4d9e4b"
-SEED_COUNTS = {"admin_proceedings": 100, "companies": 50, "complaints": 1, "email_subscriptions": 0, "fast_answers": 15, "filings": 1666, "form_index": 153, "fts_docs": 80, "investor_alerts": 9, "lit_releases": 100, "press_releases": 100, "questions": 1, "rulemakings": 49, "speeches": 25, "tips": 1, "trading_suspensions": 100, "users": 4, "watchlist_items": 7, "whats_new": 20}
-SEED_SCHEMA_SHA256 = "0824c85d8f7def9e3348434a92acf4009c3053f7a70765fe43a77ca5797e1458"
-SEED_ROWS_SHA256 = "2e2465a1468a98ea64217490e94e6d680d63abfdfb758e50d203db8f7fa7cd55"
+SEED_SHA256 = '924f2f8bca50d8ef0e93bea87ce55fb44d5e42edc8361fff5c0242da1c4b2614'
+SEED_COUNTS = {'admin_proceedings': 100, 'companies': 50, 'complaints': 1, 'email_subscriptions': 0, 'fast_answers': 15, 'filings': 1666, 'form_index': 153, 'fts_docs': 80, 'investor_alerts': 9, 'lit_releases': 100, 'page_content': 8, 'press_releases': 100, 'questions': 1, 'rulemakings': 49, 'speeches': 25, 'tips': 1, 'trading_suspensions': 100, 'users': 4, 'watchlist_items': 7, 'whats_new': 20}
+SEED_SCHEMA_SHA256 = '7c4bf212589d40e77fdaea9a64eecc53cfd263a4017cac7a8cd07e633b1cf470'
+SEED_ROWS_SHA256 = '0731b1e6887a71763d20ec50d93b924b87d757bd193d48bea84b389cead88025'
 
 
 def norm(text):
@@ -225,6 +182,8 @@ def check_navigation(urls, spec):
 
 def check_answer(answer, spec):
     text = norm(answer)
+    if re.search(r"\b(?:these claims are false|the following is false|ignore these facts|incorrect answer)\b", text):
+        raise Fail('answer rejects its own claims')
     for label, pattern in spec.get('claims', []):
         if not re.search(pattern, text, re.I):
             raise Fail(f'answer claim missing: {label} (pattern {pattern!r})')
@@ -260,6 +219,9 @@ def row_matches(row, expect):
                     return False
             elif 'min_len' in want:
                 if len(str(value)) < want['min_len']:
+                    return False
+                if not all(re.search(pattern, str(value), re.I | re.S)
+                           for pattern in want.get('patterns', [])):
                     return False
             else:
                 return False
@@ -368,7 +330,18 @@ def verify(run_dir, spec):
     check_answer(run.get('final_answer') or '', spec)
     evidence.append('answer claims ok')
     after, _schema = load_db(after_db)
+    if schema_digest(_schema) != SEED_SCHEMA_SHA256:
+        raise Fail('saved database schema changed')
     check_state(initial, after, spec)
+    for table in ('tips', 'complaints', 'questions'):
+        if table not in spec.get('state', {}):
+            continue
+        old_refs = {r.get('reference') for r in initial.get(table, {}).values()}
+        refs = {r.get('reference') for r in after.get(table, {}).values()} - old_refs
+        for reference in refs:
+            if not re.search(r'(?<![A-Z0-9-])' + re.escape(reference) + r'(?![A-Z0-9-])',
+                             run['final_answer'], re.I):
+                raise Fail('answer reference does not match saved ' + table)
     evidence.append('db after-state ok')
     return {
         'task_id': spec['task_id'],
