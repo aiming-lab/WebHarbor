@@ -13,3 +13,9 @@ The run must carry the current task definition and verifier path, ordered browse
 Answer matching uses finite language patterns. It accepts the documented prose, bullets, reordered rows and selected monetary equivalents, but does not claim unrestricted semantic understanding. The primary review includes real scripted browser runs, separate positive/negative grading controls, and manual comparison to rendered content. A passing grader alone does not establish visual quality or minimum task difficulty. No secondary LLM judge was used.
 
 Review evidence and the dashboard are retained under `/data/webharbor-prs/final/pr239/`. The recordings are scripted browser regressions with reviewer-authored summaries, not independent agent discovery.
+
+Specialty housing evidence may come from the complete student-housing page or
+its filtered search. Counts bind to each city. The property comparison now explicitly distinguishes the overall advertised
+range from the matching-available-unit range, using the property and search
+surfaces to inform one rental choice. Ranges must match both property and meaning. Luxury-result tasks accept
+the fully filtered/sorted results without an unnecessary detail-page visit.

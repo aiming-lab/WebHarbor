@@ -1034,6 +1034,9 @@ def article_report(wiki_slug, title):
 # Special: pages
 # =======================================================================
 
+RECENT_CHANGES_LIMIT = 200
+
+
 def _special_recent_changes(w):
     namespace = request.args.get("namespace", "")
     hide_minor = bool(request.args.get("hide_minor"))
@@ -1047,9 +1050,10 @@ def _special_recent_changes(w):
         q = q.filter(Revision.minor == False)  # noqa
     if hide_bot:
         q = q.filter(Revision.bot == False)  # noqa
-    revs = q.limit(200).all()
+    revs = q.limit(RECENT_CHANGES_LIMIT).all()
     return render_template("recent_changes.html", wiki=w, revisions=revs,
-                           namespace=namespace, hide_minor=hide_minor, hide_bot=hide_bot)
+                           limit=RECENT_CHANGES_LIMIT, namespace=namespace,
+                           hide_minor=hide_minor, hide_bot=hide_bot)
 
 
 def _special_categories(w):

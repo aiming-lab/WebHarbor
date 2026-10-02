@@ -107,7 +107,7 @@
     "view_tables": []
   },
   "Apartments.com--3": {
-    "task": "Compare Mosaic at 2392 5th Ave in New York with Beacon at 4690 Pike St in Seattle. Which has the higher Walk Score, and what rent range is shown for each?",
+    "task": "I am comparing Mosaic at 2392 5th Ave in New York with Beacon at 4690 Pike St in Seattle for a walkable rental. Which has the higher Walk Score? For each building, distinguish its overall advertised rent range from the rent range currently shown for matching available units, so I can compare what is advertised with what I could rent.",
     "initial_digest": "5cfffdd7df943aaabcfbced4232ae07378ee809f36e1b9ca6d15f10c9271bb49",
     "state": {},
     "paths": [
@@ -116,35 +116,50 @@
     ],
     "claims": [
       {
-        "label": "1",
+        "label": "Mosaic Walk Score",
+        "entity": "mosaic",
         "all": [
-          "mosaic",
-          "walk score 78",
-          "3213",
-          "5751"
-        ],
-        "scope": "mosaic"
+          "walk(?: score)?\\D*78\\b"
+        ]
       },
       {
-        "label": "2",
+        "label": "Beacon Walk Score",
+        "entity": "beacon",
         "all": [
-          "beacon",
-          "walk score 76",
-          "2077",
-          "3904"
-        ],
-        "scope": "beacon"
+          "walk(?: score)?\\D*76\\b"
+        ]
       },
       {
-        "label": "3",
+        "label": "higher score",
         "all": [
           "mosaic",
           "higher walk score"
-        ],
-        "scope": "mosaic"
+        ]
       }
     ],
-    "view_tables": []
+    "view_tables": [],
+    "rental_ranges": {
+      "mosaic": {
+        "advertised": [
+          3213,
+          5751
+        ],
+        "available": [
+          3228,
+          5749
+        ]
+      },
+      "beacon": {
+        "advertised": [
+          2077,
+          3904
+        ],
+        "available": [
+          2119,
+          3894
+        ]
+      }
+    }
   },
   "Apartments.com--4": {
     "task": "Find the cheapest currently available 1-bedroom unit in San Francisco in a building that allows dogs and has in-unit laundry. Report the building name, address, unit number, and rent.",
@@ -367,8 +382,7 @@
     "initial_digest": "5cfffdd7df943aaabcfbced4232ae07378ee809f36e1b9ca6d15f10c9271bb49",
     "state": {},
     "paths": [
-      "^/ca/los\\-angeles/pacific\\-los\\-angeles\\-ca\\-048(?:/|\\?|$)",
-      "^/search(?:/|\\?|$)"
+      "^/search\\?(?=[^#]*\\bcity=Los(?:\\+|%20)Angeles(?:&|$))(?=[^#]*\\bmode=luxury(?:&|$))(?=[^#]*\\bamenity=rooftop(?:&|$))(?=[^#]*\\bamenity=pool(?:&|$))(?=[^#]*\\bsort=price_asc(?:&|$))"
     ],
     "claims": [
       {
@@ -380,13 +394,12 @@
         "scope": "pacific"
       },
       {
-        "label": "2",
+        "label": "rent range",
         "all": [
-          "matching.available.unit",
-          "2143",
-          "4797"
+          "\\b2143\\b",
+          "\\b4797\\b"
         ],
-        "scope": "matching.available.unit"
+        "entity": "pacific"
       }
     ],
     "view_tables": []
@@ -616,20 +629,13 @@
     "initial_digest": "5cfffdd7df943aaabcfbced4232ae07378ee809f36e1b9ca6d15f10c9271bb49",
     "state": {},
     "paths": [
-      "^/search(?:/|\\?|$)"
+      "^/(student-housing(?:/|$)|search\\?(?=[^#]*\\bmode=student(?:&|$)))"
     ],
-    "claims": [
-      {
-        "label": "1",
-        "all": [
-          "new york",
-          "san antonio",
-          "tie",
-          "\\b5 each|five each"
-        ],
-        "scope": "new york"
-      }
-    ],
-    "view_tables": []
+    "claims": [],
+    "view_tables": [],
+    "city_counts": {
+      "new york": 5,
+      "san antonio": 5
+    }
   }
 }

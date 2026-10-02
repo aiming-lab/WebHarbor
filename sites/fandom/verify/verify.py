@@ -177,7 +177,7 @@ def verify(run_dir):
         for line in spec['ics']:
             if line not in text:raise ValueError('Incorrect downloaded calendar: '+line)
     initial=database(run/'initial.db');after=database(run/'after.db');check_state(initial,after,spec)
-    answer=traj['final_answer'];check_claims(answer,spec['claims'])
+    answer=traj['final_answer'];check_claims(' '.join(answer.splitlines()) if spec.get('join_answer_lines') else answer,spec['claims'])
     for table,field in spec.get('answer_state',[]):
         added=[r for k,r in after[table].items() if k not in initial[table]]
         if len(added)!=1 or str(added[0][field]).casefold() not in answer.casefold():raise ValueError('Answer does not match saved confirmation')

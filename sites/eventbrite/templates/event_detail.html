@@ -266,7 +266,7 @@
         {% else %}
           <a class="btn btn-primary btn-block btn-large" href="{{ url_for('checkout', slug=ev.slug) }}">Get tickets</a>
           {% if current_user.is_authenticated %}
-          <form method="POST" action="{{ url_for('cart_add') }}" style="margin-top:6px;display:flex;gap:6px;">
+          <form class="eb-cart-form" method="POST" action="{{ url_for('cart_add') }}" style="margin-top:6px;display:flex;gap:6px;">
             <select name="tier_id" style="flex:1;padding:8px;border:1px solid var(--eb-border);border-radius:4px;">
               {% for t in ev.tickets if t.is_available_for_purchase() %}<option value="{{ t.id }}">{{ t.name }} — {{ t.price_str() }}</option>{% endfor %}
             </select>
