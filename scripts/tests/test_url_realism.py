@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import ast
+import contextlib
 import importlib.util
+import io
 import os
 import sys
 import tempfile
@@ -43,6 +45,111 @@ class SourceGuardTests(unittest.TestCase):
         self.assertFalse(check_url_realism.check_forbidden())
         self.assertFalse(check_url_realism.check_required())
         self.assertFalse(check_url_realism.check_relative_next_templates())
+
+    def test_no_site_leaks_the_mirror_address(self):
+        self.assertFalse(check_url_realism.check_sitewide())
+
+
+class SitewideScanTests(unittest.TestCase):
+    """The site-wide scan flags the leak patterns and nothing else."""
+
+    def _scan(self, files):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text)
+            return check_url_realism.scan_sites(root)
+
+    def test_flags_absolute_request_urls_in_templates(self):
+        found = self._scan({
+            "sites/a/templates/x.html": '<input name="next" value="{{ request.url }}">\n'
+                                        '{{ request.base_url }} {{ request.host_url }}\n'
+                                        "{{ url_for('p', _external=True) }}\n",
+        })
+        self.assertEqual(
+            [(rule, line) for rule, _, line, _ in found],
+            [("template-request-url", 1), ("template-request-url", 2),
+             ("template-external-url", 3)])
+
+    def test_flags_absolute_next_and_share_links_in_python(self):
+        found = self._scan({
+            "sites/a/app.py": "redirect(url_for('login', next=request.url))\n"
+                              "share_url = request.host_url.rstrip('/') + path\n"
+                              "redirect(url_for('login', next=current_relative_url()))\n",
+        })
+        self.assertEqual([(rule, line) for rule, _, line, _ in found],
+                         [("absolute-next", 1), ("share-from-host", 2)])
+
+    def test_flags_clipboard_writes_of_the_mirror_location(self):
+        found = self._scan({
+            "sites/a/static/js/site.js": "navigator.clipboard.writeText(window.location.href);\n"
+                                         "navigator.clipboard.writeText(location.origin + p);\n"
+                                         "window.location.href = '/next';\n"
+                                         "history.replaceState(null, '', location.href);\n",
+        })
+        self.assertEqual([(rule, line) for rule, _, line, _ in found],
+                         [("clipboard-location", 1), ("clipboard-location", 2)])
+
+    def test_ignores_lookalikes_and_non_site_code(self):
+        found = self._scan({
+            "sites/a/templates/x.html": "{{ request.url_rule }} {{ request.path }}\n",
+            "sites/a/app.py": "origin = urlsplit(request.host_url)\nnext = request.path\n",
+            "sites/a/static/js/x.min.js": "navigator.clipboard.writeText(location.href)",
+            "sites/a/static/images/x.js": "navigator.clipboard.writeText(location.href)",
+            "sites/a/verify/verify_1.py": "share_url = request.host_url\n",
+            "sites/a/tests/test_x.py": "next=request.url\n",
+        })
+        self.assertEqual(found, [])
+
+    def test_known_surfaces_are_allowed_and_stale_entries_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "sites/a/templates").mkdir(parents=True)
+            (root / "sites/a/templates/x.html").write_text("{{ request.base_url }}\n")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertTrue(check_url_realism.check_sitewide(root, known={}))
+                self.assertIn("sites/a/templates/x.html:1", out.getvalue())
+                known = {("sites/a/templates/x.html", "template-request-url"): "why"}
+                self.assertFalse(check_url_realism.check_sitewide(root, known=known))
+                known[("sites/a/templates/gone.html", "template-request-url")] = "why"
+                self.assertTrue(check_url_realism.check_sitewide(root, known=known))
+                self.assertIn("stale", out.getvalue())
+
+
+class RelativeNextHelperTests(unittest.TestCase):
+    """Sites that build login/return links from the current request."""
+
+    SITES = ("berkeley", "nba", "samsung", "thumbtack", "re_max")
+
+    def setUp(self):
+        self.flask = Flask(__name__)
+        self.helpers = {
+            site: _load_functions(
+                ROOT / f"sites/{site}/app.py", ("current_relative_url",),
+                extra_globals={"url_quote": quote})
+            for site in self.SITES
+        }
+
+    def test_current_relative_url_has_no_scheme_or_host(self):
+        cases = [("/tickets?team=lakers", "/tickets?team=lakers"),
+                 ("/projects/new?category=house-cleaning&pro=3", "/projects/new?category=house-cleaning&pro=3"),
+                 ("/a%20b/c?q=why?", "/a%20b/c?q=why?"),
+                 ("/news/x?", "/news/x")]
+        for site, ns in self.helpers.items():
+            for url, expected in cases:
+                with self.flask.test_request_context(url, base_url="http://localhost:40999"):
+                    self.assertEqual(ns["current_relative_url"](), expected, site)
+
+    def test_re_max_redirect_target_is_same_site_only(self):
+        ns = _load_functions(ROOT / "sites/re_max/app.py", ("safe_redirect_target",))
+        safe = ns["safe_redirect_target"]
+        self.assertEqual(safe("/tx/austin-real-estate?beds=2", "/x"), "/tx/austin-real-estate?beds=2")
+        for target in (None, "", "advice", "//evil.example", "https://evil.example/",
+                       "http://localhost:40096/account", "/\\evil.example",
+                       "/%5cevil.example", "/%2fevil.example", "/a\tb", "/a%0d%0aX: y"):
+            self.assertEqual(safe(target, "/x"), "/x", target)
 
 
 class RedirectHelperTests(unittest.TestCase):

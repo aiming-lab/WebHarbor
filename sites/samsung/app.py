@@ -40,6 +40,7 @@ import re
 import time
 import unicodedata
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
@@ -818,6 +819,13 @@ def _resolve_option_tree(tree, selected):
     return levels, resolved
 
 
+def current_relative_url():
+    """Path + query of the current request, without scheme or host."""
+    path = quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
+
+
 @app.context_processor
 def _globals():
     def products_in(category_slug):
@@ -944,7 +952,7 @@ def buy(category_slug, product_slug):
     if request.method == 'POST':
         if not current_user.is_authenticated:
             flash('Please sign in to add items to your cart.', 'error')
-            return redirect(url_for('login', next=request.url))
+            return redirect(url_for('login', next=current_relative_url()))
         model_code = request.form.get('model_code', '')
         try:
             qty = int(request.form.get('qty', '1'))
@@ -1267,7 +1275,7 @@ def contact():
     if request.method == 'POST':
         if not current_user.is_authenticated:
             flash('Please sign in to send us a message.', 'error')
-            return redirect(url_for('login', next=request.url))
+            return redirect(url_for('login', next=current_relative_url()))
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         if not subject or not message:

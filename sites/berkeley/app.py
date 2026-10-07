@@ -6,7 +6,7 @@ import secrets
 import sys
 from datetime import datetime
 from math import ceil
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, jsonify, session, abort, g)
@@ -369,10 +369,18 @@ def event_image(event):
 
 # ─── Context Processors ───────────────────────────────────────────────────────
 
+def current_relative_url():
+    """Path + query of the current request, without scheme or host."""
+    path = quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
+
+
 @app.context_processor
 def inject_globals():
     return {
         'now': BENCHMARK_NOW,
+        'current_relative_url': current_relative_url,
         'colleges': College.query.order_by(College.name).all(),
         'article_image': article_image,
         'event_image': event_image,

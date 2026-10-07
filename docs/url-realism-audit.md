@@ -101,11 +101,42 @@ These URL-looking values are intentional and should not be "fixed":
 - JavaScript that uses `window.location.href` only to update the current page's
   query string or navigate to a local route.
 
-## Out Of Scope (same class, not listed in #13)
+## Follow-up: Return URLs On Later Mirrors
 
-`sites/berkeley/templates/news_article.html` still serializes `request.url`
-into a hidden `next` input. Left unchanged to keep this takeover scoped to the
-sites named in #13.
+The sites above were fixed individually. A site-wide scan (see
+`scripts/check_url_realism.py`) found the same `request.url` pattern on
+mirrors added or reviewed afterwards:
+
+- `re_max`: eight hidden `next` inputs and the signed-out FAVORITE link used
+  `request.url`. The login handler only follows paths that start with `/`, so
+  signing in from that link dropped the user on `/account` instead of the
+  listing. Thirteen handlers also redirected to `request.form['next']`
+  unvalidated (`//evil.example` and `https://evil.example` were followed).
+  They now use `current_relative_url()` for the field and
+  `safe_redirect_target()` for the redirect, same rules as Booking/Allrecipes.
+- `berkeley`: the news-article bookmark form (previously listed here as out of
+  scope).
+- `nba` (`/tickets`), `samsung` (configurator buy, support contact) and
+  `thumbtack` (`/projects/new`): the signed-out redirect built
+  `/login?next=http://localhost:<port>/...`, which put the mirror address in
+  the address bar. It is now `/login?next=/<path>?<query>`.
+
+## Known Remaining Share Surfaces
+
+These still show the mirror address in a share or copy-link control. Fixing
+them needs the site's real upstream URL shape, which can't be derived from
+the mirror route, so they are listed in `KNOWN_SHARE_SURFACES` instead of
+being guessed:
+
+- `compass` share dialog (`request.base_url`)
+- `phys_org` article permalink (`url_for(..., _external=True)`)
+- `smartasset` calculator permalink (`request.host_url`)
+- `4shared` created share links (`request.host_url`; mirror-generated tokens)
+- `amazon_jobs` job share box (`request.host_url`)
+- `eventbrite`, `landwatch`, `us_doj`, `imgur` copy-link buttons
+  (`window.location.href` / `location.origin`)
+
+The check fails if a listed entry stops matching, so the list can only shrink.
 
 ## Regression Rule
 
@@ -117,4 +148,17 @@ python3 -m unittest scripts.tests.test_url_realism
 ```
 
 The check guards the known user-visible leaks while leaving benchmark/runtime
-localhost contracts intact.
+localhost contracts intact. Beyond the pinned files, it scans every site's
+top-level Python modules, templates and non-vendored JS for:
+
+| Rule | Matches |
+| --- | --- |
+| `template-request-url` | `request.url`, `request.base_url`, `request.host_url`, `request.url_root` in a template |
+| `template-external-url` | `_external=True` in a template |
+| `clipboard-location` | `writeText(... location.href / location.origin ...)` |
+| `absolute-next` | `next=request.url` (or the other absolute forms) in view code |
+| `share-from-host` | `share... = request.host_url` (or the other absolute forms) in view code |
+
+Host checks in view code (for example comparing `request.host_url` to validate
+a redirect) are not matched. Use a root-relative path from
+`current_relative_url()` for `next` values.

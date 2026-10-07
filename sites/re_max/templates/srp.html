@@ -63,7 +63,7 @@
       {% if current_user.is_authenticated %}
       <form method="post" action="{{ url_for('saved_search_add') }}" style="display:inline;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="next" value="{{ request.url }}">
+        <input type="hidden" name="next" value="{{ current_relative_url() }}">
         <input type="hidden" name="city" value="{{ city }}">
         <input type="hidden" name="state" value="{{ state }}">
         <input type="hidden" name="home_type" value="{{ args.get('home_type', '') }}">
@@ -75,7 +75,7 @@
       {% endif %}
       <form method="post" action="{{ url_for('alerts_subscribe') }}" style="display:inline-flex; align-items:center; gap:6px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="next" value="{{ request.url }}">
+        <input type="hidden" name="next" value="{{ current_relative_url() }}">
         <input type="hidden" name="city" value="{{ city }}">
         <input type="hidden" name="state" value="{{ state }}">
         <input type="email" name="email" placeholder="Email for alerts" required aria-label="Email for listing alerts" style="padding:8px 10px; border:1px solid #A9AEB8; font-family:inherit; font-size:13px; width:170px;">
@@ -120,7 +120,7 @@
     <h3 style="font-size:16px; color:#000E35; font-weight:600;">Get real-estate advice trusted by thousands worldwide</h3>
     <form method="post" action="{{ url_for('newsletter_subscribe') }}" style="display:flex; gap:8px; margin:12px 0; flex-wrap:wrap;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="next" value="{{ request.url }}">
+      <input type="hidden" name="next" value="{{ current_relative_url() }}">
       <input type="email" name="email" placeholder="Email Address" required style="padding:12px; border:1px solid #A9AEB8; font-family:inherit; min-width:280px;">
       <select name="buyer_type" style="padding:12px; border:1px solid #A9AEB8; font-family:inherit;">
         <option value="">Buyer Type</option>

@@ -4,6 +4,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 from flask_bcrypt import Bcrypt
@@ -267,6 +268,13 @@ class TicketRequest(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
+
+def current_relative_url():
+    """Path + query of the current request, without scheme or host."""
+    path = quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
 
 
 @app.context_processor
@@ -1823,7 +1831,7 @@ def tickets():
     if request.method == "POST":
         if not current_user.is_authenticated:
             flash("Sign in to save ticket requests.", "info")
-            return redirect(url_for("login", next=request.url))
+            return redirect(url_for("login", next=current_relative_url()))
         game = db.session.get(Game, int(request.form.get("game_id")))
         if not game:
             abort(404)
