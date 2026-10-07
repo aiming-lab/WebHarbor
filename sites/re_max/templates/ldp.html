@@ -33,11 +33,11 @@
         {% if current_user.is_authenticated %}
         <form method="post" action="{{ url_for('favorite_toggle', listing_id=l.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="next" value="{{ request.url }}">
+          <input type="hidden" name="next" value="{{ current_relative_url() }}">
           <button class="action-chip" type="submit">FAVORITE {{ '✓' if is_favorite else '' }}</button>
         </form>
         {% else %}
-        <a class="action-chip" href="{{ url_for('login', next=request.url) }}">FAVORITE</a>
+        <a class="action-chip" href="{{ url_for('login', next=current_relative_url()) }}">FAVORITE</a>
         {% endif %}
         <a class="action-chip" href="javascript:window.print()">PRINT</a>
       </div>
@@ -119,7 +119,7 @@
         <form method="post" action="{{ url_for('contact_listing') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="listing_id" value="{{ l.id }}">
-          <input type="hidden" name="next" value="{{ request.url }}">
+          <input type="hidden" name="next" value="{{ current_relative_url() }}">
           <input type="text" name="name" placeholder="Name" required>
           <input type="email" name="email" placeholder="Email" required>
           <input type="tel" name="phone" placeholder="Phone (optional)">

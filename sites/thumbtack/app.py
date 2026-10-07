@@ -19,6 +19,7 @@ import json
 import os
 import re
 from datetime import datetime
+from urllib.parse import quote
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
@@ -502,6 +503,13 @@ def _pro_card(pro):
 
 # ------------------------------------------------------------------- routes --
 
+def current_relative_url():
+    """Path + query of the current request, without scheme or host."""
+    path = quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
+
+
 @app.route('/')
 def index():
     cats = Category.query.order_by(Category.id).all()
@@ -765,7 +773,7 @@ def project_new():
                 db.session.flush()
                 login_user(user)
             else:
-                return redirect(url_for('login', next=request.url))
+                return redirect(url_for('login', next=current_relative_url()))
         project = Project(user_id=current_user.id, category_id=cat.id,
                           zip=zip_ or current_user.zip or DEFAULT_ZIP,
                           details=details, timeline=timeline,

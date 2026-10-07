@@ -18,7 +18,7 @@ import re
 import secrets
 from datetime import date, datetime
 
-from urllib.parse import quote as url_quote
+from urllib.parse import quote as url_quote, unquote
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
@@ -459,9 +459,31 @@ def _popular_cities_with_inventory():
     return _CONTENT_CACHE['popular']
 
 
+def current_relative_url():
+    """Path + query of the current request, without scheme or host.
+
+    Used for hidden ``next`` fields and login links so the mirror's own
+    address (``request.url``) never ends up in the DOM or the address bar.
+    """
+    path = url_quote(request.path, safe="/:@!$&'()*+,;=-._~")
+    return path + ('?' + request.query_string.decode('ascii', errors='replace')
+                   if request.query_string else '')
+
+
+def safe_redirect_target(target, fallback):
+    """Return ``target`` only if it is a same-site, root-relative path."""
+    if isinstance(target, str) and target.startswith('/'):
+        decoded = unquote(target)
+        if (not decoded.startswith('//') and '\\' not in decoded
+                and not any(ord(c) < 32 or ord(c) == 127 for c in decoded)):
+            return target
+    return fallback
+
+
 @app.context_processor
 def inject_globals():
     return {
+        'current_relative_url': current_relative_url,
         'STATES': STATES,
         'sort_options': SORT_OPTIONS,
         'content_popular_cities': _popular_cities_with_inventory(),
@@ -880,10 +902,8 @@ def login():
         user = User.query.filter(db.func.lower(User.email) == email).first()
         if user and user.check_password(password):
             login_user(user)
-            nxt = request.args.get('next')
-            if nxt and nxt.startswith('/'):
-                return redirect(nxt)
-            return redirect(url_for('account'))
+            return redirect(safe_redirect_target(request.args.get('next'),
+                                                 url_for('account')))
         flash('Invalid email or password.', 'error')
     return render_template('login.html')
 
@@ -988,7 +1008,7 @@ def favorite_toggle(listing_id):
                                  created_at=now_stamp()))
         db.session.commit()
         flash('Saved to your favorites.', 'success')
-    return redirect(request.form.get('next') or listing.detail_url())
+    return redirect(safe_redirect_target(request.form.get('next'), listing.detail_url()))
 
 
 @app.route('/saved-searches/add', methods=['POST'])
@@ -1010,7 +1030,7 @@ def saved_search_add():
             created_at=now_stamp()))
         db.session.commit()
         flash('Search saved to your account.', 'success')
-    return redirect(request.form.get('next') or url_for('account'))
+    return redirect(safe_redirect_target(request.form.get('next'), url_for('account')))
 
 
 @app.route('/saved-searches/<int:sid>/delete', methods=['POST'])
@@ -1048,10 +1068,10 @@ def contact_agent():
     message = request.form.get('message', '').strip()
     if not agent:
         flash('Select an agent to contact.', 'error')
-        return redirect(request.form.get('next') or url_for('agents_page'))
+        return redirect(safe_redirect_target(request.form.get('next'), url_for('agents_page')))
     if not (name and email and '@' in email):
         flash('Please provide your name and a valid email address.', 'error')
-        return redirect(request.form.get('next') or agent.detail_url())
+        return redirect(safe_redirect_target(request.form.get('next'), agent.detail_url()))
     db.session.add(Inquiry(
         user_id=current_user.id if current_user.is_authenticated else None,
         agent_id=agent.id, kind='agent', name=name, email=email,
@@ -1059,7 +1079,7 @@ def contact_agent():
         message=message or None, created_at=now_stamp()))
     db.session.commit()
     flash(f'Thank you! Your message has been sent to {agent.name}. They will get back to you shortly.', 'success')
-    return redirect(request.form.get('next') or agent.detail_url())
+    return redirect(safe_redirect_target(request.form.get('next'), agent.detail_url()))
 
 
 @app.route('/contact/listing', methods=['POST'])
@@ -1074,10 +1094,10 @@ def contact_listing():
     rental = db.session.get(Rental, rental_id) if rental_id else None
     if not listing and not rental:
         flash('Select a property first.', 'error')
-        return redirect(request.form.get('next') or url_for('index'))
+        return redirect(safe_redirect_target(request.form.get('next'), url_for('index')))
     if not (name and email and '@' in email):
         flash('Please provide your name and a valid email address.', 'error')
-        return redirect(request.form.get('next') or (listing.detail_url() if listing else rental.detail_url()))
+        return redirect(safe_redirect_target(request.form.get('next'), (listing.detail_url() if listing else rental.detail_url())))
     db.session.add(Inquiry(
         user_id=current_user.id if current_user.is_authenticated else None,
         listing_id=listing.id if listing else None,
@@ -1092,7 +1112,7 @@ def contact_listing():
         flash('Tour request sent! A RE/MAX agent will confirm your showing time shortly.', 'success')
     else:
         flash('Thank you! A RE/MAX agent will contact you about this property shortly.', 'success')
-    return redirect(request.form.get('next') or (listing.detail_url() if listing else rental.detail_url()))
+    return redirect(safe_redirect_target(request.form.get('next'), (listing.detail_url() if listing else rental.detail_url())))
 
 
 @app.route('/contact/office', methods=['POST'])
@@ -1103,10 +1123,10 @@ def contact_office():
     email = request.form.get('email', '').strip()
     if not office:
         flash('Select an office to contact.', 'error')
-        return redirect(request.form.get('next') or url_for('offices_page'))
+        return redirect(safe_redirect_target(request.form.get('next'), url_for('offices_page')))
     if not (name and email and '@' in email):
         flash('Please provide your name and a valid email address.', 'error')
-        return redirect(request.form.get('next') or office.detail_url())
+        return redirect(safe_redirect_target(request.form.get('next'), office.detail_url()))
     db.session.add(Inquiry(
         user_id=current_user.id if current_user.is_authenticated else None,
         office_id=office.id, kind='office', name=name, email=email,
@@ -1115,7 +1135,7 @@ def contact_office():
         created_at=now_stamp()))
     db.session.commit()
     flash(f'Thank you! Your message has been sent to {office.name}.', 'success')
-    return redirect(request.form.get('next') or office.detail_url())
+    return redirect(safe_redirect_target(request.form.get('next'), office.detail_url()))
 
 
 @app.route('/newsletter/subscribe', methods=['POST'])
@@ -1129,7 +1149,7 @@ def newsletter_subscribe():
                                            created_at=now_stamp()))
         db.session.commit()
         flash('Thanks for subscribing to HomeHQ! Watch your inbox for real estate advice.', 'success')
-    return redirect(request.form.get('next') or url_for('index'))
+    return redirect(safe_redirect_target(request.form.get('next'), url_for('index')))
 
 
 @app.route('/alerts/subscribe', methods=['POST'])
@@ -1146,7 +1166,7 @@ def alerts_subscribe():
             created_at=now_stamp()))
         db.session.commit()
         flash('Listing alerts enabled! We will email you new matches.', 'success')
-    return redirect(request.form.get('next') or url_for('index'))
+    return redirect(safe_redirect_target(request.form.get('next'), url_for('index')))
 
 
 # ------------------------------------------------------------- error pages --

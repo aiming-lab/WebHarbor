@@ -346,3 +346,62 @@ def test_hero_carousel_renders_all_slides():
             assert title in body
         assert body.count('class="hero-slide') == 4
         assert body.count('hero-bg') >= 4
+
+
+def test_return_paths_are_relative():
+    """Hidden next fields and login links carry a path, never the mirror host."""
+    import re
+    from urllib.parse import urlsplit
+    with app.app_context():
+        # SERVER_NAME makes detail_url() absolute here; the tests want the path
+        pages = [urlsplit(row.detail_url()).path for row in (
+                 Listing.query.filter_by(has_detail=True).first(),
+                 Agent.query.filter(Agent.about.isnot(None)).first(),
+                 Office.query.filter_by(has_detail=True).first(),
+                 Rental.query.filter_by(has_detail=True).first())]
+        pages.append('/tx/austin-real-estate?beds=2')
+    with client() as c:
+        for page in pages:
+            body = c.get(page).data.decode()
+            nexts = re.findall(r'name="next" value="([^"]*)"', body)
+            nexts += re.findall(r'href="/login\?next=([^"]*)"', body)
+            assert nexts, page
+            for value in nexts:
+                assert value.startswith('/') and 'localhost' not in value, (page, value)
+        # the FAVORITE chip on a signed-out listing returns to that listing
+        body = c.get(pages[0]).data.decode()
+        assert f'/login?next={pages[0]}' in body
+
+
+def test_login_returns_to_relative_next():
+    with client() as c:
+        tok = csrf_from(c, '/login')
+        r = c.post('/login?next=/tx/austin-real-estate%3Fbeds%3D2',
+                   data={'email': 'alice.j@test.com', 'password': 'TestPass123!',
+                         'csrf_token': tok})
+        assert r.status_code == 302
+        assert r.headers['Location'] == '/tx/austin-real-estate?beds=2'
+
+
+def test_next_redirects_stay_on_site():
+    bad = ['//evil.example/x', 'https://evil.example/x', '/\\evil.example',
+           '/%5cevil.example', '/%2fevil.example', 'javascript:alert(1)']
+    with client() as c:
+        tok = csrf_from(c, '/')
+        for target in bad:
+            r = c.post('/newsletter/subscribe',
+                       data={'email': 'next@example.com', 'next': target,
+                             'csrf_token': tok})
+            assert r.status_code == 302, target
+            assert r.headers['Location'] == '/', target
+        r = c.post('/newsletter/subscribe',
+                   data={'email': 'next@example.com', 'next': '/advice?x=1',
+                         'csrf_token': tok})
+        assert r.headers['Location'] == '/advice?x=1'
+        tok = csrf_from(c, '/login')
+        for target in bad:
+            c.get('/logout')
+            r = c.post('/login?next=' + target,
+                       data={'email': 'alice.j@test.com',
+                             'password': 'TestPass123!', 'csrf_token': tok})
+            assert r.headers['Location'] == '/account', target
