@@ -19,8 +19,6 @@
   </a>
 </p>
 
-</div>
-
 WebHarbor docks popular websites into local, stable, Docker-based mirrors with full auth, database, and multimodal image content. Environments evolve with agent capability.
 
 
@@ -34,32 +32,26 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 94 sites today, scaling to 100+ together
+- **Community-driven** — 153 sites today
 
 ## 🚀 Quickstart
 
 Build this checkout to run its registered web environments (published image tags may have an older registry):
 
 ```bash
-./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40132:40000-40132 webharbor:dev
+git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
+./scripts/build.sh webharbor:dev                   # pulls missing static assets from ChilleD/WebHarbor on HF, then docker build
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"   # required, at least 32 characters
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40152:40000-40152 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40093` to explore 94 local mirrors. The table below lists every site in port order.
+Then point your agent at `http://localhost:40000` through `http://localhost:40152` to explore 153 local mirrors. The table below lists every site in port order.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
 ```bash
 curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset/amazon          # one site
 curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset-all             # all sites in parallel
-```
-
-If you prefer to build the image yourself:
-
-```bash
-git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
-./scripts/fetch_assets.sh                          # pulls static assets from ChilleD/WebHarbor on HF
-./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
 ### Websites
@@ -121,6 +113,8 @@ All registered websites and their default ports, in registration order from left
 | Steam | 40150 | Trader Joe's | 40151 | SEC.gov | 40152 |
 
 ## 🤝 Contribute
+
+**Contributions for the current paper version have been closed.**
 
 We have built 30 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
 
