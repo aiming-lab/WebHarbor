@@ -1,0 +1,43 @@
+name: Deploy project page
+
+# The project page source lives in aiming-lab/webharbor.github.io (images and
+# trajectories stay out of this repository's history); this workflow publishes
+# it at https://aiming-lab.github.io/WebHarbor/.
+# Repository Settings -> Pages -> Source must be "GitHub Actions".
+
+on:
+  workflow_dispatch:
+  # sent by aiming-lab/webharbor.github.io on every push to its main branch
+  repository_dispatch:
+    types: [project-page-updated]
+  # fallback when that dispatch is not configured
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: aiming-lab/webharbor.github.io
+          ref: main
+          path: site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
