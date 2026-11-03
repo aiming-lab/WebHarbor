@@ -9,9 +9,8 @@
   <a href="https://aiming-lab.github.io/WebHarbor/">
     <img src="https://img.shields.io/badge/🏠-Project%20Page-orange.svg" alt="Project Page" />
   </a>
-  <!-- arXiv: replace 2611.XXXXX (badge and link) with the paper id once it is live -->
-  <a href="https://arxiv.org/abs/2611.XXXXX">
-    <img src="https://img.shields.io/badge/📄%20arXiv-2611.XXXXX-b31b1b.svg" alt="arXiv" />
+  <a href="https://arxiv.org/abs/2611.03634">
+    <img src="https://img.shields.io/badge/📄%20arXiv-2611.03634-b31b1b.svg" alt="arXiv" />
   </a>
   <a href="https://github.com/aiming-lab/WebHarbor">
     <img src="https://img.shields.io/badge/💻-Code-black.svg" alt="Code" />
@@ -48,6 +47,7 @@ WebHarbor docks **153** popular websites into local, stable, Docker-based mirror
 | Name                        | Link                                                         |
 | --------------------------- | ------------------------------------------------------------ |
 | 🏠 WebHarbor Project Page    | [WebHarbor](https://aiming-lab.github.io/WebHarbor/)         |
+| 📄 Paper                     | [arXiv:2611.03634](https://arxiv.org/abs/2611.03634)         |
 | 🤗 Environments              | [ChilleD/WebHarbor](https://huggingface.co/datasets/ChilleD/WebHarbor) |
 | 🤗 Tasks in Harbor format    | [ChilleD/WebHarbor-Tasks](https://huggingface.co/datasets/ChilleD/WebHarbor-Tasks) |
 | 🤖 WebHarbor-4B              | [ChilleD/WebHarbor-4B](https://huggingface.co/ChilleD/WebHarbor-4B) |
@@ -238,10 +238,12 @@ WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from
 
 ```bibtex
 @misc{webharbor2026,
-  title        = {WebHarbor: Docking Real Websites for Evolving GUI Agent Environments},
-  author       = {{WebHarbor Team and Contributors}},
-  year         = {2026},
-  url          = {https://aiming-lab.github.io/webharbor.github.io},
-  note         = {Project website.}
+  title         = {WebHarbor: Docking Real Websites for Evolving GUI Agent Environments},
+  author        = {{WebHarbor Team and Contributors}},
+  year          = {2026},
+  eprint        = {2611.03634},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2611.03634}
 }
 ```
