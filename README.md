@@ -237,13 +237,27 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`.
 
 ```bibtex
-@misc{webharbor2026,
-  title         = {WebHarbor: Docking Real Websites for Evolving GUI Agent Environments},
-  author        = {{WebHarbor Team and Contributors}},
-  year          = {2026},
-  eprint        = {2611.03634},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.AI},
-  url           = {https://arxiv.org/abs/2611.03634}
+@article{wang2026webharbordockingrealwebsites,
+      title={WebHarbor: Docking Real Websites for Evolving GUI Agent Environments}, 
+      author={{WebHarbor Team and Contributors}},
+      year={2026},
+      eprint={2611.03634},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2611.03634}, 
+}
+```
+
+or
+
+```bibtex
+@article{wang2026webharbordockingrealwebsites,
+      title={WebHarbor: Docking Real Websites for Evolving GUI Agent Environments}, 
+      author={Zhaoyang Wang and Qianhui Wu and Boyu Gou and Demi Wang and Jiacheng Zhang and Peichun Hua and Qize Li and Shi Qiu and Yifan Jiang and Yifan Zhang and Zexu Jin and Baolin Peng and Bolin Shen and Chetan Bansal and Dehan Kong and Deren Lei and Dongshen Peng and Fengqing Jiang and Hao Cheng and Haoqing Wang and Jiaming Shan and Jicheng Wang and Jingguang Zhou and Jixuan He and Kaide Zeng and Kangyu Zhu and Lama Moukheiber and Mufan Qiu and Peng Xia and Qihan Sun and Qingwei Lin and Qiushi Sun and Ruichen Zhang and Shuqing Luo and Si Qin and Sicheng Fan and Tao Xiong and Wenlin Yao and Xinyu Zhang and Xinyue Zeng and Xuanrui Li and Xuchao Zhang and Yian Wang and Yichao Liu and Yiming Liang and Yiyang Zhou and Yizhu Jiao and Yuetai Li and Yurun Chen and Yuxuan Zhang and Zheyuan Yang and Zhiyuan Yao and Zhongyang Li and Zihao Li and Zili Wang and Jianfeng Gao and Huaxiu Yao},
+      year={2026},
+      eprint={2611.03634},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2611.03634}, 
 }
 ```
