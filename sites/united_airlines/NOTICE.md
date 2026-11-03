@@ -47,7 +47,5 @@ benchmark fixture, not an official United Airlines product.
 
 All airport, flight, aircraft and content data in this mirror was captured
 from the real united.com (and its APIs) on 2026-09-28 via the Internet
-Archive Wayback Machine — see provenance.json for the per-source map, and
-scripts_dev/build_source_data.py for how each tracked source_data_*.json
-snapshot is derived. Images are the real upstream united.com media assets
+Archive Wayback Machine — see provenance.json for the per-source map. Images are the real upstream united.com media assets
 (see asset_inventory.json for per-file bytes, SHA-256 and source URLs).

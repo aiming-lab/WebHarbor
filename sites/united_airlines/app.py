@@ -15,7 +15,7 @@ change/cancel policy pages.
 
 All runtime data comes from the SQLite seed built deterministically from the
 tracked source_data_*.json snapshots captured from united.com on
-2026-09-28 (see scripts_dev/build_source_data.py).
+2026-09-28.
 """
 import hashlib
 import json

@@ -6,7 +6,7 @@ the boot path is a no-op after the first seed and /reset/<site> restores
 byte-identity. All rows come from the tracked source_data/*.json snapshots
 in a fixed order; benchmark users use a frozen bcrypt hash.
 
-The image binding step (scripts_dev/bind_images.py) records the local
+The image binding step recorded the local
 static/images/... path for every entity in source_data, so the seed never
 guesses filesystem state.
 """

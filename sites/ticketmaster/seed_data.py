@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic build-time seeder for the Ticketmaster mirror.
 
-Reads the tracked source_data_*.json snapshots (captured from the live site,
-see scripts_dev/build_source_data.py) and materializes artists, venues, events,
+Reads the tracked source_data_*.json snapshots (captured from the live site) and materializes artists, venues, events,
 ticket listings, presales, benchmark users and their orders / cards /
 favorites. Run with PYTHONHASHSEED=0 during the image build so the SQLite
 output is byte-reproducible on every build.

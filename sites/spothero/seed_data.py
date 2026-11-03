@@ -2,7 +2,7 @@
 """Deterministic build-time seeder for the spothero mirror.
 
 All catalog rows come from the tracked source_data_*.json snapshots captured
-from https://spothero.com/ on 2026-09-26 (see scripts_dev/build_source_data.py).
+from https://spothero.com/ on 2026-09-26.
 Benchmark users use a frozen bcrypt hash so the SQLite seed is byte-reproducible
 on every build (PYTHONHASHSEED=0).
 

@@ -99,8 +99,7 @@ def _apply_accessibility(db):
     """Mark ADA-accessible stations from the upstream accessible-stations list.
 
     The GTFS feeds carry no wheelchair_boarding values, so accessibility comes
-    from the MTA Accessible Stations page snapshot instead (see
-    scripts_dev/harvest_accessibility.py): every station whose GTFS id appears
+    from the MTA Accessible Stations page snapshot instead: every station whose GTFS id appears
     in the list is accessible, and the upstream partial-accessibility notes
     ("downtown only", "L only; 4/5/6 is not accessible") are preserved.
     """

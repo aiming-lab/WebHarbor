@@ -61,13 +61,6 @@ four benchmark accounts and their trips/favorites/cards are benchmark
 fixtures (standard WebHarbor pattern) using the frozen-password benchmark
 accounts defined in the seed-database skill.
 
-## How to refresh
-
-`scripts_dev/harvest_destinations.py`, `harvest_hotels.py`,
-`harvest_reviews.py`, `harvest_assets.py` re-capture everything above from
-the live site (they are resumable and share a page cache under
-`scraped_data/`). After a refresh, regenerate the seed with
-`PYTHONHASHSEED=0 python3 seed_data.py` (or via the image build).
 
 ## Reviewer corrections
 

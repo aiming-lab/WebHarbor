@@ -46,7 +46,7 @@ upstream fare-finder cards), the route network and daily schedules (real FR
 flight numbers and times for the captured STN<->DUB pair; deterministic
 schedules for the remaining routes), and the fee/bag/seat/insurance constants
 captured from the live booking flow were captured from www.ryanair.com on
-2026-09-24 (see provenance.json and scripts_dev/build_source_data.py). Media
+2026-09-24 (see provenance.json). Media
 files are the real upstream images fetched from their original URLs; every
 file's source URL and SHA-256 are recorded in asset_inventory.json.
 

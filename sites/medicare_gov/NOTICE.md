@@ -6,8 +6,7 @@ All page copy, coverage-database records, provider-directory records, DME
 supplier records, the equipment taxonomy, the publications catalog, and the
 2026 Medicare cost tables in this mirror were captured from the public
 medicare.gov surfaces listed in `provenance.json` on 2026-09-23 with a
-Playwright-driven browser (see `scripts_dev/build_source_data.py` for the
-normalization applied to each harvest). They are U.S. Government works in
+Playwright-driven browser. They are U.S. Government works in
 the public domain (17 U.S.C. § 105); CMS asks that reuse credit Medicare.gov.
 
 The benchmark user accounts (alice/bob/carol/david @test.com), their claims,

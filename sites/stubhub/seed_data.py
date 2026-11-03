@@ -4,8 +4,8 @@ Everything loads from the tracked source_data/ snapshots (captured from the
 live site on 2026-09-26; see provenance.json) plus the tracked
 static/images/ tree — no untracked scratch directories are consulted, so the
 seed is byte-reproducible from a clean checkout / Docker context (the
-Dockerfile stanza, .build-generated-seed and scripts_dev/Containerfile.test
-all rebuild it with PYTHONHASHSEED=0). Performer imagery is resolved by
+Dockerfile stanza and .build-generated-seed
+both rebuild it with PYTHONHASHSEED=0). Performer imagery is resolved by
 probing static/images/performers/<slug>.* (harvest_images.py names every
 performer asset by slug, and the tracked tree is the source of truth), and
 performer taxonomy nodes are derived from the performer's own events'

@@ -5,8 +5,7 @@ Upstream: https://speedo.com/ (Speedo International Ltd / Pentland Group)
 All product copy, catalog structure, prices, size tables, quiz flows,
 athlete profiles, blog articles, FAQ entries and page content in this
 mirror were captured from the public speedo.com storefront listed in
-`provenance.json` on 2026-09-26 with browser-profile fetchers (see
-`scripts_dev/` for the normalization applied to each harvest). They are
+`provenance.json` on 2026-09-26 with browser-profile fetchers. They are
 Speedo marketing material mirrored for offline benchmarking; the Speedo
 name, logo and brand marks are used here only to keep the mirror visually
 faithful to the upstream site.

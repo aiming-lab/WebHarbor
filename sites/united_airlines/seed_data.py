@@ -4,7 +4,7 @@
 Run from sites/united_airlines/:  PYTHONHASHSEED=0 python3 seed_data.py
 
 All catalog rows come from the tracked source_data_*.json snapshots (real
-united.com data captured 2026-09-28, see scripts_dev/build_source_data.py).
+united.com data captured 2026-09-28).
 Every seed function is gated at the function level so re-running the boot
 path is a no-op and /reset stays byte-identical. The four benchmark members
 share one frozen bcrypt digest so the SQLite seed is byte-reproducible.

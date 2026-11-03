@@ -1,7 +1,6 @@
 """Deterministic build-time/boot-time seeder for the medicare_gov mirror.
 
-Reads the tracked source snapshot (source_data.json, built by
-scripts_dev/build_source_data.py from the 2026-09-23 Playwright harvest of
+Reads the tracked source snapshot (source_data.json, built from the 2026-09-23 Playwright harvest of
 medicare.gov) and materializes it into the site's SQLite database. The
 snapshot arrays are pre-sorted by the build script and every loop below
 iterates them in order, so repeated builds on the same source produce

@@ -12,8 +12,7 @@ payment methods, favorites), gift cards page, help centre, sell landing page
 and presale codes.
 
 All content rows come from the tracked source_data_*.json snapshots captured
-from the live site on 2026-09-27 (see scripts_dev/build_source_data.py for the
-capture pipeline); the SQLite seed is materialized deterministically at image
+from the live site on 2026-09-27; the SQLite seed is materialized deterministically at image
 build time (PYTHONHASHSEED=0).
 """
 import hashlib

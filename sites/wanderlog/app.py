@@ -21,7 +21,7 @@ Dana) come seeded with trips, checklists, budgets, collaborators, likes and
 comments built on real captured places.
 
 Content comes from the tracked source_data/*.json snapshots captured from
-wanderlog.com on 2026-09-29 (see scripts_dev/); the SQLite seed is
+wanderlog.com on 2026-09-29; the SQLite seed is
 materialized deterministically at image build time (PYTHONHASHSEED=0).
 """
 import hashlib

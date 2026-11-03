@@ -7,8 +7,7 @@ All page copy, service-alert text, elevator/escalator status records, GTFS
 timetables, railroad fare tables, the accessible-stations list, project
 microsites and press releases in this mirror were captured from the public
 new.mta.info and web.mta.info (developer feeds) surfaces listed in
-`provenance.json` on 2026-09-23 with browser-profile fetchers (see
-`scripts_dev/` for the normalization applied to each harvest). They are
+`provenance.json` on 2026-09-23 with browser-profile fetchers. They are
 New York State public-authority material mirrored for offline benchmarking;
 the MTA name and logo are used here only to keep the mirror visually
 faithful to the upstream site.

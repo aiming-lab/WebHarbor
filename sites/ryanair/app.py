@@ -9,7 +9,7 @@ boarding passes, fare finder, flights-to destination pages, timetable, help
 centre and site-wide scored search.
 
 Data comes from the tracked source_data_*.json snapshots captured on
-2026-09-24 (see scripts_dev/build_source_data.py); the SQLite seed is
+2026-09-24; the SQLite seed is
 materialized deterministically at image build time.
 """
 import hashlib

@@ -66,7 +66,7 @@ If any of these fail, request changes; don't bother with the deeper review yet.
 
 Also enforce the repo hygiene rules: no `README.md`, `CLAUDE.md`, reports, or
 unreferenced one-off scripts inside `sites/<site>/` (only code, data, contract files,
-`NOTICE.md`, and the reviewer's `verify/README.md`), and all documentation, commit
+and `NOTICE.md`), and all documentation, commit
 messages, and PR text in English. See AGENTS.md "Per-site directory structure" and
 "Documentation and language rules".
 

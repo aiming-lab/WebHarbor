@@ -6,9 +6,7 @@ All page copy, resource content, topic-hub listings, news releases, the
 professional-licenses directory, the State Directory agencies table, the State
 Employee Phone Search records, and the Help Center FAQ answers in this mirror
 were captured from the public ohio.gov surfaces listed in `provenance.json`
-on 2026-09-23 with a real browser driven via Playwright (see
-`scripts_dev/prepare_seed_data.py` for the normalization applied to the
-harvest). Ohio.gov is the official State of Ohio portal; content is reused
+on 2026-09-23 with a real browser driven via Playwright. Ohio.gov is the official State of Ohio portal; content is reused
 here for a non-commercial offline benchmark mirror with attribution to
 ohio.gov.
 

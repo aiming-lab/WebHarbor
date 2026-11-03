@@ -8,7 +8,7 @@ review text), the university catalogue for the four featured states (TX/FL/GA/OH
 city editorial content, job listings, FAQ and marketing copy in this mirror were
 captured from the public student.com website on 2026-09-26 via its public
 discovery/GraphQL APIs and server-rendered pages (see `provenance.json` for the
-exact endpoints and `scripts_dev/` for the per-source harvesters). They are
+exact endpoints). They are
 Student.com marketing/listing data mirrored for offline benchmarking; the
 Student.com name, logo and brand marks are used here only to keep the mirror
 visually faithful to the upstream site.

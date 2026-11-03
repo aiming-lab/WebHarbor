@@ -127,8 +127,8 @@ _INV_MAP = None
 def local_image(url):
     """The mirror's local static path for a captured upstream image URL.
 
-    The tracked asset_inventory.json (built by scripts_dev/
-    download_images.py, which verifies the actually-served format) is the
+    The tracked asset_inventory.json (built by the image download step,
+    which verifies the actually-served format) is the
     mapping authority; the deterministic name derivation is the fallback
     for URLs the inventory does not carry."""
     if not url:
@@ -238,7 +238,7 @@ def seed_all(db):
             # ld_images photo-tour URLs (the same images the upstream PDP
             # gallery renders), then the SERP card photos. Every URI is a
             # managed local asset (asset_inventory.json is the mapping
-            # authority; scripts_dev/download_images.py fetches the same
+            # authority; the image download step fetched the same
             # URL set, so no listing can end up with a NULL or remote URI).
             photo_uris = [p.get('uri') for p in (det.get('photos') or [])
                           if p.get('uri')]

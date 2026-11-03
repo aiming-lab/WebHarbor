@@ -5,8 +5,7 @@ Upstream: https://www.stubhub.com/ (StubHub, a viagogo company)
 All page copy, taxonomy labels, performer names, event names, venue names,
 listing cards, seat-map geometry, search suggestions and account-domain copy
 in this mirror were captured from the public www.stubhub.com surfaces listed
-in `provenance.json` on 2026-09-26 with headful-browser fetchers (see
-`scripts_dev/` for the harvest and normalization applied to each dataset).
+in `provenance.json` on 2026-09-26 with headful-browser fetchers.
 The site is protected by DataDome; the harvest used a real browser profile
 so the captured payloads are the same ones served to human visitors. They
 are StubHub material mirrored for offline benchmarking; the StubHub name and

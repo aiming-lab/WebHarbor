@@ -51,8 +51,7 @@ Thomson Reuters or Super Lawyers.
 All content (directory taxonomy, lawyer profiles, firm profiles, top
 lists, resource articles, Q&A answers, feature articles, static page
 copy, imagery) was captured from the live superlawyers.com family of
-sites and its CDNs on 2026-09-26 with a real Chromium via Playwright;
-see scripts_dev/ for the capture pipeline and asset_inventory.json for
+sites and its CDNs on 2026-09-26 with a real Chromium via Playwright; see asset_inventory.json for
 the per-file byte size, SHA-256 and https source URL of every shipped
 image. The seed database is rebuilt deterministically from the tracked
 source_data/ snapshots (PYTHONHASHSEED=0, no wall clock).

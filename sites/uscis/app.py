@@ -11,7 +11,7 @@ account surface (login, myProgress, online appointment requests, AR-11-style
 change of address).
 
 Content comes from the tracked source_data/*.json snapshots captured from the
-upstream sites on 2026-09-28 (see scripts_dev/ and provenance.json); the
+upstream sites on 2026-09-28 (see provenance.json); the
 SQLite seed is materialized deterministically at image build time
 (PYTHONHASHSEED=0, frozen bcrypt benchmark users).
 """

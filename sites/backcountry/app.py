@@ -15,7 +15,7 @@ seeded with carts, wish lists, orders and reviews built on real captured
 products.
 
 Content comes from the tracked source_data/*.json snapshots captured from
-backcountry.com on 2026-09-30 (see scripts_dev/ and provenance.json); the
+backcountry.com on 2026-09-30 (see provenance.json); the
 SQLite seed is materialized deterministically at image build time
 (PYHASHSEED=0).
 """

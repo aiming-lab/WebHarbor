@@ -15,7 +15,7 @@ contact-us hours, network support, the troubleshoot wizard, trade-in
 program steps + FAQ).
 
 Upstream-sourced content comes from the tracked source_data/*.json
-snapshots captured on 2026-09-29 (see scripts_dev/ and provenance.json).
+snapshots captured on 2026-09-29 (see provenance.json).
 Benchmark accounts (users, lines, bills, usage, orders), the trade-in
 estimate matrix and the troubleshoot flows are deterministic fixtures
 declared in provenance.json. The SQLite seed is materialized

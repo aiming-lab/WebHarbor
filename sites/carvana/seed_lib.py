@@ -88,7 +88,7 @@ def _vehicle_row(card, details, pricing):
     gallery = []
     if photos.get("spin_frames"):
         # the three lightest frames of the upstream 64-frame 360 spin,
-        # kept in spin order (see scripts_dev/download_images.py)
+        # kept in spin order
         gallery = [u for u in photos["spin_frames"][::5]][:3]
     highlights = []
     for h in d.get("highlights") or []:

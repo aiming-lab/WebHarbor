@@ -78,30 +78,30 @@ sites/<site>/
 │                                (+ reviewer-added verifier_path and judge_rubric; never an answer key)
 ├── templates/  static/          Jinja + css/js/icons; heavy images via the HF archive
 ├── instance_seed/<site>.db      seed DB (HF-managed, or build-generated per .build-generated-seed)
-├── verify/                      one deterministic verifier per task + test_verifiers.py
+├── verify/                      one deterministic verifier per task
 │                                + shared helpers (verify_lib.py, ground_truth.py)
-│                                + README.md (the per-site verifier contract doc)
-├── tests/                       optional site regression tests
 └── NOTICE.md                    required when the site redistributes third-party media or fonts
 ```
 
 Also allowed: data files the app or seed code reads, asset-contract markers
 (`.requires-images`, `.requires-external-cache`, `.build-generated-seed`), asset manifests
 (`asset_inventory.json`, `provenance.json`, ...), and tool scripts the Docker build,
-`scripts/`, the app, the seed chain, or a test actually invokes.
+`scripts/`, the app, or the seed chain actually invokes.
 
 Never commit, anywhere under `sites/<site>/`:
 
 - `README.md`, `CLAUDE.md`, or any other documentation file (the one exception:
-  `verify/README.md`, the per-site verifier contract referenced by the verifiers)
+  `NOTICE.md`, below)
 - integration/review/work reports (`INTEGRATION_REPORT.md`, `PHASE_1_SUMMARY.md`, `TASK_REVIEW.md`, `FIX_REPORT.md`, ...)
-- one-off harvest or generation scripts that nothing in the build, runtime, or tests invokes, and the intermediate files they produced
+- one-off harvest or generation scripts that nothing in the build or runtime invokes (such as a
+  `scripts_dev/` directory), and the intermediate files they produced
+- tests and their fixtures (`tests/`, `test_*.py`, `verify/tests/`): run them locally, keep them out of the PR
 - backup or duplicate files
 
-A script that is not imported or executed by the `Dockerfile`, `scripts/`, the app, the
-seed chain, or a test is a work artifact. The only documentation files allowed under
-`sites/<site>/` are `NOTICE.md` (legally required attribution and removal information for
-redistributed third-party material) and `verify/README.md` (the verifier contract).
+A script that is not imported or executed by the `Dockerfile`, `scripts/`, the app, or the
+seed chain is a work artifact. The only documentation file allowed under `sites/<site>/`
+is `NOTICE.md` (legally required attribution and removal information for redistributed
+third-party material).
 
 ## Documentation and language rules
 
@@ -304,38 +304,6 @@ No cross-imports between `sites/<a>/` and `sites/<b>/`. Image runs one Python pr
 | `/reset` returns but DB still dirty | Popen handle leaked; zombie not reaped    | `_site_procs` dict in `control_server.py`  |
 | Byte-identity fails post-reset      | seed not fully idempotent                 | gate every `seed_*()` function             |
 | Image bloats > 4 GB                 | shipped `scraped_data/` or `instance/`    | `.dockerignore`                            |
-
-## PR integration preference
-
-Code and required HF assets must be integrated together (user requirement,
-2026-09-17). Authorization to merge a reviewed code PR includes publishing and
-merging its required asset changes into `ChilleD/WebHarbor`; do not leave its
-asset dependencies on open HF PRs and call the integration complete.
-
-Before merging code, identify its original asset PRs and any locally modified
-bundles. Publish the reviewed replacements when needed, merge the required HF
-PRs in dependency order while preserving unrelated dataset assets, and verify
-the actual HF merge status. Update `.assets-revision` to tested immutable merged
-revisions, then freshly fetch and validate the combined code/assets, including
-the required build and reset checks. An accessible open-PR commit is not a merged
-asset revision. Tracked build-time seed generation/migrations need not cause an
-unnecessary archive rewrite, but their source asset dependencies must be merged.
-If HF integration is blocked, report it before merging code unless the user
-explicitly approves an exception. Docker image publication and deployment remain
-separate stages and are not implied by this requirement.
-
-For stacked contributions, preserve the original PR ancestry and integrate in
-dependency order: original contribution, reviewer continuation, then follow-up
-fixes. Do not replace that sequence with a copied/squashed integration PR unless
-the user explicitly requests it.
-
-If a combined replacement PR has already merged and the original PR history still
-needs integration, the user's preferred future recovery is a revert PR followed
-by the original PRs in dependency order and a new PR reapplying the reviewed fixes.
-Plan and validate the whole sequence, obtain authorization for the rollback/merges,
-and never force-push shared main. History-only reconciliation while retaining the
-replacement is an explicit exception chosen for PRs #35/#88 after #127, not the
-default for future cases (preference recorded 2026-09-17).
 
 ## When you finish
 

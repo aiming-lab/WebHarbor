@@ -75,8 +75,7 @@ fixture, not an official NFL product.
 
 All game, standings, roster, player, news, video, stat, injury, transaction
 and plan content was captured from the live nfl.com and its api.nfl.com
-experience endpoints on 2026-09-23/24 (see scripts_dev/ for the capture
-pipeline and source_data/ for the frozen snapshots). See provenance.json for
+experience endpoints on 2026-09-23/24 (see source_data/ for the frozen snapshots). See provenance.json for
 the per-path classification and asset_inventory.json for per-file upstream
 source URLs, byte lengths and SHA-256 hashes.
 

@@ -13,7 +13,7 @@ math, license renewal/replacement, plate purchase, record requests) plus
 the Reserve-Your-Spot appointment flow.
 
 Content comes from the tracked source_data/*.json snapshots captured from
-the upstream sites on 2026-09-29 (see scripts_dev/ and provenance.json); the
+the upstream sites on 2026-09-29 (see provenance.json); the
 SQLite seed is materialized deterministically at image build time
 (PYTHONHASHSEED=0, frozen bcrypt benchmark users).
 """

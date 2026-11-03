@@ -82,8 +82,7 @@ fixture, not an official LandWatch product.
 
 All listing records, broker records, county/city/region names, taxonomy,
 homepage fixtures, and static page text come from the tracked
-source_data.json snapshot captured from the live site on 2026-09-22; the
-capture scripts live in scripts_dev/ (gitignored dev tooling). Every image
+source_data.json snapshot captured from the live site on 2026-09-22. Every image
 served by the mirror (listing photos, agent headshots, hero images,
 property-type tiles) is a real asset downloaded from
 assets.landwatch.com / www.landwatch.com and tracked in

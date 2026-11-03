@@ -247,7 +247,7 @@ class Faculty(db.Model):
     email = db.Column(db.String(200))
     photo = db.Column(db.String(200))
 
-    # Faculty photos are packed per profile by scripts_dev/select_images.py
+    # Faculty photos are packed per profile
     # (up to 12 per department, saved as faculty_<profile_id>.jpg); the seed
     # mirrors the upstream CDN filename in Faculty.photo, which is not on
     # disk. Map to the packed per-profile asset when present, and render no

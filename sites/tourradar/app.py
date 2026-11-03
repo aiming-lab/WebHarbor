@@ -10,7 +10,7 @@ payment), wishlists, accounts with Tour Management, deals pages, traveler
 moments and platform reviews.
 
 Data comes from the tracked source_data_*.json snapshots captured from
-tourradar.com on 2026-09-27 (see scripts_dev/); the SQLite seed is
+tourradar.com on 2026-09-27; the SQLite seed is
 materialized deterministically at image build time.
 """
 import json

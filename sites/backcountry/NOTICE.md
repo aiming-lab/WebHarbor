@@ -23,7 +23,7 @@ This directory contains a WebHarbor mirror of https://www.backcountry.com/
   public backcountry.com pages captured at the same date, stored in the
   tracked `source_data/*.json` files. The untrimmed as-rendered upstream
   HTML lives in the gitignored `scraped_data/` captures the tracked
-  snapshots were built from (see `scripts_dev/`).
+  snapshots were built from.
 - www.backcountry.com sits behind an AWS WAF (CloudFront) that serves a
   JavaScript challenge plus an image-puzzle CAPTCHA to plain HTTP clients
   and headless browsers. All captures were made with a real headful

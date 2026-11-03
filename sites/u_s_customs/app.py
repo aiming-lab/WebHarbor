@@ -9,7 +9,7 @@ downloadable PDFs, trade & import reference pages, and CBP careers with
 real USAJOBS postings.
 
 Content comes from the tracked source_data/*.json snapshots captured from
-the upstream sites on 2026-09-28 (see scripts_dev/); the SQLite seed is
+the upstream sites on 2026-09-28; the SQLite seed is
 materialized deterministically at image build time (PYTHONHASHSEED=0).
 """
 import hashlib

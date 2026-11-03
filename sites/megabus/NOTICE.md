@@ -42,8 +42,7 @@ not an official megabus product.
 ## Data provenance
 
 All city, route, journey, fare, stop and FAQ data was captured from
-us.megabus.com's public JSON APIs and rendered pages on 2026-09-23 (see
-provenance.json and scripts_dev/build_source_data.py). Media files are the
+us.megabus.com's public JSON APIs and rendered pages on 2026-09-23 (see provenance.json). Media files are the
 real upstream images fetched from their original URLs; every file's source
 URL and SHA-256 are recorded in asset_inventory.json.
 

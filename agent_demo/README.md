@@ -8,7 +8,7 @@ The current source requires a bearer token of at least 32 characters for control
 export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
 ```
 
-Pass it with `docker run -e WEBSYN_CONTROL_TOKEN`. Site browsing does not require this token; it is removed from site-process environments. Build from this checkout: previously published images may use an older registry/authentication contract.
+Pass it with `docker run -e WEBSYN_CONTROL_TOKEN`. Site browsing does not require this token; it is removed from site-process environments.
 
 
 Minimal ReAct loop (`agent.py`) + LLM-as-judge grader (`eval_judge.py`) for driving and evaluating an agent on any WebHarbor mirror.
@@ -30,7 +30,7 @@ export OPENAI_BASE_URL=https://api.openai.com/v1   # or your Azure / vLLM endpoi
 
 ## Run a task
 
-WebHarbor must already be running locally (build it with `./scripts/build.sh webharbor:dev`, then `docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40152:40000-40152 webharbor:dev`).
+WebHarbor must already be running locally: `docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40152:40000-40152 wildawm/webharbor:latest` (or build `webharbor:dev` from this checkout, see the main README).
 
 Run a single task from a site's `tasks.jsonl`:
 

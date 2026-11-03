@@ -18,7 +18,7 @@ offline agent-benchmark use.
   page) is a frozen snapshot of the public pages captured at the same date
   and stored in the tracked `source_data/*.json` files. The untrimmed
   upstream snapshots live in the gitignored `scraped_data/` captures the
-  tracked snapshots were built from (see `scripts_dev/`).
+  tracked snapshots were built from.
 - The four benchmark accounts (alice.j / bob.c / carol.d / dana.k
   @test.com) and their trips, itineraries, checklists, budgets and
   collaboration states are authored fixtures modeling Wanderlog's

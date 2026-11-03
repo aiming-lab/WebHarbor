@@ -41,8 +41,8 @@ predates the rename and is kept stable.
 
 Do not create `README.md`, `CLAUDE.md`, review notes, reports, or one-off harvest
 scripts inside `sites/<your_site>/`. A site directory holds code, data, and contract
-files only; the allowed doc files are `NOTICE.md` (third-party attribution) and the
-reviewer-written `verify/README.md` (verifier contract). Write all documentation,
+files only; the only allowed doc file is `NOTICE.md` (third-party attribution).
+Write all documentation,
 commit messages, and PR descriptions in English. See AGENTS.md ("Per-site directory
 structure" and "Documentation and language rules").
 

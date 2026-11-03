@@ -19,7 +19,7 @@ agent-benchmark use.
   pages/APIs captured at the same date, stored in the tracked
   `source_data/*.json` files. The untrimmed upstream snapshots live in
   the gitignored `scraped_data/` captures the tracked snapshots were
-  built from (see `scripts_dev/`).
+  built from.
 - The four benchmark accounts (alice.j / bob.c / carol.d / dana.k
   @test.com) and their bags, wishlists, addresses and orders are
   authored fixtures modeling zara.com's account area on top of real

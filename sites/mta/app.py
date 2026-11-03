@@ -50,7 +50,7 @@ MIRROR_NOW = datetime(2026, 9, 23, 19, 0)
 
 
 # ---------------------------------------------------------------------------
-# Asset resolution (see scripts_dev/harvest_assets.py)
+# Asset resolution
 # ---------------------------------------------------------------------------
 # Content blocks carry the upstream image URLs verbatim (query strings like
 # ?itok=... included), while the downloaded files land in static/images/

@@ -42,8 +42,7 @@ fixture, not an official Qatar Airways product.
 The live site sits behind Akamai edge protection (HTTP 403 to offline
 harvesters), so all page and asset captures were taken from web.archive.org
 replays of the real qatarairways.com URLs (Wayback Machine snapshots
-2025-06 through 2026-09; see `provenance.json` and
-`scripts_dev/harvest_assets.py`). Every image under `static/images/` is a
+2025-06 through 2026-09; see `provenance.json`). Every image under `static/images/` is a
 real upstream asset fetched at its original CDN path; the per-file
 inventory with source URLs and SHA-256 digests lives in
 `asset_inventory.json`.

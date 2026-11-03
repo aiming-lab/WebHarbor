@@ -46,8 +46,7 @@ not an official RE/MAX product.
 
 All content (listings, rentals, agents, offices, blog articles, page copy)
 was captured from the live https://www.remax.com/ and its CDNs on
-2026-09-24 with a real Chromium via Playwright; see scripts_dev/ for the
-capture pipeline and image_manifest.json / asset_inventory.json for the
+2026-09-24 with a real Chromium via Playwright; see image_manifest.json / asset_inventory.json for the
 per-file provenance (byte size, SHA-256, exact upstream URL). No content is
 synthetic. The seed database is deterministically rebuilt from the tracked
 source_data_*.json snapshots at image build time (see .build-generated-seed).

@@ -9,7 +9,7 @@ booking; account area (profile, my bookings, wishlist, coupons, coins); deals
 page with promo codes; travel guides and site-wide scored search.
 
 Data comes from the tracked source_data_*.json snapshots captured on
-2026-09-27 (see scripts_dev/ harvesters); the SQLite seed is materialized
+2026-09-27; the SQLite seed is materialized
 deterministically at image build time.
 """
 import json

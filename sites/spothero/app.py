@@ -7,7 +7,7 @@ guest + signed-in checkout with promo codes; account area with reservations
 airport / stadium / monthly landing pages; FAQ hub and the static info pages.
 
 All catalog rows come from the tracked source_data_*.json snapshots captured
-from spothero.com on 2026-09-26 (see scripts_dev/build_source_data.py); the
+from spothero.com on 2026-09-26; the
 SQLite seed is deterministically generated at build time (see .build-generated-seed).
 """
 from __future__ import annotations

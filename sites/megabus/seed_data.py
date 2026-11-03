@@ -2,7 +2,7 @@
 """Deterministic build-time seeder for the megabus mirror.
 
 All content rows come from the tracked source_data_*.json snapshots captured
-from https://us.megabus.com/ on 2026-09-23 (see scripts_dev/build_source_data.py).
+from https://us.megabus.com/ on 2026-09-23.
 Benchmark users use a frozen bcrypt hash so the SQLite seed is byte-reproducible
 on every build (PYTHONHASHSEED=0).
 

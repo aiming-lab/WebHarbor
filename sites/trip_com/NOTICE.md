@@ -11,8 +11,7 @@ facet prices) and attraction data (names, categories, ratings, review counts,
 booking counts, from-prices, highlights, product descriptions, photos) in this
 mirror were captured from the public us.trip.com website on 2026-09-27 via
 Playwright-driven page renders and direct fetches of the resolved media URLs
-(see `provenance.json` for the capture scope and `scripts_dev/` for the
-per-source harvesters). They are Trip.com listing data mirrored for offline
+(see `provenance.json` for the capture scope). They are Trip.com listing data mirrored for offline
 benchmarking; the Trip.com name, logo and brand marks are used here only to
 keep the mirror visually faithful to the upstream site.
 

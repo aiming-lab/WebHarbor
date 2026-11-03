@@ -11,7 +11,7 @@ cost-guide pages (/p/...), the /prices index, the services-near-me index and
 city pages.
 
 Data comes from the tracked source_data_*.json snapshots captured on
-2026-09-26 (see scripts_dev/build_source_data.py); the SQLite seed is
+2026-09-26; the SQLite seed is
 materialized deterministically at image build time.
 """
 import hashlib
